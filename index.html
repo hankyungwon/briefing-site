@@ -122,6 +122,47 @@
   .cat.gov .cat-label{background:var(--gwanak-deep);}
   .cat.seoul .cat-label{background:var(--sky);}
   .cat.world .cat-label{background:var(--slate);}
+  /* ── 오늘의 브리핑: 2단 카드 레이아웃 ── */
+  .brief-head{
+    display:flex;justify-content:space-between;align-items:flex-end;flex-wrap:wrap;gap:16px;
+    margin-bottom:24px;padding:22px 26px;border-radius:18px;
+    background:linear-gradient(135deg,#EFF5FC 0%,#E7EFF8 100%);border:1px solid var(--line);
+  }
+  .brief-head .bh-eyebrow{font-size:11.5px;letter-spacing:.22em;color:var(--sky);font-weight:700;margin-bottom:5px;}
+  .brief-head .bh-issue{font-family:'Noto Serif KR',serif;font-weight:700;font-size:clamp(19px,2.8vw,25px);color:var(--gwanak-deep);line-height:1.3;}
+  .brief-head .bh-date{
+    background:#fff;border:1px solid var(--line);border-radius:999px;
+    padding:7px 16px;font-size:13.5px;color:var(--slate);font-weight:500;white-space:nowrap;
+  }
+  .brief-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:16px;align-items:start;}
+  .cat-band{grid-column:1/-1;display:flex;align-items:center;gap:10px;margin-top:12px;}
+  .cat-band:first-child{margin-top:0;}
+  .cat-band .dot{width:9px;height:9px;border-radius:50%;flex:none;}
+  .cat-band .name{font-size:13.5px;font-weight:700;letter-spacing:.05em;color:var(--ink);white-space:nowrap;}
+  .cat-band .rule{flex:1;height:1px;background:var(--line);}
+  .cat-band.gov .dot{background:var(--gwanak-deep);}
+  .cat-band.seoul .dot{background:var(--sky);}
+  .cat-band.world .dot{background:var(--slate);}
+  .brief-card{
+    background:var(--card);border:1px solid var(--line);border-radius:16px;
+    padding:20px 22px 18px;box-shadow:0 2px 10px rgba(14,95,168,.05);
+    position:relative;overflow:hidden;
+    transition:transform .18s ease,box-shadow .18s ease,border-color .18s ease;
+  }
+  .brief-card::before{content:"";position:absolute;left:0;top:0;bottom:0;width:4px;}
+  .brief-card.gov::before{background:var(--gwanak-deep);}
+  .brief-card.seoul::before{background:var(--sky);}
+  .brief-card.world::before{background:var(--slate);}
+  .brief-card:hover{transform:translateY(-3px);box-shadow:0 12px 28px rgba(14,95,168,.13);border-color:#C2D4E8;}
+  .brief-card h3{font-family:'Noto Serif KR',serif;font-size:17.5px;font-weight:600;line-height:1.5;margin-bottom:9px;color:var(--ink);}
+  .brief-card p.sum{font-size:14.5px;color:#3B4756;line-height:1.72;}
+  .brief-card a.src{display:inline-block;margin-top:12px;font-size:13px;font-weight:500;color:var(--gwanak);}
+  .brief-card a.src:hover{color:var(--gwanak-deep);}
+  .brief-empty{
+    grid-column:1/-1;color:var(--muted);font-size:14px;background:#F7F9FC;
+    border:1px dashed var(--line);border-radius:14px;padding:15px 20px;
+  }
+  @media(max-width:640px){.brief-grid{grid-template-columns:1fr;}}
   article.item{
     background:var(--card);border:1px solid var(--line);border-radius:10px;
     padding:20px 22px;margin-bottom:14px;box-shadow:0 1px 3px rgba(14,95,168,.05);
@@ -130,8 +171,8 @@
   article.item p{font-size:15px;color:#3B4756;}
   article.item a.src{font-size:13.5px;color:var(--gwanak);}
   .implication{
-    margin-top:12px;padding:12px 14px;border-left:3px solid var(--gold);
-    background:#FBF7EC;border-radius:0 6px 6px 0;font-size:14.5px;
+    margin-top:12px;padding:11px 14px;border-left:3px solid var(--gold);
+    background:#FBF7EC;border-radius:8px;font-size:13.8px;line-height:1.62;
   }
   .implication strong{color:var(--gold);}
   .empty-note{
@@ -325,29 +366,33 @@
   }
 
   function renderIssue(briefing, items) {
-    let html = '<div class="issue-head">'
-      + '<span class="issue-no serif">AI 정책 동향 브리핑 · 제' + briefing.issue_no + '호</span>'
-      + '<span class="issue-date">' + fmtDate(briefing.published_date) + '</span></div>';
+    let html = '<div class="brief-head">'
+      + '<div><div class="bh-eyebrow">GWANAK-GU · AI POLICY BRIEFING</div>'
+      + '<div class="bh-issue">AI 정책 동향 브리핑 · 제' + briefing.issue_no + '호</div></div>'
+      + '<span class="bh-date">' + fmtDate(briefing.published_date) + '</span></div>';
 
+    html += '<div class="brief-grid">';
     for (const cat of CATS) {
       const catItems = items.filter(i => i.category === cat.key);
-      html += '<div class="cat ' + cat.key + '"><span class="cat-label">' + cat.label + '</span>';
+      html += '<div class="cat-band ' + cat.key + '"><span class="dot"></span>'
+        + '<span class="name">' + cat.label + '</span><span class="rule"></span></div>';
       if (catItems.length === 0) {
-        html += '<p class="empty-note">오늘은 이 분야의 특이 동향이 확인되지 않았습니다.</p>';
+        html += '<p class="brief-empty">오늘은 이 분야의 특이 동향이 확인되지 않았습니다.</p>';
       } else {
         for (const it of catItems) {
-          html += '<article class="item"><h3>' + esc(it.title) + '</h3><p>' + esc(it.summary) + '</p>';
+          html += '<article class="brief-card ' + cat.key + '"><h3>' + esc(it.title) + '</h3>'
+            + '<p class="sum">' + esc(it.summary) + '</p>';
           if (it.implication) {
             html += '<div class="implication"><strong>함의</strong> · ' + esc(it.implication) + '</div>';
           }
           if (it.source_url) {
-            html += '<p style="margin-top:8px;"><a class="src" href="' + esc(it.source_url) + '" target="_blank" rel="noopener">원문 보기 →</a></p>';
+            html += '<a class="src" href="' + esc(it.source_url) + '" target="_blank" rel="noopener">원문 보기 →</a>';
           }
           html += '</article>';
         }
       }
-      html += '</div>';
     }
+    html += '</div>';
     document.getElementById("briefing-view").innerHTML = html;
   }
 
