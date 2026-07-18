@@ -43,6 +43,66 @@
   nav button:hover{color:var(--gwanak);}
   nav button:focus-visible{outline:2px solid var(--gwanak);outline-offset:-2px;}
   nav button[aria-selected="true"]{color:var(--gwanak-deep);font-weight:700;border-bottom-color:var(--gwanak);}
+  .nav-auth{margin-left:auto;align-self:center;display:flex;align-items:center;gap:10px;min-width:0;padding-left:12px;}
+  .auth-email{font-size:13px;color:var(--muted);max-width:160px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+  .auth-btn{
+    appearance:none;cursor:pointer;font-family:'Noto Sans KR',sans-serif;
+    font-size:13.5px;font-weight:500;color:var(--gwanak);
+    background:none;border:1px solid var(--gwanak);border-radius:6px;
+    padding:5px 14px;white-space:nowrap;
+  }
+  .auth-btn:hover{background:var(--gwanak);color:#fff;}
+  .auth-btn:focus-visible{outline:2px solid var(--gwanak);outline-offset:2px;}
+  .modal-backdrop{
+    position:fixed;inset:0;background:rgba(28,43,58,.45);z-index:50;
+    display:none;align-items:flex-start;justify-content:center;padding:24px;
+  }
+  .modal-backdrop.open{display:flex;}
+  .modal{
+    background:var(--card);border:1px solid var(--line);border-radius:10px;
+    box-shadow:0 8px 30px rgba(14,95,168,.25);width:100%;max-width:380px;
+    margin-top:10vh;padding:26px 26px 24px;
+  }
+  .modal h3{font-family:'Noto Serif KR',serif;font-size:19px;color:var(--gwanak-deep);margin-bottom:4px;}
+  .modal .modal-sub{font-size:13.5px;color:var(--muted);margin-bottom:16px;}
+  .field{margin-bottom:14px;}
+  .field label{display:block;font-size:13.5px;font-weight:700;color:var(--slate);margin-bottom:5px;}
+  .field input,.field textarea{
+    width:100%;font-family:'Noto Sans KR',sans-serif;font-size:15px;color:var(--ink);
+    background:#fff;border:1px solid var(--line);border-radius:6px;padding:9px 12px;
+  }
+  .field input:focus,.field textarea:focus{outline:2px solid var(--gwanak);outline-offset:-1px;border-color:var(--gwanak);}
+  .field textarea{resize:vertical;min-height:74px;}
+  .btn-primary{
+    appearance:none;cursor:pointer;border:none;border-radius:6px;
+    font-family:'Noto Sans KR',sans-serif;font-size:15px;font-weight:700;
+    background:var(--gwanak);color:#fff;padding:10px 22px;
+  }
+  .btn-primary:hover{background:var(--gwanak-deep);}
+  .btn-primary:disabled{opacity:.55;cursor:default;}
+  .form-error{color:#A33;font-size:13.5px;margin-top:10px;display:none;}
+  .form-error.show{display:block;}
+  .locked-note{
+    background:var(--card);border:1px dashed var(--line);border-radius:10px;
+    padding:44px 24px;text-align:center;color:var(--muted);
+  }
+  .locked-note p{font-size:15.5px;margin-bottom:18px;}
+  .post-form{
+    background:var(--card);border:1px solid var(--line);border-radius:10px;
+    padding:20px 22px;margin-bottom:28px;box-shadow:0 1px 3px rgba(14,95,168,.05);
+  }
+  .post-form h3{
+    font-family:'Noto Serif KR',serif;font-size:17px;font-weight:600;color:var(--gwanak-deep);
+    margin-bottom:14px;padding-bottom:10px;border-bottom:1px solid var(--line);
+  }
+  .post-meta{margin-top:12px;display:flex;gap:12px;flex-wrap:wrap;align-items:baseline;font-size:13px;color:var(--muted);}
+  .post-meta .author{font-weight:700;color:var(--slate);}
+  .post-del{
+    appearance:none;cursor:pointer;background:none;border:1px solid var(--line);
+    border-radius:5px;color:#A33;font-size:12.5px;padding:2px 10px;margin-left:auto;
+    font-family:'Noto Sans KR',sans-serif;
+  }
+  .post-del:hover{border-color:#A33;background:#FBEFEE;}
   main{max-width:920px;margin:0 auto;padding:32px 24px 80px;}
   .panel{display:none;}
   .panel.active{display:block;animation:fade .35s ease;}
@@ -122,6 +182,7 @@
     main{padding:24px 18px 60px;}
     nav{padding:0 12px;overflow-x:auto;}
     nav button{padding:12px 12px 10px;white-space:nowrap;}
+    .auth-email{max-width:90px;}
   }
 </style>
 </head>
@@ -143,7 +204,12 @@
 <nav role="tablist" aria-label="주요 메뉴">
   <button role="tab" aria-selected="true" data-panel="today">오늘의 브리핑</button>
   <button role="tab" aria-selected="false" data-panel="archive">브리핑 아카이브</button>
+  <button role="tab" aria-selected="false" data-panel="resources">자료마당</button>
   <button role="tab" aria-selected="false" data-panel="about">연구단 소개</button>
+  <div class="nav-auth">
+    <span class="auth-email" id="auth-email" hidden></span>
+    <button type="button" class="auth-btn" id="auth-btn">로그인</button>
+  </div>
 </nav>
 
 <main>
@@ -160,6 +226,16 @@
     </div>
     <ul class="archive-list" id="archive-list"></ul>
     <p class="archive-hint">매일 아침 발행되는 브리핑이 이곳에 차곡차곡 쌓입니다. 호수를 누르면 해당 브리핑을 볼 수 있습니다.</p>
+  </section>
+
+  <section id="resources" class="panel" role="tabpanel">
+    <div class="issue-head">
+      <span class="issue-no serif">자료마당</span>
+      <span class="issue-date">팀원 전용 자료 공유 공간</span>
+    </div>
+    <div id="resources-view">
+      <p class="status">불러오는 중입니다…</p>
+    </div>
   </section>
 
   <section id="about" class="panel" role="tabpanel">
@@ -186,6 +262,26 @@
   </section>
 </main>
 
+<div class="modal-backdrop" id="login-modal">
+  <div class="modal" role="dialog" aria-modal="true" aria-labelledby="login-title">
+    <h3 id="login-title">팀원 로그인</h3>
+    <p class="modal-sub">초대받은 계정으로 로그인해 주세요. (초대제로 운영되며 별도 회원가입은 없습니다.)</p>
+    <form id="login-form">
+      <div class="field">
+        <label for="login-email">이메일</label>
+        <input id="login-email" type="email" autocomplete="username" required>
+      </div>
+      <div class="field">
+        <label for="login-password">비밀번호</label>
+        <input id="login-password" type="password" autocomplete="current-password" required>
+      </div>
+      <button type="submit" class="btn-primary" id="login-submit">로그인</button>
+      <button type="button" class="auth-btn" id="login-cancel" style="margin-left:8px;">닫기</button>
+      <p class="form-error" id="login-error" role="alert"></p>
+    </form>
+  </div>
+</div>
+
 <footer>
   <div class="footer-inner">
     본 사이트의 브리핑은 AI가 언론보도·공개자료를 바탕으로 자동 생성한 내부 참고자료로, 관악구청의 공식 입장이 아닙니다.<br>
@@ -194,6 +290,7 @@
   </div>
 </footer>
 
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script>
   // ── Supabase 연결 정보 ─────────────────────────────
   // publishable 키는 '공개용'으로 설계된 키라서 웹페이지에 넣어도 안전합니다.
@@ -287,7 +384,7 @@
     }
   }
 
-  const tabs = document.querySelectorAll("nav button");
+  const tabs = document.querySelectorAll('nav button[role="tab"]');
   const panels = document.querySelectorAll(".panel");
   function switchTab(name) {
     tabs.forEach(t => t.setAttribute("aria-selected", String(t.dataset.panel === name)));
@@ -295,6 +392,181 @@
     window.scrollTo({ top: 0 });
   }
   tabs.forEach(tab => tab.addEventListener("click", () => switchTab(tab.dataset.panel)));
+
+  // ── 로그인 (supabase-js) ─────────────────────────────
+  const sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+  let currentUser = null;
+
+  const authEmailEl = document.getElementById("auth-email");
+  const authBtn = document.getElementById("auth-btn");
+  const loginModal = document.getElementById("login-modal");
+  const loginForm = document.getElementById("login-form");
+  const loginError = document.getElementById("login-error");
+
+  function openLoginModal() {
+    loginError.classList.remove("show");
+    loginModal.classList.add("open");
+    document.getElementById("login-email").focus();
+  }
+  function closeLoginModal() {
+    loginModal.classList.remove("open");
+    loginForm.reset();
+    loginError.classList.remove("show");
+  }
+  loginModal.addEventListener("click", e => { if (e.target === loginModal) closeLoginModal(); });
+  document.addEventListener("keydown", e => {
+    if (e.key === "Escape" && loginModal.classList.contains("open")) closeLoginModal();
+  });
+  document.getElementById("login-cancel").addEventListener("click", closeLoginModal);
+
+  authBtn.addEventListener("click", async () => {
+    if (currentUser) await sb.auth.signOut();
+    else openLoginModal();
+  });
+
+  loginForm.addEventListener("submit", async e => {
+    e.preventDefault();
+    const submitBtn = document.getElementById("login-submit");
+    submitBtn.disabled = true;
+    loginError.classList.remove("show");
+    const { error } = await sb.auth.signInWithPassword({
+      email: document.getElementById("login-email").value.trim(),
+      password: document.getElementById("login-password").value
+    });
+    submitBtn.disabled = false;
+    if (error) {
+      loginError.textContent = "로그인에 실패했습니다. 이메일과 비밀번호를 확인해 주세요.";
+      loginError.classList.add("show");
+      return;
+    }
+    closeLoginModal();
+  });
+
+  function renderAuthNav() {
+    if (currentUser) {
+      authEmailEl.textContent = currentUser.email;
+      authEmailEl.hidden = false;
+      authBtn.textContent = "로그아웃";
+    } else {
+      authEmailEl.hidden = true;
+      authBtn.textContent = "로그인";
+    }
+  }
+
+  sb.auth.onAuthStateChange((_event, session) => {
+    const nextUser = session ? session.user : null;
+    // 토큰 자동 갱신처럼 같은 사용자면 화면을 다시 그리지 않음(작성 중인 폼 보호)
+    const sameUser = !!(nextUser && currentUser && nextUser.id === currentUser.id);
+    currentUser = nextUser;
+    renderAuthNav();
+    if (!sameUser) renderResources();
+  });
+
+  // ── 자료마당 ─────────────────────────────
+  const resourcesView = document.getElementById("resources-view");
+
+  function fmtPostDate(iso) {
+    const d = new Date(iso);
+    return d.getFullYear() + "." + String(d.getMonth() + 1).padStart(2, "0") + "." + String(d.getDate()).padStart(2, "0");
+  }
+
+  function linkHref(url) {
+    return /^https?:\/\//i.test(url) ? url : "https://" + url;
+  }
+
+  function renderResources() {
+    if (!currentUser) {
+      resourcesView.innerHTML =
+        '<div class="locked-note"><p>팀원 전용 공간입니다. 로그인해 주세요.</p>'
+        + '<button type="button" class="btn-primary" id="locked-login-btn">로그인</button></div>';
+      document.getElementById("locked-login-btn").addEventListener("click", openLoginModal);
+      return;
+    }
+    resourcesView.innerHTML =
+      '<div class="post-form"><h3>새 자료 올리기</h3>'
+      + '<form id="post-form">'
+      + '<div class="field"><label for="post-title">제목 <span style="color:#A33;">*</span></label>'
+      + '<input id="post-title" type="text" maxlength="200" required></div>'
+      + '<div class="field"><label for="post-url">링크 (선택)</label>'
+      + '<input id="post-url" type="text" placeholder="https://..."></div>'
+      + '<div class="field"><label for="post-comment">코멘트 (선택)</label>'
+      + '<textarea id="post-comment" placeholder="자료에 대한 짧은 소개나 의견을 남겨 주세요."></textarea></div>'
+      + '<button type="submit" class="btn-primary" id="post-submit">올리기</button>'
+      + '<p class="form-error" id="post-error" role="alert"></p>'
+      + '</form></div>'
+      + '<div id="post-list"><p class="status">자료를 불러오는 중입니다…</p></div>';
+    document.getElementById("post-form").addEventListener("submit", submitPost);
+    loadPosts();
+  }
+
+  async function loadPosts() {
+    const listEl = document.getElementById("post-list");
+    if (!listEl) return;
+    const { data, error } = await sb.from("posts")
+      .select("*")
+      .order("created_at", { ascending: false });
+    if (error) {
+      listEl.innerHTML = '<p class="status error">자료를 불러오지 못했습니다. 잠시 후 다시 시도해 주세요. (' + esc(error.message) + ')</p>';
+      return;
+    }
+    if (data.length === 0) {
+      listEl.innerHTML = '<p class="empty-note">아직 올라온 자료가 없습니다. 첫 자료를 공유해 보세요.</p>';
+      return;
+    }
+    listEl.innerHTML = data.map(p => {
+      let html = '<article class="item post"><h3>' + esc(p.title) + '</h3>';
+      if (p.url) {
+        html += '<p style="margin-top:2px;"><a class="src" href="' + esc(linkHref(p.url)) + '" target="_blank" rel="noopener">' + esc(p.url) + '</a></p>';
+      }
+      if (p.comment) {
+        html += '<p style="margin-top:8px;">' + esc(p.comment) + '</p>';
+      }
+      html += '<div class="post-meta"><span class="author">' + esc(p.author_name) + '</span>'
+        + '<span>' + fmtPostDate(p.created_at) + '</span>';
+      if (currentUser && p.author_id === currentUser.id) {
+        html += '<button type="button" class="post-del" data-id="' + p.id + '">삭제</button>';
+      }
+      html += '</div></article>';
+      return html;
+    }).join("");
+    listEl.querySelectorAll(".post-del").forEach(btn => {
+      btn.addEventListener("click", () => deletePost(btn.dataset.id));
+    });
+  }
+
+  async function submitPost(e) {
+    e.preventDefault();
+    const submitBtn = document.getElementById("post-submit");
+    const errEl = document.getElementById("post-error");
+    errEl.classList.remove("show");
+    const title = document.getElementById("post-title").value.trim();
+    if (!title) return;
+    submitBtn.disabled = true;
+    const { error } = await sb.from("posts").insert({
+      author_name: (currentUser.email || "").split("@")[0],
+      title: title,
+      url: document.getElementById("post-url").value.trim() || null,
+      comment: document.getElementById("post-comment").value.trim() || null
+    });
+    submitBtn.disabled = false;
+    if (error) {
+      errEl.textContent = "글을 올리지 못했습니다. 잠시 후 다시 시도해 주세요. (" + error.message + ")";
+      errEl.classList.add("show");
+      return;
+    }
+    document.getElementById("post-form").reset();
+    loadPosts();
+  }
+
+  async function deletePost(id) {
+    if (!confirm("이 글을 삭제할까요?")) return;
+    const { error } = await sb.from("posts").delete().eq("id", id);
+    if (error) {
+      alert("삭제하지 못했습니다. 잠시 후 다시 시도해 주세요.");
+      return;
+    }
+    loadPosts();
+  }
 
   init();
 </script>
