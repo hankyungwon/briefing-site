@@ -1,0 +1,303 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>관악구 AI혁신정책연구단 지식 플랫폼</title>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Serif+KR:wght@400;600;700&family=Noto+Sans+KR:wght@400;500;700&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg:#F4F7FB; --card:#FFFFFF; --ink:#1C2B3A;
+    --gwanak:#0E5FA8; --gwanak-deep:#0B4A86; --sky:#1489A7;
+    --slate:#556A8D; --gold:#B47E12; --line:#D7E0EA; --muted:#5D6B7A;
+  }
+  *{margin:0;padding:0;box-sizing:border-box;}
+  html{scroll-behavior:smooth;}
+  body{background:var(--bg);color:var(--ink);font-family:'Noto Sans KR',sans-serif;line-height:1.7;font-size:16px;}
+  .serif{font-family:'Noto Serif KR',serif;}
+  .header-band{background:linear-gradient(135deg,var(--gwanak-deep) 0%,var(--gwanak) 70%,#1470C4 100%);color:#fff;}
+  header{padding:38px 24px 30px;max-width:920px;margin:0 auto;}
+  .masthead{display:flex;align-items:flex-start;gap:18px;}
+  .seal{
+    flex:none;width:54px;height:54px;
+    border:2.5px solid #BE3A2B;color:#BE3A2B;
+    display:flex;align-items:center;justify-content:center;
+    font-family:'Noto Serif KR',serif;font-weight:700;font-size:19px;
+    line-height:1.15;text-align:center;border-radius:6px;transform:rotate(-3deg);
+    letter-spacing:1px;user-select:none;background:#FAF6EE;
+    box-shadow:0 2px 6px rgba(0,0,0,.18);
+  }
+  .masthead-text .eyebrow{font-size:12.5px;letter-spacing:.35em;color:rgba(255,255,255,.75);text-transform:uppercase;margin-bottom:5px;}
+  .masthead-text h1{font-family:'Noto Serif KR',serif;font-size:clamp(24px,4.5vw,34px);font-weight:700;color:#fff;}
+  .masthead-text .tagline{margin-top:7px;color:rgba(255,255,255,.85);font-size:14.5px;}
+  nav{
+    max-width:920px;margin:0 auto;display:flex;gap:4px;padding:0 24px;
+    border-bottom:1px solid var(--line);background:var(--card);
+    position:sticky;top:0;z-index:10;box-shadow:0 1px 4px rgba(14,95,168,.06);
+  }
+  nav button{
+    appearance:none;border:none;background:none;cursor:pointer;
+    font-family:'Noto Sans KR',sans-serif;font-size:15px;font-weight:500;
+    color:var(--muted);padding:14px 16px 12px;border-bottom:3px solid transparent;margin-bottom:-1px;
+  }
+  nav button:hover{color:var(--gwanak);}
+  nav button:focus-visible{outline:2px solid var(--gwanak);outline-offset:-2px;}
+  nav button[aria-selected="true"]{color:var(--gwanak-deep);font-weight:700;border-bottom-color:var(--gwanak);}
+  main{max-width:920px;margin:0 auto;padding:32px 24px 80px;}
+  .panel{display:none;}
+  .panel.active{display:block;animation:fade .35s ease;}
+  @keyframes fade{from{opacity:0;transform:translateY(6px);}to{opacity:1;transform:none;}}
+  @media (prefers-reduced-motion: reduce){.panel.active{animation:none;}html{scroll-behavior:auto;}}
+  .issue-head{
+    display:flex;justify-content:space-between;align-items:baseline;flex-wrap:wrap;gap:8px;
+    padding-bottom:14px;border-bottom:2px solid var(--gwanak);margin-bottom:28px;
+  }
+  .issue-no{font-family:'Noto Serif KR',serif;font-weight:700;font-size:22px;color:var(--gwanak-deep);}
+  .issue-date{color:var(--muted);font-size:14.5px;}
+  .cat{margin-bottom:40px;}
+  .cat-label{
+    display:inline-block;font-size:13px;font-weight:700;letter-spacing:.12em;
+    color:#fff;padding:3px 12px;border-radius:3px;margin-bottom:14px;
+  }
+  .cat.gov .cat-label{background:var(--gwanak-deep);}
+  .cat.seoul .cat-label{background:var(--sky);}
+  .cat.world .cat-label{background:var(--slate);}
+  article.item{
+    background:var(--card);border:1px solid var(--line);border-radius:10px;
+    padding:20px 22px;margin-bottom:14px;box-shadow:0 1px 3px rgba(14,95,168,.05);
+  }
+  article.item h3{font-family:'Noto Serif KR',serif;font-size:18px;font-weight:600;line-height:1.5;margin-bottom:8px;}
+  article.item p{font-size:15px;color:#3B4756;}
+  article.item a.src{font-size:13.5px;color:var(--gwanak);}
+  .implication{
+    margin-top:12px;padding:12px 14px;border-left:3px solid var(--gold);
+    background:#FBF7EC;border-radius:0 6px 6px 0;font-size:14.5px;
+  }
+  .implication strong{color:var(--gold);}
+  .empty-note{
+    color:var(--muted);font-size:15px;border:1px dashed var(--line);
+    border-radius:10px;padding:16px 18px;
+  }
+  .status{color:var(--muted);font-size:15px;padding:24px 0;}
+  .status.error{color:#A33;}
+  .archive-list{list-style:none;}
+  .archive-list li{border-bottom:1px solid var(--line);}
+  .archive-list button{
+    appearance:none;border:none;background:none;cursor:pointer;width:100%;
+    display:flex;justify-content:space-between;align-items:baseline;gap:12px;flex-wrap:wrap;
+    padding:16px 4px;font-family:inherit;font-size:inherit;color:inherit;text-align:left;
+  }
+  .archive-list button:hover .no{color:var(--gwanak);}
+  .archive-list .no{font-family:'Noto Serif KR',serif;font-weight:600;}
+  .archive-list .date{color:var(--muted);font-size:14px;}
+  .archive-hint{margin-top:20px;color:var(--muted);font-size:14.5px;}
+  .about-lede{
+    font-family:'Noto Serif KR',serif;font-size:clamp(19px,3vw,23px);line-height:1.75;
+    margin-bottom:18px;max-width:660px;color:var(--gwanak-deep);
+  }
+  .about-body{max-width:660px;color:#3B4756;margin-bottom:36px;font-size:15.5px;}
+  .team-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(230px,1fr));gap:14px;margin-bottom:36px;}
+  .member{
+    background:var(--card);border:1px solid var(--line);border-radius:10px;
+    padding:18px 18px 16px;box-shadow:0 1px 3px rgba(14,95,168,.05);
+  }
+  .member .role-tag{font-size:12.5px;font-weight:700;letter-spacing:.08em;color:var(--sky);margin-bottom:6px;}
+  .member.head .role-tag{color:var(--gwanak);}
+  .member h4{font-family:'Noto Serif KR',serif;font-size:17px;font-weight:600;}
+  .member p{font-size:14px;color:var(--muted);margin-top:6px;}
+  .contact{
+    background:var(--card);border:1px solid var(--line);border-radius:10px;
+    padding:20px 22px;max-width:660px;box-shadow:0 1px 3px rgba(14,95,168,.05);
+  }
+  .contact h5{
+    font-family:'Noto Serif KR',serif;font-size:16px;font-weight:600;
+    color:var(--gwanak-deep);margin-bottom:10px;padding-bottom:8px;border-bottom:1px solid var(--line);
+  }
+  .contact p{font-size:15px;color:#3B4756;}
+  .contact .tel{font-weight:700;color:var(--gwanak);}
+  footer{border-top:1px solid var(--line);background:var(--card);}
+  .footer-inner{max-width:920px;margin:0 auto;padding:24px;font-size:13px;color:var(--muted);line-height:1.9;}
+  @media(max-width:560px){
+    header{padding:28px 18px 22px;}
+    main{padding:24px 18px 60px;}
+    nav{padding:0 12px;overflow-x:auto;}
+    nav button{padding:12px 12px 10px;white-space:nowrap;}
+  }
+</style>
+</head>
+<body>
+
+<div class="header-band">
+  <header>
+    <div class="masthead">
+      <div class="seal" aria-hidden="true">지식<br>공유</div>
+      <div class="masthead-text">
+        <div class="eyebrow">GWANAK-GU · AI POLICY</div>
+        <h1>관악구 AI혁신정책연구단 지식 플랫폼</h1>
+        <p class="tagline">관악의 내일을 여는 AI 정책 인사이트 — 매일 아침, 정책의 흐름을 함께 읽습니다.</p>
+      </div>
+    </div>
+  </header>
+</div>
+
+<nav role="tablist" aria-label="주요 메뉴">
+  <button role="tab" aria-selected="true" data-panel="today">오늘의 브리핑</button>
+  <button role="tab" aria-selected="false" data-panel="archive">브리핑 아카이브</button>
+  <button role="tab" aria-selected="false" data-panel="about">연구단 소개</button>
+</nav>
+
+<main>
+  <section id="today" class="panel active" role="tabpanel">
+    <div id="briefing-view">
+      <p class="status">브리핑을 불러오는 중입니다…</p>
+    </div>
+  </section>
+
+  <section id="archive" class="panel" role="tabpanel">
+    <div class="issue-head">
+      <span class="issue-no serif">브리핑 아카이브</span>
+      <span class="issue-date">발행일 순</span>
+    </div>
+    <ul class="archive-list" id="archive-list"></ul>
+    <p class="archive-hint">매일 아침 발행되는 브리핑이 이곳에 차곡차곡 쌓입니다. 호수를 누르면 해당 브리핑을 볼 수 있습니다.</p>
+  </section>
+
+  <section id="about" class="panel" role="tabpanel">
+    <div class="issue-head"><span class="issue-no serif">연구단 소개</span></div>
+    <p class="about-lede">문서로 남는 지식과 현장에서 얻은 감각 —<br>두 가지 모두를 이곳에 쌓아 관악의 내일을 준비합니다.</p>
+    <p class="about-body">
+      관악구 AI혁신정책연구단은 인공지능 전환 시대에 구정이 나아갈 방향을 연구하고 실행하는 조직입니다.
+      이 플랫폼은 연구단이 매일 수집·분석하는 AI 정책 동향과 활동 기록을 팀원과 함께 나누는 열린 지식 공간으로,
+      브리핑은 AI가 자동 수집·작성하고 연구단이 검토합니다.
+    </p>
+    <div class="team-grid">
+      <div class="member head"><div class="role-tag">단장</div><h4>한○○</h4><p>연구단 총괄 · 정책 방향 설계</p></div>
+      <div class="member"><div class="role-tag">AI혁신 선임연구관</div><h4>○○○</h4><p>AI 기술·정책 동향 분석 및 혁신과제 발굴</p></div>
+      <div class="member"><div class="role-tag">지역개발 연구관</div><h4>○○○</h4><p>지역 기반 AI 활용 전략 및 개발 정책 연구</p></div>
+      <div class="member"><div class="role-tag">도시행정 연구관</div><h4>○○○</h4><p>AI 행정혁신 및 구정 적용 방안 연구</p></div>
+      <div class="member"><div class="role-tag">대외협력 연구관</div><h4>○○○</h4><p>중앙정부·서울시·유관기관 협력 및 교류</p></div>
+      <div class="member"><div class="role-tag">행정지원 주무관</div><h4>○○○</h4><p>연구단 운영 지원 및 행정 사무</p></div>
+    </div>
+    <div class="contact">
+      <h5>오시는 길 · 연락처</h5>
+      <p>(08832) 서울특별시 관악구 관악로 145, 관악구청 2층</p>
+      <p class="tel">TEL 02-879-7424</p>
+    </div>
+  </section>
+</main>
+
+<footer>
+  <div class="footer-inner">
+    본 사이트의 브리핑은 AI가 언론보도·공개자료를 바탕으로 자동 생성한 내부 참고자료로, 관악구청의 공식 입장이 아닙니다.<br>
+    (08832) 서울특별시 관악구 관악로 145, 관악구청 2층 · TEL 02-879-7424<br>
+    © 2026 관악구 AI혁신정책연구단 지식 플랫폼
+  </div>
+</footer>
+
+<script>
+  // ── Supabase 연결 정보 ─────────────────────────────
+  // publishable 키는 '공개용'으로 설계된 키라서 웹페이지에 넣어도 안전합니다.
+  // (데이터베이스 비밀번호와는 다른 것입니다. 비밀번호는 절대 코드에 넣지 않습니다.)
+  const SUPABASE_URL = "https://bpkliumilseyuloutsqt.supabase.co";
+  const SUPABASE_KEY = "sb_publishable_BlgBVtoK45odAbJf8BSM0g_CoX3FZqE";
+
+  const CATS = [
+    { key: "gov",   label: "중앙정부 · 국회" },
+    { key: "seoul", label: "서울시 · 타 지자체" },
+    { key: "world", label: "세계 동향" }
+  ];
+  const WEEKDAYS = ["일","월","화","수","목","금","토"];
+
+  async function api(path) {
+    const res = await fetch(SUPABASE_URL + "/rest/v1/" + path, {
+      headers: { apikey: SUPABASE_KEY, Authorization: "Bearer " + SUPABASE_KEY }
+    });
+    if (!res.ok) throw new Error("HTTP " + res.status);
+    return res.json();
+  }
+
+  function esc(s) {
+    return String(s ?? "").replace(/[&<>"']/g, c => (
+      { "&":"&amp;", "<":"&lt;", ">":"&gt;", '"':"&quot;", "'":"&#39;" }[c]
+    ));
+  }
+
+  function fmtDate(iso) {
+    const d = new Date(iso + "T00:00:00");
+    return d.getFullYear() + "년 " + (d.getMonth()+1) + "월 " + d.getDate() + "일 (" + WEEKDAYS[d.getDay()] + ") 발행";
+  }
+
+  function renderIssue(briefing, items) {
+    let html = '<div class="issue-head">'
+      + '<span class="issue-no serif">AI 정책 동향 브리핑 · 제' + briefing.issue_no + '호</span>'
+      + '<span class="issue-date">' + fmtDate(briefing.published_date) + '</span></div>';
+
+    for (const cat of CATS) {
+      const catItems = items.filter(i => i.category === cat.key);
+      html += '<div class="cat ' + cat.key + '"><span class="cat-label">' + cat.label + '</span>';
+      if (catItems.length === 0) {
+        html += '<p class="empty-note">오늘은 이 분야의 특이 동향이 확인되지 않았습니다.</p>';
+      } else {
+        for (const it of catItems) {
+          html += '<article class="item"><h3>' + esc(it.title) + '</h3><p>' + esc(it.summary) + '</p>';
+          if (it.implication) {
+            html += '<div class="implication"><strong>함의</strong> · ' + esc(it.implication) + '</div>';
+          }
+          if (it.source_url) {
+            html += '<p style="margin-top:8px;"><a class="src" href="' + esc(it.source_url) + '" target="_blank" rel="noopener">원문 보기 →</a></p>';
+          }
+          html += '</article>';
+        }
+      }
+      html += '</div>';
+    }
+    document.getElementById("briefing-view").innerHTML = html;
+  }
+
+  async function loadIssue(briefing) {
+    const items = await api("briefing_items?briefing_id=eq." + briefing.id + "&select=*&order=position.asc");
+    renderIssue(briefing, items);
+  }
+
+  async function init() {
+    const view = document.getElementById("briefing-view");
+    try {
+      const briefings = await api("briefings?select=id,issue_no,published_date&order=issue_no.desc");
+      if (briefings.length === 0) {
+        view.innerHTML = '<p class="status">아직 발행된 브리핑이 없습니다. 첫 브리핑이 곧 도착합니다.</p>';
+        return;
+      }
+      await loadIssue(briefings[0]);
+
+      const list = document.getElementById("archive-list");
+      list.innerHTML = briefings.map((b, idx) =>
+        '<li><button data-idx="' + idx + '">'
+        + '<span class="no">제' + b.issue_no + '호</span>'
+        + '<span class="date">' + esc(b.published_date) + '</span>'
+        + '</button></li>'
+      ).join("");
+      list.addEventListener("click", async e => {
+        const btn = e.target.closest("button[data-idx]");
+        if (!btn) return;
+        await loadIssue(briefings[Number(btn.dataset.idx)]);
+        switchTab("today");
+      });
+    } catch (err) {
+      view.innerHTML = '<p class="status error">브리핑을 불러오지 못했습니다. 잠시 후 새로고침해 주세요. (' + esc(err.message) + ')</p>';
+    }
+  }
+
+  const tabs = document.querySelectorAll("nav button");
+  const panels = document.querySelectorAll(".panel");
+  function switchTab(name) {
+    tabs.forEach(t => t.setAttribute("aria-selected", String(t.dataset.panel === name)));
+    panels.forEach(p => p.classList.toggle("active", p.id === name));
+    window.scrollTo({ top: 0 });
+  }
+  tabs.forEach(tab => tab.addEventListener("click", () => switchTab(tab.dataset.panel)));
+
+  init();
+</script>
+
+</body>
+</html>
