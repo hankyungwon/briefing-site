@@ -218,6 +218,10 @@
   .att-size{color:var(--muted);font-size:12px;}
   .att-img{display:block;border-radius:10px;overflow:hidden;border:1px solid var(--line);line-height:0;}
   .att-img img{display:block;width:118px;height:118px;object-fit:cover;}
+  .edit-atts{display:flex;flex-direction:column;gap:6px;}
+  .edit-att{font-size:13px;color:var(--slate);display:flex;align-items:center;gap:8px;}
+  .edit-att .c-del{border:1px solid var(--line);border-radius:5px;padding:1px 8px;color:#A33;cursor:pointer;background:none;font-family:inherit;}
+  .edit-att .c-del:hover{border-color:#A33;background:#FBEFEE;}
   main{max-width:920px;margin:0 auto;padding:32px 24px 80px;}
   .panel{display:none;}
   .panel.active{display:block;animation:fade .35s ease;}
@@ -845,7 +849,7 @@
     }
     const attMap = await loadAttachments("resource", data.map(p => p.id));
     listEl.innerHTML = data.map(p => {
-      let html = '<article class="item post"><h3>' + esc(p.title) + '</h3>';
+      let html = '<article class="item post" data-post="' + p.id + '"><h3>' + esc(p.title) + '</h3>';
       if (p.url) {
         html += '<p style="margin-top:2px;"><a class="src" href="' + esc(linkHref(p.url)) + '" target="_blank" rel="noopener">' + esc(p.url) + '</a></p>';
       }
@@ -854,16 +858,19 @@
       }
       html += renderAttachments(attMap[p.id]);
       html += '<div class="post-meta"><span class="author">' + esc(p.author_name) + '</span>'
-        + '<span>' + fmtPostDate(p.created_at) + '</span>';
+        + '<span>' + fmtPostDate(p.created_at) + (p.updated_at ? ' (수정됨)' : '') + '</span>';
       if (currentUser && p.author_id === currentUser.id) {
-        html += '<button type="button" class="post-del" data-id="' + p.id + '">삭제</button>';
+        html += '<span class="acts"><button type="button" class="mini-btn" data-editr="' + p.id + '">수정</button>'
+          + '<button type="button" class="mini-btn danger" data-delr="' + p.id + '">삭제</button></span>';
       }
       html += '</div></article>';
       return html;
     }).join("");
-    listEl.querySelectorAll(".post-del").forEach(btn => {
-      btn.addEventListener("click", () => deletePost(btn.dataset.id));
-    });
+    listEl.querySelectorAll("[data-delr]").forEach(btn => btn.addEventListener("click", () => deletePost(btn.dataset.delr)));
+    listEl.querySelectorAll("[data-editr]").forEach(btn => btn.addEventListener("click", () => {
+      const p = data.find(x => String(x.id) === btn.dataset.editr);
+      if (p) openEditResource(p, attMap[p.id] || []);
+    }));
   }
 
   async function submitPost(e) {
@@ -906,6 +913,59 @@
     if (error) {
       alert("삭제하지 못했습니다. 잠시 후 다시 시도해 주세요.");
       return;
+    }
+    loadPosts();
+  }
+
+  function openEditResource(p, atts) {
+    const card = resourcesView.querySelector('.item.post[data-post="' + p.id + '"]');
+    if (!card) return;
+    let attHtml = "";
+    if (atts.length) {
+      attHtml = '<div class="field"><label>기존 첨부</label><div class="edit-atts">'
+        + atts.map(a => '<div class="edit-att" data-attid="' + a.id + '"><span class="att-badge">'
+          + esc(extOf(a.file_name).toUpperCase() || "FILE") + '</span> ' + esc(a.file_name)
+          + ' <button type="button" class="c-del" data-rmatt="' + a.id + '" data-rmpath="' + esc(a.path) + '">제거</button></div>').join("")
+        + '</div></div>';
+    }
+    card.innerHTML =
+      '<div class="field"><label>제목</label><input id="er-title-' + p.id + '" type="text" maxlength="200" value="' + esc(p.title) + '"></div>'
+      + '<div class="field"><label>링크</label><input id="er-url-' + p.id + '" type="text" value="' + esc(p.url || "") + '" placeholder="https://..."></div>'
+      + '<div class="field"><label>코멘트</label><textarea id="er-comment-' + p.id + '">' + esc(p.comment || "") + '</textarea></div>'
+      + attHtml
+      + fileFieldHtml("er-file-" + p.id).replace("파일 첨부 (선택)", "첨부 추가 (선택)")
+      + '<button class="btn-primary" data-saver="' + p.id + '">저장</button>'
+      + '<button class="auth-btn" data-cancelr="1" style="margin-left:8px;">취소</button>';
+    bindFileField("er-file-" + p.id);
+    card.querySelector('[data-saver]').addEventListener("click", () => saveEditResource(p.id));
+    card.querySelector('[data-cancelr]').addEventListener("click", () => loadPosts());
+    card.querySelectorAll('[data-rmatt]').forEach(b => b.addEventListener("click", () => removeOneAttachment(b.dataset.rmatt, b.dataset.rmpath, b)));
+  }
+
+  async function removeOneAttachment(attId, path, btnEl) {
+    if (!confirm("이 첨부파일을 삭제할까요?")) return;
+    await sb.storage.from("attachments").remove([path]);
+    await sb.from("attachments").delete().eq("id", attId);
+    const row = btnEl.closest(".edit-att");
+    if (row) row.remove();
+  }
+
+  async function saveEditResource(id) {
+    const title = document.getElementById("er-title-" + id).value.trim();
+    if (!title) { alert("제목을 입력해 주세요."); return; }
+    const files = Array.from(document.getElementById("er-file-" + id).files || []);
+    const vErr = validateFiles(files);
+    if (vErr) { alert(vErr); return; }
+    const { error } = await sb.from("posts").update({
+      title,
+      url: document.getElementById("er-url-" + id).value.trim() || null,
+      comment: document.getElementById("er-comment-" + id).value.trim() || null,
+      updated_at: new Date().toISOString()
+    }).eq("id", id);
+    if (error) { alert("수정하지 못했습니다. (" + error.message + ")"); return; }
+    if (files.length) {
+      try { await uploadAttachments("resource", id, files); }
+      catch (up) { alert("파일 추가 실패: " + (up.message || up)); }
     }
     loadPosts();
   }
