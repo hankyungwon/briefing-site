@@ -54,6 +54,11 @@
   }
   .auth-btn:hover{background:var(--gwanak);color:#fff;}
   .auth-btn:focus-visible{outline:2px solid var(--gwanak);outline-offset:2px;}
+  .auth-btn.auth-sm{padding:5px 10px;font-size:12.5px;border-color:var(--line);color:var(--slate);}
+  .auth-btn.auth-sm:hover{background:var(--slate);border-color:var(--slate);color:#fff;}
+  .link-btn{background:none;border:none;padding:0;cursor:pointer;color:var(--gwanak);font-size:13px;font-family:inherit;text-decoration:underline;}
+  .form-ok{color:#1E8E5A;font-size:13.5px;margin-top:10px;display:none;}
+  .form-ok.show{display:block;}
   .modal-backdrop{
     position:fixed;inset:0;background:rgba(28,43,58,.45);z-index:50;
     display:none;align-items:flex-start;justify-content:center;padding:24px;
@@ -377,6 +382,7 @@
   <button role="tab" aria-selected="false" data-panel="about">연구단 소개</button>
   <div class="nav-auth">
     <span class="auth-email" id="auth-email" hidden></span>
+    <button type="button" class="auth-btn auth-sm" id="pw-change-btn" hidden>비밀번호 변경</button>
     <button type="button" class="auth-btn" id="auth-btn">로그인</button>
   </div>
 </nav>
@@ -467,6 +473,28 @@
       <button type="submit" class="btn-primary" id="login-submit">로그인</button>
       <button type="button" class="auth-btn" id="login-cancel" style="margin-left:8px;">닫기</button>
       <p class="form-error" id="login-error" role="alert"></p>
+      <p style="margin-top:12px;"><button type="button" class="link-btn" id="forgot-pw">비밀번호를 잊으셨나요?</button></p>
+    </form>
+  </div>
+</div>
+
+<div class="modal-backdrop" id="pw-modal">
+  <div class="modal" role="dialog" aria-modal="true" aria-labelledby="pw-title">
+    <h3 id="pw-title">비밀번호 설정</h3>
+    <p class="modal-sub" id="pw-sub">사용하실 비밀번호를 설정해 주세요.</p>
+    <form id="pw-form">
+      <div class="field">
+        <label for="pw-new">새 비밀번호 (8자 이상)</label>
+        <input id="pw-new" type="password" autocomplete="new-password">
+      </div>
+      <div class="field">
+        <label for="pw-confirm">비밀번호 확인</label>
+        <input id="pw-confirm" type="password" autocomplete="new-password">
+      </div>
+      <button type="submit" class="btn-primary" id="pw-submit">설정</button>
+      <button type="button" class="auth-btn" id="pw-cancel" style="margin-left:8px;">닫기</button>
+      <p class="form-error" id="pw-error" role="alert"></p>
+      <p class="form-ok" id="pw-ok" role="status"></p>
     </form>
   </div>
 </div>
@@ -640,11 +668,18 @@
   tabs.forEach(tab => tab.addEventListener("click", () => switchTab(tab.dataset.panel)));
 
   // ── 로그인 (supabase-js) ─────────────────────────────
+  // 초대/재설정 링크의 해시 파라미터를 supabase-js가 지우기 전에 먼저 읽어둔다.
+  const _hp = new URLSearchParams((window.location.hash || "").replace(/^#/, ""));
+  const authHashType = _hp.get("type");                                   // invite | recovery | signup | ...
+  const authHashError = _hp.get("error_description") || _hp.get("error_code") || _hp.get("error");
+
   const sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
   let currentUser = null;
+  let pwFlowHandled = false;
 
   const authEmailEl = document.getElementById("auth-email");
   const authBtn = document.getElementById("auth-btn");
+  const pwChangeBtn = document.getElementById("pw-change-btn");
   const loginModal = document.getElementById("login-modal");
   const loginForm = document.getElementById("login-form");
   const loginError = document.getElementById("login-error");
@@ -670,6 +705,82 @@
     else openLoginModal();
   });
 
+  // ── 비밀번호 재설정 요청 (비밀번호 찾기) ──
+  document.getElementById("forgot-pw").addEventListener("click", async () => {
+    const email = document.getElementById("login-email").value.trim();
+    if (!email) {
+      loginError.textContent = "먼저 이메일을 입력한 뒤 눌러 주세요.";
+      loginError.classList.add("show");
+      return;
+    }
+    const { error } = await sb.auth.resetPasswordForEmail(email, {
+      redirectTo: window.location.origin + window.location.pathname
+    });
+    if (error) {
+      loginError.textContent = "재설정 메일 발송에 실패했습니다. (" + error.message + ")";
+      loginError.classList.add("show");
+      return;
+    }
+    loginError.classList.remove("show");
+    alert("입력하신 이메일로 비밀번호 재설정 링크를 보냈습니다. 메일함을 확인해 주세요.");
+  });
+
+  // ── 비밀번호 설정 / 변경 / 재설정 모달 ──
+  const pwModal = document.getElementById("pw-modal");
+  const pwForm = document.getElementById("pw-form");
+  const pwError = document.getElementById("pw-error");
+  const pwOk = document.getElementById("pw-ok");
+  let pwMode = "change";
+
+  function openPwModal(mode) {
+    pwMode = mode;
+    pwForm.reset();
+    pwError.classList.remove("show");
+    pwOk.classList.remove("show");
+    const cancelBtn = document.getElementById("pw-cancel");
+    if (mode === "invite") {
+      document.getElementById("pw-title").textContent = "환영합니다 · 비밀번호 설정";
+      document.getElementById("pw-sub").textContent = "초대가 확인되었습니다. 앞으로 로그인에 사용할 비밀번호를 설정해 주세요.";
+      cancelBtn.hidden = true;
+    } else if (mode === "recovery") {
+      document.getElementById("pw-title").textContent = "새 비밀번호 설정";
+      document.getElementById("pw-sub").textContent = "새로 사용하실 비밀번호를 입력해 주세요.";
+      cancelBtn.hidden = true;
+    } else {
+      document.getElementById("pw-title").textContent = "비밀번호 변경";
+      document.getElementById("pw-sub").textContent = "새 비밀번호를 입력해 주세요.";
+      cancelBtn.hidden = false;
+    }
+    pwModal.classList.add("open");
+    document.getElementById("pw-new").focus();
+  }
+  function closePwModal() { pwModal.classList.remove("open"); }
+  pwModal.addEventListener("click", e => { if (e.target === pwModal && pwMode === "change") closePwModal(); });
+  document.getElementById("pw-cancel").addEventListener("click", closePwModal);
+  document.addEventListener("keydown", e => {
+    if (e.key === "Escape" && pwMode === "change" && pwModal.classList.contains("open")) closePwModal();
+  });
+  pwChangeBtn.addEventListener("click", () => openPwModal("change"));
+
+  pwForm.addEventListener("submit", async e => {
+    e.preventDefault();
+    pwError.classList.remove("show");
+    pwOk.classList.remove("show");
+    const p1 = document.getElementById("pw-new").value, p2 = document.getElementById("pw-confirm").value;
+    if (p1.length < 8) { pwError.textContent = "비밀번호는 8자 이상이어야 합니다."; pwError.classList.add("show"); return; }
+    if (p1 !== p2) { pwError.textContent = "비밀번호가 일치하지 않습니다."; pwError.classList.add("show"); return; }
+    const btn = document.getElementById("pw-submit");
+    btn.disabled = true;
+    const { error } = await sb.auth.updateUser({ password: p1 });
+    btn.disabled = false;
+    if (error) { pwError.textContent = "설정에 실패했습니다. (" + error.message + ")"; pwError.classList.add("show"); return; }
+    pwOk.textContent = "비밀번호가 설정되었습니다. 다음부터 이 비밀번호로 로그인하세요.";
+    pwOk.classList.add("show");
+    // 초대/재설정 해시를 제거해 새로고침 시 재실행 방지
+    history.replaceState(null, "", window.location.pathname + window.location.search);
+    setTimeout(closePwModal, 1400);
+  });
+
   loginForm.addEventListener("submit", async e => {
     e.preventDefault();
     const submitBtn = document.getElementById("login-submit");
@@ -693,20 +804,34 @@
       authEmailEl.textContent = currentUser.email;
       authEmailEl.hidden = false;
       authBtn.textContent = "로그아웃";
+      pwChangeBtn.hidden = false;
     } else {
       authEmailEl.hidden = true;
       authBtn.textContent = "로그인";
+      pwChangeBtn.hidden = true;
     }
   }
 
-  sb.auth.onAuthStateChange((_event, session) => {
+  sb.auth.onAuthStateChange((event, session) => {
     const nextUser = session ? session.user : null;
     // 토큰 자동 갱신처럼 같은 사용자면 화면을 다시 그리지 않음(작성 중인 폼 보호)
     const sameUser = !!(nextUser && currentUser && nextUser.id === currentUser.id);
     currentUser = nextUser;
     renderAuthNav();
     if (!sameUser) { renderResources(); renderCalendar(); renderBoard(); }
+    // 초대/재설정 링크로 접속한 경우 비밀번호 설정 화면을 띄운다.
+    if (!pwFlowHandled && session &&
+        (event === "PASSWORD_RECOVERY" || authHashType === "invite" || authHashType === "recovery")) {
+      pwFlowHandled = true;
+      openPwModal(authHashType === "invite" ? "invite" : "recovery");
+    }
   });
+
+  // 만료·오류 링크 처리
+  if (authHashError) {
+    history.replaceState(null, "", window.location.pathname + window.location.search);
+    setTimeout(() => alert("초대 또는 재설정 링크가 만료되었거나 유효하지 않습니다. 관리자에게 새 초대를 요청해 주세요."), 300);
+  }
 
   // ── 자료마당 ─────────────────────────────
   const resourcesView = document.getElementById("resources-view");
