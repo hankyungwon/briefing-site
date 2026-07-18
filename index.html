@@ -39,6 +39,7 @@
     appearance:none;border:none;background:none;cursor:pointer;
     font-family:'Noto Sans KR',sans-serif;font-size:15px;font-weight:500;
     color:var(--muted);padding:14px 16px 12px;border-bottom:3px solid transparent;margin-bottom:-1px;
+    word-break:keep-all;text-align:center;line-height:1.35;
   }
   nav button:hover{color:var(--gwanak);}
   nav button:focus-visible{outline:2px solid var(--gwanak);outline-offset:-2px;}
@@ -200,6 +201,23 @@
   .c-form button{appearance:none;cursor:pointer;border:none;background:var(--gwanak);color:#fff;
     border-radius:8px;padding:8px 16px;font-family:inherit;font-size:13.5px;font-weight:600;white-space:nowrap;}
   .c-form button:hover{background:var(--gwanak-deep);}
+  /* ── 파일 첨부 ── */
+  .file-field .file-btn{display:inline-block;cursor:pointer;border:1px dashed var(--line);border-radius:8px;
+    padding:9px 14px;font-size:14px;color:var(--slate);background:#F7FAFD;}
+  .file-field .file-btn:hover{border-color:var(--gwanak);color:var(--gwanak);}
+  .file-field input[type=file]{display:none;}
+  .file-hint{font-size:12.5px;color:var(--muted);margin-top:6px;line-height:1.5;}
+  .file-chosen{margin-top:8px;display:flex;flex-direction:column;gap:4px;}
+  .file-chosen div{font-size:13px;color:var(--slate);}
+  .att-list{display:flex;flex-wrap:wrap;gap:8px;margin-top:12px;}
+  .att-doc{display:inline-flex;align-items:center;gap:8px;border:1px solid var(--line);border-radius:9px;
+    padding:7px 12px;font-size:13px;color:var(--ink);background:#F7FAFD;text-decoration:none;}
+  .att-doc:hover{border-color:var(--gwanak);background:#EFF5FC;}
+  .att-badge{font-size:10px;font-weight:700;color:#fff;background:var(--slate);border-radius:4px;padding:2px 5px;letter-spacing:.03em;flex:none;}
+  .att-name{font-weight:500;max-width:200px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+  .att-size{color:var(--muted);font-size:12px;}
+  .att-img{display:block;border-radius:10px;overflow:hidden;border:1px solid var(--line);line-height:0;}
+  .att-img img{display:block;width:118px;height:118px;object-fit:cover;}
   main{max-width:920px;margin:0 auto;padding:32px 24px 80px;}
   .panel{display:none;}
   .panel.active{display:block;animation:fade .35s ease;}
@@ -698,6 +716,92 @@
     return /^https?:\/\//i.test(url) ? url : "https://" + url;
   }
 
+  // ── 파일 첨부 공용 ─────────────────────────────
+  const IMG_EXT = ["jpg","jpeg","png","gif","webp","bmp","heic","heif"];
+  const DOC_EXT = ["pdf","hwp","hwpx","doc","docx","ppt","pptx","xls","xlsx","txt","csv"];
+  const MAX_IMG = 20 * 1024 * 1024, MAX_DOC = 30 * 1024 * 1024, MAX_FILES = 5;
+  function extOf(name) { const i = name.lastIndexOf("."); return i >= 0 ? name.slice(i+1).toLowerCase() : ""; }
+  function fmtSize(b) { return b >= 1048576 ? (b/1048576).toFixed(1) + "MB" : Math.max(1, Math.round(b/1024)) + "KB"; }
+  function validateFiles(files) {
+    if (files.length > MAX_FILES) return "파일은 한 번에 최대 5개까지 첨부할 수 있습니다.";
+    for (const f of files) {
+      const ext = extOf(f.name), isImg = IMG_EXT.includes(ext), isDoc = DOC_EXT.includes(ext);
+      if (!isImg && !isDoc) return "\"" + f.name + "\"은(는) 첨부할 수 없는 형식입니다. 문서·이미지만 가능하며, 동영상은 링크로 공유해 주세요.";
+      if (isImg && f.size > MAX_IMG) return "\"" + f.name + "\" 이미지가 20MB를 초과합니다.";
+      if (isDoc && f.size > MAX_DOC) return "\"" + f.name + "\" 문서가 30MB를 초과합니다.";
+    }
+    return null;
+  }
+  function fileFieldHtml(id) {
+    return '<div class="field file-field"><label>파일 첨부 (선택)</label>'
+      + '<label class="file-btn" for="' + id + '">📎 파일 선택</label>'
+      + '<input id="' + id + '" type="file" multiple>'
+      + '<div class="file-chosen" id="' + id + '-chosen"></div>'
+      + '<div class="file-hint">문서 30MB · 이미지 20MB 이하, 최대 5개. 동영상 · 실행 · 압축 파일은 첨부할 수 없으니 동영상은 링크로 공유해 주세요.</div></div>';
+  }
+  function bindFileField(id) {
+    const input = document.getElementById(id), chosen = document.getElementById(id + "-chosen");
+    if (!input) return;
+    input.addEventListener("change", () => {
+      const files = Array.from(input.files || []);
+      const err = validateFiles(files);
+      if (err) { chosen.innerHTML = '<div style="color:#A33;">' + esc(err) + '</div>'; input.value = ""; return; }
+      chosen.innerHTML = files.map(f => '<div><span class="att-badge">' + esc(extOf(f.name).toUpperCase() || "FILE") + '</span> '
+        + esc(f.name) + ' <span class="att-size">' + fmtSize(f.size) + '</span></div>').join("");
+    });
+  }
+  async function uploadAttachments(parentType, parentId, files) {
+    for (const f of files) {
+      const safe = f.name.replace(/[^\w.\-가-힣]/g, "_");
+      const path = parentType + "/" + parentId + "/" + Date.now() + "_" + Math.random().toString(36).slice(2,8) + "_" + safe;
+      const { error: upErr } = await sb.storage.from("attachments").upload(path, f, { contentType: f.type || undefined });
+      if (upErr) throw upErr;
+      const { error: rowErr } = await sb.from("attachments").insert({
+        parent_type: parentType, parent_id: parentId, path, file_name: f.name, file_size: f.size, mime: f.type || null
+      });
+      if (rowErr) throw rowErr;
+    }
+  }
+  async function loadAttachments(parentType, ids) {
+    if (!ids.length) return {};
+    const { data } = await sb.from("attachments").select("*")
+      .eq("parent_type", parentType).in("parent_id", ids).order("created_at", { ascending: true });
+    const rows = data || [], map = {};
+    if (rows.length) {
+      const { data: signed } = await sb.storage.from("attachments").createSignedUrls(rows.map(r => r.path), 3600);
+      const urlByPath = {};
+      (signed || []).forEach(s => { if (s.signedUrl) urlByPath[s.path] = s.signedUrl; });
+      rows.forEach(r => { r.url = urlByPath[r.path]; (map[r.parent_id] = map[r.parent_id] || []).push(r); });
+    }
+    return map;
+  }
+  function renderAttachments(list) {
+    if (!list || !list.length) return "";
+    let h = '<div class="att-list">';
+    for (const a of list) {
+      const ext = extOf(a.file_name), isImg = IMG_EXT.includes(ext);
+      if (isImg && a.url) {
+        h += '<a class="att-img" href="' + esc(a.url) + '" target="_blank" rel="noopener">'
+          + '<img src="' + esc(a.url) + '" alt="' + esc(a.file_name) + '" loading="lazy"></a>';
+      } else {
+        h += '<a class="att-doc" href="' + esc(a.url || "#") + '" target="_blank" rel="noopener">'
+          + '<span class="att-badge">' + esc(ext.toUpperCase() || "FILE") + '</span>'
+          + '<span class="att-name">' + esc(a.file_name) + '</span>'
+          + '<span class="att-size">' + fmtSize(a.file_size) + '</span></a>';
+      }
+    }
+    return h + '</div>';
+  }
+  async function deleteAttachmentsFor(parentType, parentId) {
+    const { data } = await sb.from("attachments").select("id,path")
+      .eq("parent_type", parentType).eq("parent_id", parentId);
+    const rows = data || [];
+    if (rows.length) {
+      await sb.storage.from("attachments").remove(rows.map(r => r.path));
+      await sb.from("attachments").delete().eq("parent_type", parentType).eq("parent_id", parentId);
+    }
+  }
+
   function renderResources() {
     if (!currentUser) {
       resourcesView.innerHTML =
@@ -715,11 +819,13 @@
       + '<input id="post-url" type="text" placeholder="https://..."></div>'
       + '<div class="field"><label for="post-comment">코멘트 (선택)</label>'
       + '<textarea id="post-comment" placeholder="자료에 대한 짧은 소개나 의견을 남겨 주세요."></textarea></div>'
+      + fileFieldHtml("post-file")
       + '<button type="submit" class="btn-primary" id="post-submit">올리기</button>'
       + '<p class="form-error" id="post-error" role="alert"></p>'
       + '</form></div>'
       + '<div id="post-list"><p class="status">자료를 불러오는 중입니다…</p></div>';
     document.getElementById("post-form").addEventListener("submit", submitPost);
+    bindFileField("post-file");
     loadPosts();
   }
 
@@ -737,6 +843,7 @@
       listEl.innerHTML = '<p class="empty-note">아직 올라온 자료가 없습니다. 첫 자료를 공유해 보세요.</p>';
       return;
     }
+    const attMap = await loadAttachments("resource", data.map(p => p.id));
     listEl.innerHTML = data.map(p => {
       let html = '<article class="item post"><h3>' + esc(p.title) + '</h3>';
       if (p.url) {
@@ -745,6 +852,7 @@
       if (p.comment) {
         html += '<p style="margin-top:8px;">' + esc(p.comment) + '</p>';
       }
+      html += renderAttachments(attMap[p.id]);
       html += '<div class="post-meta"><span class="author">' + esc(p.author_name) + '</span>'
         + '<span>' + fmtPostDate(p.created_at) + '</span>';
       if (currentUser && p.author_id === currentUser.id) {
@@ -765,25 +873,35 @@
     errEl.classList.remove("show");
     const title = document.getElementById("post-title").value.trim();
     if (!title) return;
+    const files = Array.from(document.getElementById("post-file").files || []);
+    const vErr = validateFiles(files);
+    if (vErr) { errEl.textContent = vErr; errEl.classList.add("show"); return; }
     submitBtn.disabled = true;
-    const { error } = await sb.from("posts").insert({
+    const ins = await sb.from("posts").insert({
       author_name: (currentUser.email || "").split("@")[0],
       title: title,
       url: document.getElementById("post-url").value.trim() || null,
       comment: document.getElementById("post-comment").value.trim() || null
-    });
+    }).select().single();
+    let failMsg = ins.error ? ins.error.message : null;
+    if (!failMsg && files.length) {
+      try { await uploadAttachments("resource", ins.data.id, files); }
+      catch (up) { failMsg = "파일 업로드 실패: " + (up.message || up); }
+    }
     submitBtn.disabled = false;
-    if (error) {
-      errEl.textContent = "글을 올리지 못했습니다. 잠시 후 다시 시도해 주세요. (" + error.message + ")";
+    if (failMsg) {
+      errEl.textContent = "저장하지 못했습니다. (" + failMsg + ")";
       errEl.classList.add("show");
       return;
     }
     document.getElementById("post-form").reset();
+    document.getElementById("post-file-chosen").innerHTML = "";
     loadPosts();
   }
 
   async function deletePost(id) {
     if (!confirm("이 글을 삭제할까요?")) return;
+    await deleteAttachmentsFor("resource", id);
     const { error } = await sb.from("posts").delete().eq("id", id);
     if (error) {
       alert("삭제하지 못했습니다. 잠시 후 다시 시도해 주세요.");
@@ -1052,6 +1170,7 @@
   // ── 자유게시판 ─────────────────────────────
   const boardRoot = document.getElementById("board-view");
   let boardComments = {};
+  let boardAtts = {};
   const expandedComments = new Set();
 
   async function renderBoard() {
@@ -1067,11 +1186,13 @@
       + '<input id="fp-title" type="text" maxlength="200" required></div>'
       + '<div class="field"><label for="fp-body">내용 (선택)</label>'
       + '<textarea id="fp-body" style="min-height:96px;" placeholder="자유롭게 이야기를 남겨 주세요."></textarea></div>'
+      + fileFieldHtml("fp-file")
       + '<label class="checkbox-row"><input type="checkbox" id="fp-pin"> 공지로 상단 고정</label>'
       + '<button type="submit" class="btn-primary" id="fp-submit">올리기</button>'
       + '<p class="form-error" id="fp-error" role="alert"></p></form></div>'
       + '<div id="fp-list"><p class="status">글을 불러오는 중입니다…</p></div>';
     document.getElementById("fp-form").addEventListener("submit", submitFreePost);
+    bindFileField("fp-file");
     loadFreePosts();
   }
 
@@ -1087,6 +1208,7 @@
       .in("post_id", ids).order("created_at", { ascending: true });
     boardComments = {};
     (comments || []).forEach(c => { (boardComments[c.post_id] = boardComments[c.post_id] || []).push(c); });
+    boardAtts = await loadAttachments("free", ids);
     listEl.innerHTML = posts.map(renderFreePost).join("");
     bindBoard(listEl, posts);
   }
@@ -1097,6 +1219,7 @@
     if (p.pinned) h += '<span class="pin-badge">📌 공지</span>';
     h += '<h3>' + esc(p.title) + '</h3>';
     if (p.body) h += '<div class="body">' + esc(p.body) + '</div>';
+    h += renderAttachments(boardAtts[p.id]);
     h += '<div class="board-meta"><span class="author">' + esc(p.author_name) + '</span>'
       + '<span>' + fmtPostDate(p.created_at) + (p.updated_at ? ' (수정됨)' : '') + '</span>';
     if (mine) h += '<span class="acts"><button class="mini-btn" data-edit="' + p.id + '">수정</button>'
@@ -1144,15 +1267,24 @@
     err.classList.remove("show");
     const title = document.getElementById("fp-title").value.trim();
     if (!title) return;
+    const files = Array.from(document.getElementById("fp-file").files || []);
+    const vErr = validateFiles(files);
+    if (vErr) { err.textContent = vErr; err.classList.add("show"); return; }
     btn.disabled = true;
-    const { error } = await sb.from("free_posts").insert({
+    const ins = await sb.from("free_posts").insert({
       author_name: (currentUser.email || "").split("@")[0],
       title, body: document.getElementById("fp-body").value.trim() || null,
       pinned: document.getElementById("fp-pin").checked
-    });
+    }).select().single();
+    let failMsg = ins.error ? ins.error.message : null;
+    if (!failMsg && files.length) {
+      try { await uploadAttachments("free", ins.data.id, files); }
+      catch (up) { failMsg = "파일 업로드 실패: " + (up.message || up); }
+    }
     btn.disabled = false;
-    if (error) { err.textContent = "글을 올리지 못했습니다. (" + error.message + ")"; err.classList.add("show"); return; }
+    if (failMsg) { err.textContent = "글을 올리지 못했습니다. (" + failMsg + ")"; err.classList.add("show"); return; }
     document.getElementById("fp-form").reset();
+    document.getElementById("fp-file-chosen").innerHTML = "";
     loadFreePosts();
   }
 
@@ -1182,7 +1314,8 @@
   }
 
   async function deleteFreePost(id) {
-    if (!confirm("이 글을 삭제할까요? 댓글도 함께 삭제됩니다.")) return;
+    if (!confirm("이 글을 삭제할까요? 댓글과 첨부파일도 함께 삭제됩니다.")) return;
+    await deleteAttachmentsFor("free", id);
     const { error } = await sb.from("free_posts").delete().eq("id", id);
     if (error) { alert("삭제하지 못했습니다."); return; }
     loadFreePosts();
