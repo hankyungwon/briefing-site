@@ -4,6 +4,18 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>관악구 AI혁신정책연구단 지식 플랫폼</title>
+<meta name="description" content="매일 아침 발행되는 AI 정책 동향 브리핑과 연구단 일정·자료·소통 공간. 관악의 내일을 여는 AI 정책 인사이트.">
+<link rel="icon" type="image/png" href="/favicon.png">
+<link rel="apple-touch-icon" href="/apple-touch-icon.png">
+<!-- 카톡·SNS 공유 미리보기 (도메인 변경 시 og:url·og:image 주소도 함께 갱신) -->
+<meta property="og:type" content="website">
+<meta property="og:title" content="관악구 AI혁신정책연구단 지식 플랫폼">
+<meta property="og:description" content="매일 아침, AI 정책의 흐름을 함께 읽습니다 — 브리핑·일정·자료·소통 공간">
+<meta property="og:url" content="https://briefing-site-tau.vercel.app/">
+<meta property="og:image" content="https://briefing-site-tau.vercel.app/og.png">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta name="twitter:card" content="summary_large_image">
 <link href="https://fonts.googleapis.com/css2?family=Noto+Serif+KR:wght@400;600;700&family=Noto+Sans+KR:wght@400;500;700&display=swap" rel="stylesheet">
 <style>
   :root{
@@ -227,6 +239,57 @@
   .edit-att{font-size:13px;color:var(--slate);display:flex;align-items:center;gap:8px;}
   .edit-att .c-del{border:1px solid var(--line);border-radius:5px;padding:1px 8px;color:#A33;cursor:pointer;background:none;font-family:inherit;}
   .edit-att .c-del:hover{border-color:#A33;background:#FBEFEE;}
+  /* ── 새 글 배지 ── */
+  nav button[role="tab"]{position:relative;}
+  nav button[role="tab"].has-new::after{
+    content:"";position:absolute;top:9px;right:5px;width:7px;height:7px;border-radius:50%;
+    background:#E5484D;box-shadow:0 0 0 2px var(--card);
+  }
+  /* ── 검색 ── */
+  .search-row{display:flex;gap:8px;margin-bottom:20px;}
+  .search-row input{
+    flex:1;min-width:0;font-family:inherit;font-size:15px;color:var(--ink);
+    background:#fff;border:1px solid var(--line);border-radius:10px;padding:11px 16px;
+  }
+  .search-row input:focus{outline:2px solid var(--gwanak);outline-offset:-1px;border-color:var(--gwanak);}
+  .search-row button{
+    appearance:none;cursor:pointer;border:none;background:var(--gwanak);color:#fff;
+    border-radius:10px;padding:11px 20px;font-family:inherit;font-size:14.5px;font-weight:700;white-space:nowrap;
+  }
+  .search-row button:hover{background:var(--gwanak-deep);}
+  .filter-input{
+    width:100%;font-family:inherit;font-size:14px;color:var(--ink);
+    background:#fff;border:1px solid var(--line);border-radius:9px;padding:9px 14px;margin-bottom:14px;
+  }
+  .filter-input:focus{outline:2px solid var(--gwanak);outline-offset:-1px;border-color:var(--gwanak);}
+  .sr-item{
+    background:var(--card);border:1px solid var(--line);border-radius:12px;
+    padding:14px 16px;margin-bottom:10px;cursor:pointer;transition:border-color .15s,box-shadow .15s;
+  }
+  .sr-item:hover{border-color:var(--gwanak);box-shadow:0 3px 12px rgba(14,95,168,.1);}
+  .sr-item h4{font-family:'Noto Serif KR',serif;font-size:15.5px;font-weight:600;margin-bottom:4px;}
+  .sr-item p{font-size:13.5px;color:var(--muted);overflow:hidden;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;}
+  .sr-item .sr-meta{font-size:12px;color:var(--sky);font-weight:700;margin-bottom:3px;}
+  /* ── 아카이브 카드 ── */
+  .archive-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(160px,1fr));gap:12px;}
+  .arch-card{
+    appearance:none;cursor:pointer;font-family:inherit;text-align:left;
+    background:var(--card);border:1px solid var(--line);border-radius:14px;padding:16px 16px 14px;
+    box-shadow:0 1px 3px rgba(14,95,168,.05);transition:transform .15s,border-color .15s,box-shadow .15s;
+  }
+  .arch-card:hover{transform:translateY(-2px);border-color:var(--gwanak);box-shadow:0 8px 20px rgba(14,95,168,.12);}
+  .arch-card .an{font-family:'Noto Serif KR',serif;font-size:19px;font-weight:700;color:var(--gwanak-deep);}
+  .arch-card .ad{font-size:12.5px;color:var(--muted);margin-top:5px;}
+  .arch-card.latest .an::after{content:"최신";font-family:'Noto Sans KR',sans-serif;font-size:10.5px;font-weight:700;
+    color:#fff;background:var(--gold);border-radius:4px;padding:2px 6px;margin-left:8px;vertical-align:2px;}
+  /* ── 브리핑 카드 액션(스크랩·조사요청) ── */
+  .bc-actions{display:flex;gap:7px;margin-top:12px;flex-wrap:wrap;}
+  .bc-btn{
+    appearance:none;cursor:pointer;font-family:inherit;font-size:12.5px;font-weight:600;
+    color:var(--slate);background:#F4F7FB;border:1px solid var(--line);border-radius:999px;padding:5px 13px;
+  }
+  .bc-btn:hover{border-color:var(--gwanak);color:var(--gwanak);background:#EFF5FC;}
+  .bc-btn:disabled{cursor:default;color:#1E8E5A;border-color:#BFE3D0;background:#F0FAF4;}
   main{max-width:920px;margin:0 auto;padding:32px 24px 80px;}
   .panel{display:none;}
   .panel.active{display:block;animation:fade .35s ease;}
@@ -408,7 +471,12 @@
       <span class="issue-no serif">브리핑 아카이브</span>
       <span class="issue-date">발행일 순</span>
     </div>
-    <ul class="archive-list" id="archive-list"></ul>
+    <form class="search-row" id="briefing-search-form">
+      <input id="briefing-search" type="search" placeholder="지난 브리핑 검색 — 제목·요약·함의에서 찾습니다 (예: EU, 챗봇, 예산)">
+      <button type="submit">검색</button>
+    </form>
+    <div id="briefing-search-results"></div>
+    <div class="archive-grid" id="archive-list"></div>
     <p class="archive-hint">매일 아침 발행되는 브리핑이 이곳에 차곡차곡 쌓입니다. 호수를 누르면 해당 브리핑을 볼 수 있습니다.</p>
   </section>
 
@@ -451,12 +519,8 @@
       브리핑은 AI가 자동 수집·작성하고 연구단이 검토합니다.
     </p>
     <div class="team-grid">
-      <div class="member head"><div class="role-tag">단장</div><h4>한○○</h4><p>연구단 총괄 · 정책 방향 설계</p></div>
-      <div class="member"><div class="role-tag">AI혁신 선임연구관</div><h4>○○○</h4><p>AI 기술·정책 동향 분석 및 혁신과제 발굴</p></div>
-      <div class="member"><div class="role-tag">지역개발 연구관</div><h4>○○○</h4><p>지역 기반 AI 활용 전략 및 개발 정책 연구</p></div>
-      <div class="member"><div class="role-tag">도시행정 연구관</div><h4>○○○</h4><p>AI 행정혁신 및 구정 적용 방안 연구</p></div>
-      <div class="member"><div class="role-tag">대외협력 연구관</div><h4>○○○</h4><p>중앙정부·서울시·유관기관 협력 및 교류</p></div>
-      <div class="member"><div class="role-tag">행정지원 주무관</div><h4>○○○</h4><p>연구단 운영 지원 및 행정 사무</p></div>
+      <div class="member head"><div class="role-tag">단장</div><h4>한경원</h4><p>연구단 총괄 · 정책 방향 설계</p></div>
+      <div class="member"><div class="role-tag">행정지원 주무관</div><h4>송신영</h4><p>연구단 운영 지원 및 행정 사무</p></div>
     </div>
     <div class="contact">
       <h5>오시는 길 · 연락처</h5>
@@ -561,6 +625,27 @@
   </div>
 </div>
 
+<div class="modal-backdrop" id="request-modal">
+  <div class="modal" role="dialog" aria-modal="true" aria-labelledby="request-title">
+    <h3 id="request-title">추가 조사 요청</h3>
+    <p class="modal-sub">이 주제를 더 깊이 다뤄달라고 요청하면, 다음 브리핑 수집에 반영됩니다.</p>
+    <form id="request-form">
+      <input type="hidden" id="request-item-id">
+      <div class="field">
+        <label for="request-topic">조사 주제 <span style="color:#A33;">*</span></label>
+        <input id="request-topic" type="text" maxlength="200" required>
+      </div>
+      <div class="field">
+        <label for="request-note">구체적으로 알고 싶은 점 (선택)</label>
+        <textarea id="request-note" maxlength="500" placeholder="예: 우리 구에 적용할 때의 예산 규모, 타 지자체 실패 사례 등"></textarea>
+      </div>
+      <button type="submit" class="btn-primary" id="request-submit">요청하기</button>
+      <button type="button" class="auth-btn" id="request-cancel" style="margin-left:8px;">닫기</button>
+      <p class="form-error" id="request-error" role="alert"></p>
+    </form>
+  </div>
+</div>
+
 <footer>
   <div class="footer-inner">
     본 사이트의 브리핑은 AI가 언론보도·공개자료를 바탕으로 자동 생성한 내부 참고자료로, 관악구청의 공식 입장이 아닙니다.<br>
@@ -603,7 +688,13 @@
     return d.getFullYear() + "년 " + (d.getMonth()+1) + "월 " + d.getDate() + "일 (" + WEEKDAYS[d.getDay()] + ") 발행";
   }
 
+  let currentIssue = null;
+  let currentItemsById = {};
+
   function renderIssue(briefing, items) {
+    currentIssue = briefing;
+    currentItemsById = {};
+    items.forEach(it => { currentItemsById[it.id] = it; });
     let html = '<div class="brief-head">'
       + '<div><div class="bh-eyebrow">GWANAK-GU · AI POLICY BRIEFING</div>'
       + '<div class="bh-issue">AI 정책 동향 브리핑 · 제' + briefing.issue_no + '호</div></div>'
@@ -626,6 +717,10 @@
           if (it.source_url) {
             html += '<a class="src" href="' + esc(it.source_url) + '" target="_blank" rel="noopener">원문 보기 →</a>';
           }
+          html += '<div class="bc-actions">'
+            + '<button type="button" class="bc-btn" data-scrap="' + it.id + '">☆ 자료마당에 스크랩</button>'
+            + '<button type="button" class="bc-btn" data-request="' + it.id + '">🔍 추가 조사 요청</button>'
+            + '</div>';
           html += '</div></article>';
         }
       }
@@ -633,7 +728,79 @@
     html += '</div>';
     document.getElementById("briefing-view").innerHTML = html;
     markBriefOverflow();
+    document.querySelectorAll("#briefing-view [data-scrap]").forEach(b =>
+      b.addEventListener("click", () => scrapItem(b.dataset.scrap, b)));
+    document.querySelectorAll("#briefing-view [data-request]").forEach(b =>
+      b.addEventListener("click", () => openRequestModal(b.dataset.request, b)));
   }
+
+  // ── 콘텐츠 루프: 스크랩 → 자료마당 ──
+  async function scrapItem(id, btn) {
+    if (!currentUser) { openLoginModal(); return; }
+    const it = currentItemsById[id];
+    if (!it) return;
+    btn.disabled = true; btn.textContent = "스크랩 중…";
+    let comment = "[제" + currentIssue.issue_no + "호 브리핑 스크랩] " + (it.summary || "");
+    if (it.implication) comment += "\n함의 · " + it.implication;
+    const { error } = await sb.from("posts").insert({
+      author_name: (currentUser.email || "").split("@")[0],
+      title: it.title, url: it.source_url || null, comment
+    });
+    if (error) {
+      btn.disabled = false; btn.textContent = "☆ 자료마당에 스크랩";
+      alert("스크랩하지 못했습니다. (" + error.message + ")");
+      return;
+    }
+    btn.textContent = "✓ 스크랩됨";
+    setSeen("resources");
+    loadPosts();
+  }
+
+  // ── 콘텐츠 루프: 추가 조사 요청 ──
+  const requestModal = document.getElementById("request-modal");
+  const requestForm = document.getElementById("request-form");
+  const requestError = document.getElementById("request-error");
+  let requestOriginBtn = null;
+
+  function openRequestModal(itemId, btn) {
+    if (!currentUser) { openLoginModal(); return; }
+    requestOriginBtn = btn || null;
+    requestForm.reset();
+    requestError.classList.remove("show");
+    document.getElementById("request-item-id").value = itemId || "";
+    const it = itemId ? currentItemsById[itemId] : null;
+    document.getElementById("request-topic").value = it ? it.title : "";
+    requestModal.classList.add("open");
+    document.getElementById("request-note").focus();
+  }
+  function closeRequestModal() { requestModal.classList.remove("open"); }
+  requestModal.addEventListener("click", e => { if (e.target === requestModal) closeRequestModal(); });
+  document.getElementById("request-cancel").addEventListener("click", closeRequestModal);
+  document.addEventListener("keydown", e => {
+    if (e.key === "Escape" && requestModal.classList.contains("open")) closeRequestModal();
+  });
+  requestForm.addEventListener("submit", async e => {
+    e.preventDefault();
+    const topic = document.getElementById("request-topic").value.trim();
+    if (!topic) return;
+    requestError.classList.remove("show");
+    const btn = document.getElementById("request-submit");
+    btn.disabled = true;
+    const itemId = document.getElementById("request-item-id").value;
+    const { error } = await sb.from("research_requests").insert({
+      author_name: (currentUser.email || "").split("@")[0],
+      briefing_item_id: itemId ? Number(itemId) : null,
+      topic, note: document.getElementById("request-note").value.trim() || null
+    });
+    btn.disabled = false;
+    if (error) {
+      requestError.textContent = "요청을 저장하지 못했습니다. (" + error.message + ")";
+      requestError.classList.add("show");
+      return;
+    }
+    closeRequestModal();
+    if (requestOriginBtn) { requestOriginBtn.disabled = true; requestOriginBtn.textContent = "✓ 요청됨"; }
+  });
 
   // 카드 내용이 넘치면 '더 있음' 페이드 표시, 맨 아래로 스크롤하면 숨김
   function markBriefOverflow() {
@@ -651,10 +818,13 @@
     renderIssue(briefing, items);
   }
 
+  let allBriefings = [];
+
   async function init() {
     const view = document.getElementById("briefing-view");
     try {
       const briefings = await api("briefings?select=id,issue_no,published_date&order=issue_no.desc");
+      allBriefings = briefings;
       if (briefings.length === 0) {
         view.innerHTML = '<p class="status">아직 발행된 브리핑이 없습니다. 첫 브리핑이 곧 도착합니다.</p>';
         return;
@@ -663,10 +833,10 @@
 
       const list = document.getElementById("archive-list");
       list.innerHTML = briefings.map((b, idx) =>
-        '<li><button data-idx="' + idx + '">'
-        + '<span class="no">제' + b.issue_no + '호</span>'
-        + '<span class="date">' + esc(b.published_date) + '</span>'
-        + '</button></li>'
+        '<button class="arch-card' + (idx === 0 ? ' latest' : '') + '" data-idx="' + idx + '">'
+        + '<div class="an">제' + b.issue_no + '호</div>'
+        + '<div class="ad">' + esc(fmtDate(b.published_date).replace(" 발행", "")) + '</div>'
+        + '</button>'
       ).join("");
       list.addEventListener("click", async e => {
         const btn = e.target.closest("button[data-idx]");
@@ -679,14 +849,77 @@
     }
   }
 
+  // ── 브리핑 아카이브 검색 (제목·요약·함의) ──
+  document.getElementById("briefing-search-form").addEventListener("submit", async e => {
+    e.preventDefault();
+    const q = document.getElementById("briefing-search").value.trim();
+    const box = document.getElementById("briefing-search-results");
+    if (!q) { box.innerHTML = ""; return; }
+    box.innerHTML = '<p class="status">검색 중입니다…</p>';
+    const term = q.replace(/[%_,()]/g, " ").trim();
+    const like = "*" + term + "*";
+    try {
+      const enc = encodeURIComponent;
+      const rows = await api("briefing_items?select=*&or=(title.ilike." + enc(like)
+        + ",summary.ilike." + enc(like) + ",implication.ilike." + enc(like) + ")&limit=40");
+      if (!rows.length) {
+        box.innerHTML = '<p class="empty-note" style="margin-bottom:20px;">"' + esc(q) + '"에 대한 검색 결과가 없습니다.</p>';
+        return;
+      }
+      const byId = {};
+      allBriefings.forEach(b => { byId[b.id] = b; });
+      rows.sort((a, b2) => ((byId[b2.briefing_id] || {}).issue_no || 0) - ((byId[a.briefing_id] || {}).issue_no || 0));
+      box.innerHTML = '<p style="font-size:13.5px;color:var(--muted);margin-bottom:10px;">검색 결과 ' + rows.length + '건</p>'
+        + rows.map(r => {
+          const b = byId[r.briefing_id];
+          return '<div class="sr-item" data-bid="' + r.briefing_id + '">'
+            + '<div class="sr-meta">' + (b ? '제' + b.issue_no + '호 · ' + esc(b.published_date) : '') + '</div>'
+            + '<h4>' + esc(r.title) + '</h4><p>' + esc(r.summary || "") + '</p></div>';
+        }).join("")
+        + '<div style="border-bottom:1px solid var(--line);margin:18px 0 22px;"></div>';
+      box.querySelectorAll(".sr-item").forEach(el => el.addEventListener("click", async () => {
+        const b = byId[Number(el.dataset.bid)];
+        if (b) { await loadIssue(b); switchTab("today"); }
+      }));
+    } catch (err) {
+      box.innerHTML = '<p class="status error">검색에 실패했습니다. (' + esc(err.message) + ')</p>';
+    }
+  });
+
   const tabs = document.querySelectorAll('nav button[role="tab"]');
   const panels = document.querySelectorAll(".panel");
   function switchTab(name) {
     tabs.forEach(t => t.setAttribute("aria-selected", String(t.dataset.panel === name)));
     panels.forEach(p => p.classList.toggle("active", p.id === name));
+    if (BADGE_TABS[name]) setSeen(name);
     window.scrollTo({ top: 0 });
   }
   tabs.forEach(tab => tab.addEventListener("click", () => switchTab(tab.dataset.panel)));
+
+  // ── 새 글 배지: 지난 방문 이후 새 글이 있으면 탭에 빨간 점 ──
+  const BADGE_TABS = { board: "free_posts", resources: "posts", calendar: "events" };
+  function setSeen(tab) {
+    if (!currentUser) return;
+    localStorage.setItem("seen_" + tab + "_" + currentUser.id, new Date().toISOString());
+    const btn = document.querySelector('nav button[data-panel="' + tab + '"]');
+    if (btn) btn.classList.remove("has-new");
+  }
+  async function checkNewBadges() {
+    if (!currentUser) {
+      tabs.forEach(t => t.classList.remove("has-new"));
+      return;
+    }
+    for (const [tab, table] of Object.entries(BADGE_TABS)) {
+      const btn = document.querySelector('nav button[data-panel="' + tab + '"]');
+      if (!btn) continue;
+      try {
+        const { data } = await sb.from(table).select("created_at").order("created_at", { ascending: false }).limit(1);
+        const latest = data && data[0] && data[0].created_at;
+        const seen = localStorage.getItem("seen_" + tab + "_" + currentUser.id);
+        btn.classList.toggle("has-new", !!latest && (!seen || new Date(latest) > new Date(seen)));
+      } catch (e) { /* 배지는 부가 기능 — 조용히 무시 */ }
+    }
+  }
 
   // ── 로그인 (supabase-js) ─────────────────────────────
   // 초대/재설정 링크의 해시 파라미터를 supabase-js가 지우기 전에 먼저 읽어둔다.
@@ -839,7 +1072,7 @@
     const sameUser = !!(nextUser && currentUser && nextUser.id === currentUser.id);
     currentUser = nextUser;
     renderAuthNav();
-    if (!sameUser) { renderResources(); renderCalendar(); renderBoard(); }
+    if (!sameUser) { renderResources(); renderCalendar(); renderBoard(); checkNewBadges(); }
     // 초대/재설정 링크로 접속한 경우 비밀번호 설정 화면을 띄운다.
     if (!pwFlowHandled && session &&
         (event === "PASSWORD_RECOVERY" || authHashType === "invite" || authHashType === "recovery")) {
@@ -973,11 +1206,15 @@
       + '<button type="submit" class="btn-primary" id="post-submit">올리기</button>'
       + '<p class="form-error" id="post-error" role="alert"></p>'
       + '</form></div>'
+      + '<input type="search" class="filter-input" id="res-filter" placeholder="🔎 자료 검색 — 제목·링크·코멘트·작성자">'
       + '<div id="post-list"><p class="status">자료를 불러오는 중입니다…</p></div>';
     document.getElementById("post-form").addEventListener("submit", submitPost);
+    document.getElementById("res-filter").addEventListener("input", paintPosts);
     bindFileField("post-file");
     loadPosts();
   }
+
+  let resourceData = [], resourceAtts = {};
 
   async function loadPosts() {
     const listEl = document.getElementById("post-list");
@@ -989,11 +1226,27 @@
       listEl.innerHTML = '<p class="status error">자료를 불러오지 못했습니다. 잠시 후 다시 시도해 주세요. (' + esc(error.message) + ')</p>';
       return;
     }
-    if (data.length === 0) {
+    resourceData = data;
+    resourceAtts = await loadAttachments("resource", data.map(p => p.id));
+    paintPosts();
+  }
+
+  function paintPosts() {
+    const listEl = document.getElementById("post-list");
+    if (!listEl) return;
+    if (resourceData.length === 0) {
       listEl.innerHTML = '<p class="empty-note">아직 올라온 자료가 없습니다. 첫 자료를 공유해 보세요.</p>';
       return;
     }
-    const attMap = await loadAttachments("resource", data.map(p => p.id));
+    const fEl = document.getElementById("res-filter");
+    const q = (fEl ? fEl.value : "").trim().toLowerCase();
+    const data = !q ? resourceData : resourceData.filter(p =>
+      (p.title + " " + (p.url || "") + " " + (p.comment || "") + " " + p.author_name).toLowerCase().includes(q));
+    if (data.length === 0) {
+      listEl.innerHTML = '<p class="empty-note">"' + esc(q) + '" 검색 결과가 없습니다.</p>';
+      return;
+    }
+    const attMap = resourceAtts;
     listEl.innerHTML = data.map(p => {
       let html = '<article class="item post" data-post="' + p.id + '"><h3>' + esc(p.title) + '</h3>';
       if (p.url) {
@@ -1049,6 +1302,7 @@
     }
     document.getElementById("post-form").reset();
     document.getElementById("post-file-chosen").innerHTML = "";
+    setSeen("resources");
     loadPosts();
   }
 
@@ -1363,6 +1617,7 @@
     btn.disabled = false;
     if (error) { eventError.textContent = "저장하지 못했습니다. (" + error.message + ")"; eventError.classList.add("show"); return; }
     closeEventModal();
+    setSeen("calendar");
     renderCalendar();
   });
 
@@ -1396,11 +1651,15 @@
       + '<label class="checkbox-row"><input type="checkbox" id="fp-pin"> 공지로 상단 고정</label>'
       + '<button type="submit" class="btn-primary" id="fp-submit">올리기</button>'
       + '<p class="form-error" id="fp-error" role="alert"></p></form></div>'
+      + '<input type="search" class="filter-input" id="fp-filter" placeholder="🔎 글 검색 — 제목·내용·작성자">'
       + '<div id="fp-list"><p class="status">글을 불러오는 중입니다…</p></div>';
     document.getElementById("fp-form").addEventListener("submit", submitFreePost);
+    document.getElementById("fp-filter").addEventListener("input", paintBoard);
     bindFileField("fp-file");
     loadFreePosts();
   }
+
+  let boardData = [];
 
   async function loadFreePosts() {
     const listEl = document.getElementById("fp-list");
@@ -1408,13 +1667,25 @@
     const { data: posts, error } = await sb.from("free_posts").select("*")
       .order("pinned", { ascending: false }).order("created_at", { ascending: false });
     if (error) { listEl.innerHTML = '<p class="status error">글을 불러오지 못했습니다. (' + esc(error.message) + ')</p>'; return; }
-    if (!posts.length) { listEl.innerHTML = '<p class="empty-note">아직 올라온 글이 없습니다. 첫 글을 남겨 보세요.</p>'; return; }
+    boardData = posts;
     const ids = posts.map(p => p.id);
-    const { data: comments } = await sb.from("free_comments").select("*")
-      .in("post_id", ids).order("created_at", { ascending: true });
+    const { data: comments } = ids.length ? await sb.from("free_comments").select("*")
+      .in("post_id", ids).order("created_at", { ascending: true }) : { data: [] };
     boardComments = {};
     (comments || []).forEach(c => { (boardComments[c.post_id] = boardComments[c.post_id] || []).push(c); });
     boardAtts = await loadAttachments("free", ids);
+    paintBoard();
+  }
+
+  function paintBoard() {
+    const listEl = document.getElementById("fp-list");
+    if (!listEl) return;
+    if (!boardData.length) { listEl.innerHTML = '<p class="empty-note">아직 올라온 글이 없습니다. 첫 글을 남겨 보세요.</p>'; return; }
+    const fEl = document.getElementById("fp-filter");
+    const q = (fEl ? fEl.value : "").trim().toLowerCase();
+    const posts = !q ? boardData : boardData.filter(p =>
+      (p.title + " " + (p.body || "") + " " + p.author_name).toLowerCase().includes(q));
+    if (!posts.length) { listEl.innerHTML = '<p class="empty-note">"' + esc(q) + '" 검색 결과가 없습니다.</p>'; return; }
     listEl.innerHTML = posts.map(renderFreePost).join("");
     bindBoard(listEl, posts);
   }
@@ -1491,6 +1762,7 @@
     if (failMsg) { err.textContent = "글을 올리지 못했습니다. (" + failMsg + ")"; err.classList.add("show"); return; }
     document.getElementById("fp-form").reset();
     document.getElementById("fp-file-chosen").innerHTML = "";
+    setSeen("board");
     loadFreePosts();
   }
 
