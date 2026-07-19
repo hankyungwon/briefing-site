@@ -433,6 +433,9 @@
   .cat-band.gov .dot{background:var(--gwanak-deep);}
   .cat-band.seoul .dot{background:var(--sky);}
   .cat-band.world .dot{background:var(--slate);}
+  .cat-band.ahead .dot{background:var(--gold);}
+  .edition-chip{display:inline-block;vertical-align:middle;font-size:12px;font-weight:700;color:#fff;
+    background:var(--gold);border-radius:6px;padding:2px 10px;margin-left:8px;line-height:1.6;}
   .brief-card{
     background:var(--card);border:1px solid var(--line);border-radius:16px;
     height:300px;display:flex;flex-direction:column;
@@ -887,10 +890,12 @@
   const SUPABASE_KEY = "sb_publishable_BlgBVtoK45odAbJf8BSM0g_CoX3FZqE";
 
   const CATS = [
+    { key: "ahead", label: "이번 주 전망" },   // 월요 특별판·연휴 종합판에만 항목이 있음 (없으면 섹션 숨김)
     { key: "gov",   label: "중앙정부 · 국회" },
     { key: "seoul", label: "서울시 · 타 지자체" },
     { key: "world", label: "해외 및 기타 동향" }
   ];
+  const EDITIONS = { weekend: "주말 종합", holiday: "연휴 종합" };
   const WEEKDAYS = ["일","월","화","수","목","금","토"];
 
   async function api(path) {
@@ -919,9 +924,11 @@
     currentIssue = briefing;
     currentItemsById = {};
     items.forEach(it => { currentItemsById[it.id] = it; });
+    const edLabel = EDITIONS[briefing.edition];
     let html = '<div class="brief-head">'
       + '<div><div class="bh-eyebrow">GWANAK-GU · AI POLICY BRIEFING</div>'
-      + '<div class="bh-issue">AI 정책 동향 브리핑 · 제' + briefing.issue_no + '호</div></div>'
+      + '<div class="bh-issue">AI 정책 동향 브리핑 · 제' + briefing.issue_no + '호'
+      + (edLabel ? ' <span class="edition-chip">' + edLabel + '</span>' : '') + '</div></div>'
       + '<div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;">'
       + '<span class="bh-date">' + fmtDate(briefing.published_date) + '</span>'
       + '<button type="button" class="cal-btn" id="brief-config-btn" style="display:none;">⚙️ 수집 설정</button>'
@@ -930,12 +937,13 @@
     html += '<div class="brief-grid">';
     for (const cat of CATS) {
       const catItems = items.filter(i => i.category === cat.key);
+      if (cat.key === "ahead" && catItems.length === 0) continue; // 전망 없는 날은 섹션 자체를 숨김
       html += '<div class="cat-band ' + cat.key + '"><span class="dot"></span>'
         + '<span class="name">' + cat.label + '</span><span class="rule"></span></div>';
       if (catItems.length === 0) {
         html += '<p class="brief-empty">오늘은 이 분야의 특이 동향이 확인되지 않았습니다.</p>';
-      } else if (cat.key === "world") {
-        html += renderWorldList(catItems);
+      } else if (cat.key === "world" || cat.key === "ahead") {
+        html += renderWorldList(catItems, cat.key);
       } else {
         for (const it of catItems) {
           html += '<article class="brief-card ' + cat.key + '"><h3>' + esc(it.title) + '</h3>'
@@ -962,21 +970,21 @@
     markBriefOverflow();
     updateBriefAdminUI();
     document.getElementById("brief-config-btn").addEventListener("click", openConfigModal);
-    const moreBtn = document.getElementById("world-more");
-    if (moreBtn) moreBtn.addEventListener("click", () => {
-      const hid = document.getElementById("world-hidden");
-      const open = hid.classList.toggle("open");
-      moreBtn.textContent = open ? "단신 접기 ▴" : moreBtn.dataset.moreLabel;
-    });
+    document.querySelectorAll("#briefing-view .world-more").forEach(moreBtn =>
+      moreBtn.addEventListener("click", () => {
+        const hid = document.getElementById("world-hidden-" + moreBtn.dataset.morekey);
+        const open = hid.classList.toggle("open");
+        moreBtn.textContent = open ? "단신 접기 ▴" : moreBtn.dataset.moreLabel;
+      }));
     document.querySelectorAll("#briefing-view [data-scrap]").forEach(b =>
       b.addEventListener("click", () => scrapItem(b.dataset.scrap, b)));
     document.querySelectorAll("#briefing-view [data-request]").forEach(b =>
       b.addEventListener("click", () => openRequestModal(b.dataset.request, b)));
   }
 
-  // 해외 및 기타 동향: 짧은 단신 목록 — 처음 6건만 보이고 나머지는 '더 보기'로 감춤
+  // 짧은 단신 목록 (해외 및 기타 동향 · 이번 주 전망 공용) — 6건 초과분은 '더 보기'로 감춤
   const WORLD_SHOW = 6;
-  function renderWorldList(items) {
+  function renderWorldList(items, key) {
     const row = it => {
       let h = '<div class="world-item"><div class="wi-main"><span class="wi-title">' + esc(it.title) + '</span>';
       if (it.summary) h += ' <span class="wi-sum">— ' + esc(it.summary) + '</span>';
@@ -995,8 +1003,8 @@
     let h = '<div class="world-list">' + items.slice(0, WORLD_SHOW).map(row).join("");
     if (items.length > WORLD_SHOW) {
       const label = "단신 " + (items.length - WORLD_SHOW) + "건 더 보기 ▾";
-      h += '<div class="world-hidden" id="world-hidden">' + items.slice(WORLD_SHOW).map(row).join("") + '</div>'
-        + '<button type="button" class="world-more" id="world-more" data-more-label="' + label + '">' + label + '</button>';
+      h += '<div class="world-hidden" id="world-hidden-' + key + '">' + items.slice(WORLD_SHOW).map(row).join("") + '</div>'
+        + '<button type="button" class="world-more" data-morekey="' + key + '" data-more-label="' + label + '">' + label + '</button>';
     }
     return h + '</div>';
   }
@@ -1165,7 +1173,7 @@
   async function init() {
     const view = document.getElementById("briefing-view");
     try {
-      const briefings = await api("briefings?select=id,issue_no,published_date&order=issue_no.desc");
+      const briefings = await api("briefings?select=id,issue_no,published_date,edition&order=issue_no.desc");
       allBriefings = briefings;
       if (briefings.length === 0) {
         view.innerHTML = '<p class="status">아직 발행된 브리핑이 없습니다. 첫 브리핑이 곧 도착합니다.</p>';
@@ -1176,7 +1184,8 @@
       const list = document.getElementById("archive-list");
       list.innerHTML = briefings.map((b, idx) =>
         '<button class="arch-card' + (idx === 0 ? ' latest' : '') + '" data-idx="' + idx + '">'
-        + '<div class="an">제' + b.issue_no + '호</div>'
+        + '<div class="an">제' + b.issue_no + '호'
+        + (EDITIONS[b.edition] ? ' <span class="edition-chip">' + EDITIONS[b.edition] + '</span>' : '') + '</div>'
         + '<div class="ad">' + esc(fmtDate(b.published_date).replace(" 발행", "")) + '</div>'
         + '</button>'
       ).join("");
