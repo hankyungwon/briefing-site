@@ -134,6 +134,37 @@
   .kind-tag.note{background:#F6F1E7;color:#7A6420;border:1px solid #E7DCC0;}
   .item.post.flash{animation:postFlash 2.5s ease;}
   @keyframes postFlash{0%,35%{background:#FFF6DC;}100%{background:transparent;}}
+  /* ── 글쓰기 접기/펼치기 (목록 우선 배치) ── */
+  .write-toggle{display:flex;align-items:center;justify-content:center;gap:8px;width:100%;appearance:none;cursor:pointer;
+    background:#fff;border:1.5px dashed var(--gwanak);color:var(--gwanak-deep);border-radius:12px;
+    padding:13px 0;font-family:inherit;font-size:15px;font-weight:700;margin-bottom:14px;}
+  .write-toggle:hover{background:#EFF6FF;}
+  .write-toggle.open{border-style:solid;background:#EFF6FF;}
+  .form-wrap{display:none;}
+  .form-wrap.open{display:block;}
+  /* ── 해외 및 기타 동향 단신 목록 ── */
+  .world-list{grid-column:1/-1;background:var(--card);border:1px solid var(--line);border-radius:12px;
+    padding:2px 16px;box-shadow:0 1px 3px rgba(14,95,168,.05);}
+  .world-item{display:flex;gap:10px;align-items:flex-start;padding:11px 0;border-bottom:1px solid var(--line);
+    font-size:14px;line-height:1.65;}
+  .world-list > .world-item:last-child,.world-hidden .world-item:last-child{border-bottom:none;}
+  .world-item .wi-main{flex:1;min-width:0;}
+  .wi-title{font-weight:700;color:var(--ink);}
+  .wi-sum{color:#3B4756;}
+  .wi-src{color:var(--gwanak);text-decoration:none;font-size:13px;white-space:nowrap;}
+  .wi-src:hover{text-decoration:underline;}
+  .wi-acts{display:flex;gap:4px;flex:none;}
+  .wi-btn{appearance:none;cursor:pointer;border:1px solid var(--line);background:#fff;border-radius:6px;
+    padding:2px 8px;font-size:13px;font-family:inherit;}
+  .wi-btn:hover{border-color:var(--gwanak);}
+  .world-hidden{display:none;}
+  .world-hidden.open{display:block;}
+  .world-more{appearance:none;cursor:pointer;border:none;background:none;color:var(--gwanak);font-weight:600;
+    font-size:13.5px;padding:11px 0;width:100%;text-align:center;font-family:inherit;border-top:1px solid var(--line);}
+  .src-plain{margin-top:8px;font-size:13px;color:var(--muted);}
+  /* ── 수집 설정 모달 ── */
+  .cfg-sec{font-family:'Noto Serif KR',serif;font-size:15px;font-weight:700;color:var(--gwanak-deep);
+    margin:18px 0 10px;padding-bottom:6px;border-bottom:1px solid var(--line);}
   .post-meta{margin-top:12px;display:flex;gap:12px;flex-wrap:wrap;align-items:baseline;font-size:13px;color:var(--muted);}
   .post-meta .author{font-weight:700;color:var(--slate);}
   .post-del{
@@ -675,20 +706,21 @@
           <input id="event-start" type="date" required>
         </div>
         <div class="field" style="flex:1;">
-          <label for="event-end">종료일 (선택)</label>
+          <label for="event-end">종료일 (비우면 당일)</label>
           <input id="event-end" type="date">
         </div>
       </div>
       <div style="display:flex;gap:12px;">
         <div class="field" style="flex:1;">
           <label for="event-stime">시작 시각 (선택)</label>
-          <input id="event-stime" type="time">
+          <input id="event-stime" type="time" step="1800">
         </div>
         <div class="field" style="flex:1;">
           <label for="event-etime">종료 시각 (선택)</label>
-          <input id="event-etime" type="time">
+          <input id="event-etime" type="time" step="1800">
         </div>
       </div>
+      <div class="file-hint" style="margin:-6px 0 14px;">시각 칸에 마우스를 올려 휠을 굴리면 30분 단위로 빠르게 바뀝니다. 시작 시각을 정하면 종료 시각은 1시간 뒤로 자동 제안됩니다.</div>
       <div class="field">
         <label for="event-loc">장소 (선택)</label>
         <input id="event-loc" type="text" maxlength="120">
@@ -725,6 +757,36 @@
   </div>
 </div>
 
+<div class="modal-backdrop" id="config-modal">
+  <div class="modal" role="dialog" aria-modal="true" aria-labelledby="config-title">
+    <h3 id="config-title">⚙️ 브리핑 수집 설정</h3>
+    <p class="modal-sub">수퍼관리자 전용입니다. 여기서 저장한 검색 키워드와 지침은 다음 브리핑 자동 수집부터 반영됩니다. 코드를 고칠 필요 없이 이 화면에서 수집 방향을 조정하세요.</p>
+    <form id="config-form">
+      <div class="field"><label for="cfg-global">공통 수집 지침</label>
+        <textarea id="cfg-global" maxlength="500" placeholder="예: 관악구 구정에 시사점이 있는 AI 정책 동향 중심으로 수집"></textarea></div>
+      <div class="cfg-sec">중앙정부 · 국회</div>
+      <div class="field"><label for="cfg-gov-kw">검색 키워드 (쉼표로 구분)</label>
+        <input id="cfg-gov-kw" type="text" placeholder="AI 기본법, 인공지능 정책, …"></div>
+      <div class="field"><label for="cfg-gov-note">수집 지침</label>
+        <textarea id="cfg-gov-note" maxlength="500"></textarea></div>
+      <div class="cfg-sec">서울시 · 타 지자체</div>
+      <div class="field"><label for="cfg-seoul-kw">검색 키워드 (쉼표로 구분)</label>
+        <input id="cfg-seoul-kw" type="text"></div>
+      <div class="field"><label for="cfg-seoul-note">수집 지침</label>
+        <textarea id="cfg-seoul-note" maxlength="500"></textarea></div>
+      <div class="cfg-sec">해외 및 기타 동향</div>
+      <div class="field"><label for="cfg-world-kw">검색 키워드 (쉼표로 구분)</label>
+        <input id="cfg-world-kw" type="text"></div>
+      <div class="field"><label for="cfg-world-note">수집 지침</label>
+        <textarea id="cfg-world-note" maxlength="500"></textarea></div>
+      <button type="submit" class="btn-primary" id="config-submit">저장</button>
+      <button type="button" class="auth-btn" id="config-cancel" style="margin-left:8px;">닫기</button>
+      <p class="form-error" id="config-error" role="alert"></p>
+      <p class="form-ok" id="config-ok" role="status"></p>
+    </form>
+  </div>
+</div>
+
 <footer>
   <div class="footer-inner">
     이 사이트는 관악구 AI혁신정책연구단의 지식 관리를 위한 플랫폼으로서 서울특별시 관악구의 공식 견해와 다를 수 있습니다.<br>
@@ -744,7 +806,7 @@
   const CATS = [
     { key: "gov",   label: "중앙정부 · 국회" },
     { key: "seoul", label: "서울시 · 타 지자체" },
-    { key: "world", label: "세계 동향" }
+    { key: "world", label: "해외 및 기타 동향" }
   ];
   const WEEKDAYS = ["일","월","화","수","목","금","토"];
 
@@ -777,7 +839,10 @@
     let html = '<div class="brief-head">'
       + '<div><div class="bh-eyebrow">GWANAK-GU · AI POLICY BRIEFING</div>'
       + '<div class="bh-issue">AI 정책 동향 브리핑 · 제' + briefing.issue_no + '호</div></div>'
-      + '<span class="bh-date">' + fmtDate(briefing.published_date) + '</span></div>';
+      + '<div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;">'
+      + '<span class="bh-date">' + fmtDate(briefing.published_date) + '</span>'
+      + '<button type="button" class="cal-btn" id="brief-config-btn" style="display:none;">⚙️ 수집 설정</button>'
+      + '</div></div>';
 
     html += '<div class="brief-grid">';
     for (const cat of CATS) {
@@ -786,6 +851,8 @@
         + '<span class="name">' + cat.label + '</span><span class="rule"></span></div>';
       if (catItems.length === 0) {
         html += '<p class="brief-empty">오늘은 이 분야의 특이 동향이 확인되지 않았습니다.</p>';
+      } else if (cat.key === "world") {
+        html += renderWorldList(catItems);
       } else {
         for (const it of catItems) {
           html += '<article class="brief-card ' + cat.key + '"><h3>' + esc(it.title) + '</h3>'
@@ -794,7 +861,10 @@
             html += '<div class="implication"><strong>함의</strong> · ' + esc(it.implication) + '</div>';
           }
           if (it.source_url) {
-            html += '<a class="src" href="' + esc(it.source_url) + '" target="_blank" rel="noopener">원문 보기 →</a>';
+            html += '<a class="src" href="' + esc(it.source_url) + '" target="_blank" rel="noopener">출처 · '
+              + esc(it.source_name || "원문 보기") + ' →</a>';
+          } else if (it.source_name) {
+            html += '<p class="src-plain">출처 · ' + esc(it.source_name) + '</p>';
           }
           html += '<div class="bc-actions">'
             + '<button type="button" class="bc-btn" data-scrap="' + it.id + '">☆ 자료마당에 스크랩</button>'
@@ -807,10 +877,45 @@
     html += '</div>';
     document.getElementById("briefing-view").innerHTML = html;
     markBriefOverflow();
+    updateBriefAdminUI();
+    document.getElementById("brief-config-btn").addEventListener("click", openConfigModal);
+    const moreBtn = document.getElementById("world-more");
+    if (moreBtn) moreBtn.addEventListener("click", () => {
+      const hid = document.getElementById("world-hidden");
+      const open = hid.classList.toggle("open");
+      moreBtn.textContent = open ? "단신 접기 ▴" : moreBtn.dataset.moreLabel;
+    });
     document.querySelectorAll("#briefing-view [data-scrap]").forEach(b =>
       b.addEventListener("click", () => scrapItem(b.dataset.scrap, b)));
     document.querySelectorAll("#briefing-view [data-request]").forEach(b =>
       b.addEventListener("click", () => openRequestModal(b.dataset.request, b)));
+  }
+
+  // 해외 및 기타 동향: 짧은 단신 목록 — 처음 6건만 보이고 나머지는 '더 보기'로 감춤
+  const WORLD_SHOW = 6;
+  function renderWorldList(items) {
+    const row = it => {
+      let h = '<div class="world-item"><div class="wi-main"><span class="wi-title">' + esc(it.title) + '</span>';
+      if (it.summary) h += ' <span class="wi-sum">— ' + esc(it.summary) + '</span>';
+      if (it.source_url) {
+        h += ' <a class="wi-src" href="' + esc(it.source_url) + '" target="_blank" rel="noopener">'
+          + esc(it.source_name || "원문") + ' ↗</a>';
+      } else if (it.source_name) {
+        h += ' <span class="wi-sum">(' + esc(it.source_name) + ')</span>';
+      }
+      h += '</div><span class="wi-acts">'
+        + '<button type="button" class="wi-btn" data-scrap="' + it.id + '" title="자료마당에 스크랩">☆</button>'
+        + '<button type="button" class="wi-btn" data-request="' + it.id + '" title="추가 조사 요청">🔍</button>'
+        + '</span></div>';
+      return h;
+    };
+    let h = '<div class="world-list">' + items.slice(0, WORLD_SHOW).map(row).join("");
+    if (items.length > WORLD_SHOW) {
+      const label = "단신 " + (items.length - WORLD_SHOW) + "건 더 보기 ▾";
+      h += '<div class="world-hidden" id="world-hidden">' + items.slice(WORLD_SHOW).map(row).join("") + '</div>'
+        + '<button type="button" class="world-more" id="world-more" data-more-label="' + label + '">' + label + '</button>';
+    }
+    return h + '</div>';
   }
 
   // ── 콘텐츠 루프: 스크랩 → 자료마당 ──
@@ -818,7 +923,8 @@
     if (!currentUser) { openLoginModal(); return; }
     const it = currentItemsById[id];
     if (!it) return;
-    btn.disabled = true; btn.textContent = "스크랩 중…";
+    const compact = btn.classList.contains("wi-btn");
+    btn.disabled = true; btn.textContent = compact ? "…" : "스크랩 중…";
     let comment = "[제" + currentIssue.issue_no + "호 브리핑 스크랩] " + (it.summary || "");
     if (it.implication) comment += "\n함의 · " + it.implication;
     const { error } = await sb.from("posts").insert({
@@ -826,11 +932,11 @@
       title: it.title, url: it.source_url || null, comment
     });
     if (error) {
-      btn.disabled = false; btn.textContent = "☆ 자료마당에 스크랩";
+      btn.disabled = false; btn.textContent = compact ? "☆" : "☆ 자료마당에 스크랩";
       alert("스크랩하지 못했습니다. (" + error.message + ")");
       return;
     }
-    btn.textContent = "✓ 스크랩됨";
+    btn.textContent = compact ? "✓" : "✓ 스크랩됨";
     setSeen("resources");
     loadPosts();
   }
@@ -878,7 +984,81 @@
       return;
     }
     closeRequestModal();
-    if (requestOriginBtn) { requestOriginBtn.disabled = true; requestOriginBtn.textContent = "✓ 요청됨"; }
+    if (requestOriginBtn) {
+      requestOriginBtn.disabled = true;
+      requestOriginBtn.textContent = requestOriginBtn.classList.contains("wi-btn") ? "✓" : "✓ 요청됨";
+    }
+  });
+
+  // ── 수퍼관리자: 브리핑 수집 설정 ─────────────────────────────
+  let isAdminUser = false;
+
+  async function checkAdmin() {
+    if (!currentUser) { isAdminUser = false; updateBriefAdminUI(); return; }
+    const { data } = await sb.from("admin_emails").select("email").eq("email", currentUser.email).maybeSingle();
+    isAdminUser = !!data;
+    updateBriefAdminUI();
+  }
+
+  function updateBriefAdminUI() {
+    const b = document.getElementById("brief-config-btn");
+    if (b) b.style.display = isAdminUser ? "" : "none";
+  }
+
+  const configModal = document.getElementById("config-modal");
+  const configError = document.getElementById("config-error");
+  const configOk = document.getElementById("config-ok");
+
+  async function openConfigModal() {
+    configError.classList.remove("show");
+    configOk.classList.remove("show");
+    const { data, error } = await sb.from("site_config").select("value").eq("key", "briefing_collect").maybeSingle();
+    if (error) { alert("설정을 불러오지 못했습니다. (" + error.message + ")"); return; }
+    const v = (data && data.value) || {};
+    const secs = v.sections || {};
+    document.getElementById("cfg-global").value = v.global_note || "";
+    ["gov", "seoul", "world"].forEach(k => {
+      const s = secs[k] || {};
+      document.getElementById("cfg-" + k + "-kw").value = (s.keywords || []).join(", ");
+      document.getElementById("cfg-" + k + "-note").value = s.note || "";
+    });
+    configModal.classList.add("open");
+  }
+  function closeConfigModal() { configModal.classList.remove("open"); }
+  configModal.addEventListener("click", e => { if (e.target === configModal) closeConfigModal(); });
+  document.getElementById("config-cancel").addEventListener("click", closeConfigModal);
+  document.addEventListener("keydown", e => {
+    if (e.key === "Escape" && configModal.classList.contains("open")) closeConfigModal();
+  });
+
+  document.getElementById("config-form").addEventListener("submit", async e => {
+    e.preventDefault();
+    configError.classList.remove("show");
+    configOk.classList.remove("show");
+    const btn = document.getElementById("config-submit");
+    const sections = {};
+    CATS.forEach(cat => {
+      sections[cat.key] = {
+        label: cat.label,
+        keywords: document.getElementById("cfg-" + cat.key + "-kw").value.split(",").map(s => s.trim()).filter(Boolean),
+        note: document.getElementById("cfg-" + cat.key + "-note").value.trim()
+      };
+    });
+    const value = { global_note: document.getElementById("cfg-global").value.trim(), sections };
+    btn.disabled = true;
+    const { error } = await sb.from("site_config").upsert({
+      key: "briefing_collect", value,
+      updated_at: new Date().toISOString(),
+      updated_by: currentUser ? currentUser.email : null
+    });
+    btn.disabled = false;
+    if (error) {
+      configError.textContent = "저장하지 못했습니다. (" + error.message + ")";
+      configError.classList.add("show");
+      return;
+    }
+    configOk.textContent = "✓ 저장되었습니다. 다음 브리핑 수집부터 반영됩니다.";
+    configOk.classList.add("show");
   });
 
   // 카드 내용이 넘치면 '더 있음' 페이드 표시, 맨 아래로 스크롤하면 숨김
@@ -1151,7 +1331,7 @@
     const sameUser = !!(nextUser && currentUser && nextUser.id === currentUser.id);
     currentUser = nextUser;
     renderAuthNav();
-    if (!sameUser) { renderResources(); renderCalendar(); renderBoard(); checkNewBadges(); }
+    if (!sameUser) { renderResources(); renderCalendar(); renderBoard(); checkNewBadges(); checkAdmin(); }
     // 초대/재설정 링크로 접속한 경우 비밀번호 설정 화면을 띄운다.
     if (!pwFlowHandled && session &&
         (event === "PASSWORD_RECOVERY" || authHashType === "invite" || authHashType === "recovery")) {
@@ -1172,6 +1352,31 @@
   function fmtPostDate(iso) {
     const d = new Date(iso);
     return d.getFullYear() + "." + String(d.getMonth() + 1).padStart(2, "0") + "." + String(d.getDate()).padStart(2, "0");
+  }
+
+  function fmtDateTime(iso) {
+    const d = new Date(iso);
+    return fmtPostDate(iso) + " " + String(d.getHours()).padStart(2, "0") + ":" + String(d.getMinutes()).padStart(2, "0");
+  }
+
+  // 페이스북처럼 '몇 분 전 · 몇 시간 전' 상대 시간 표시 (일주일 지나면 날짜로)
+  function timeAgo(iso) {
+    const min = Math.floor((Date.now() - new Date(iso).getTime()) / 60000);
+    if (min < 1) return "방금 전";
+    if (min < 60) return min + "분 전";
+    const h = Math.floor(min / 60);
+    if (h < 24) return h + "시간 전";
+    const d = Math.floor(h / 24);
+    if (d < 8) return d + "일 전";
+    return fmtPostDate(iso);
+  }
+
+  // 작성·수정 시각 표기 — 마우스를 올리면 정확한 날짜와 시각이 보임
+  function timeMeta(created, updated) {
+    let tip = fmtDateTime(created) + " 작성";
+    if (updated) tip += " · " + fmtDateTime(updated) + " 수정";
+    return '<span title="' + tip + '">' + timeAgo(created)
+      + (updated ? ' <em style="font-style:normal;color:var(--muted);">(수정: ' + timeAgo(updated) + ')</em>' : '') + '</span>';
   }
 
   function linkHref(url) {
@@ -1273,7 +1478,9 @@
       return;
     }
     resourcesView.innerHTML =
-      '<div class="post-form"><h3>새 자료 올리기</h3>'
+      '<button type="button" class="write-toggle" id="res-write-toggle" aria-expanded="false">✏️ 새 자료 올리기</button>'
+      + '<p class="form-ok" id="post-ok" role="status"></p>'
+      + '<div class="form-wrap" id="res-form-wrap"><div class="post-form">'
       + '<div class="res-type" role="group" aria-label="자료 유형 선택">'
       + '<button type="button" id="rt-link" aria-pressed="true">🔗 링크 · 글 자료<span class="rt-sub">기사 · 사이트 주소나 메모를 공유</span></button>'
       + '<button type="button" id="rt-file" aria-pressed="false">📎 파일 자료<span class="rt-sub">문서 · 이미지 파일을 올려서 공유</span></button>'
@@ -1288,8 +1495,7 @@
       + '<textarea id="post-comment" placeholder="자료에 대한 짧은 소개나 의견을 남겨 주세요."></textarea></div>'
       + '<button type="submit" class="btn-primary" id="post-submit">등록하기</button>'
       + '<p class="form-error" id="post-error" role="alert"></p>'
-      + '<p class="form-ok" id="post-ok" role="status"></p>'
-      + '</form></div>'
+      + '</form></div></div>'
       + '<input type="search" class="filter-input" id="res-filter" placeholder="🔎 자료 검색 — 제목·링크·코멘트·작성자">'
       + '<div id="post-list"><p class="status">자료를 불러오는 중입니다…</p></div>';
     document.getElementById("post-form").addEventListener("submit", submitPost);
@@ -1297,10 +1503,24 @@
     bindFileField("post-file");
     document.getElementById("rt-link").addEventListener("click", () => setResMode("link"));
     document.getElementById("rt-file").addEventListener("click", () => setResMode("file"));
-    restoreResDraft();
+    document.getElementById("res-write-toggle").addEventListener("click", () => toggleResForm());
+    const hasDraft = restoreResDraft();
+    if (hasDraft) toggleResForm(true);
     ["post-title", "post-url", "post-comment"].forEach(id =>
       document.getElementById(id).addEventListener("input", saveResDraft));
     loadPosts();
+  }
+
+  // 글쓰기 양식 접기/펼치기 — 목록이 먼저 보이도록 기본은 접힘
+  function toggleResForm(open) {
+    const wrap = document.getElementById("res-form-wrap"), btn = document.getElementById("res-write-toggle");
+    if (!wrap) return;
+    const isOpen = open !== undefined ? open : !wrap.classList.contains("open");
+    wrap.classList.toggle("open", isOpen);
+    btn.classList.toggle("open", isOpen);
+    btn.setAttribute("aria-expanded", isOpen ? "true" : "false");
+    btn.textContent = isOpen ? "▴ 글쓰기 접기" : "✏️ 새 자료 올리기";
+    if (isOpen) document.getElementById("post-title").focus();
   }
 
   // 작성 중 초안을 기기에 저장해 두어, 화면이 새로 고쳐져도 입력한 내용이 사라지지 않게 한다.
@@ -1338,6 +1558,7 @@
       document.getElementById("post-comment").value = d.c || "";
     }
     setResMode(d && d.m === "file" ? "file" : "link");
+    return !!(d && ((d.t || "").trim() || (d.u || "").trim() || (d.c || "").trim()));
   }
 
   function clearResDraft() {
@@ -1391,7 +1612,7 @@
       }
       html += renderAttachments(attMap[p.id]);
       html += '<div class="post-meta"><span class="author">' + esc(p.author_name) + '</span>'
-        + '<span>' + fmtPostDate(p.created_at) + (p.updated_at ? ' (수정됨)' : '') + '</span>';
+        + timeMeta(p.created_at, p.updated_at);
       if (currentUser && p.author_id === currentUser.id) {
         html += '<span class="acts"><button type="button" class="mini-btn" data-editr="' + p.id + '">수정</button>'
           + '<button type="button" class="mini-btn danger" data-delr="' + p.id + '">삭제</button></span>';
@@ -1447,6 +1668,7 @@
     clearResDraft();
     document.getElementById("post-form").reset();
     document.getElementById("post-file-chosen").innerHTML = "";
+    toggleResForm(false);
     okEl.textContent = "✓ 「" + title + "」 자료가 등록되었습니다. 아래 목록 맨 위에서 확인하실 수 있습니다.";
     okEl.classList.add("show");
     setTimeout(() => { const el = document.getElementById("post-ok"); if (el) el.classList.remove("show"); }, 6000);
@@ -1720,6 +1942,7 @@
 
   function openEventModal(ev) {
     eventForm.reset();
+    document.getElementById("event-etime").dataset.auto = "";
     eventError.classList.remove("show");
     document.getElementById("event-id").value = ev ? ev.id : "";
     document.getElementById("event-title").textContent = ev ? "일정 수정" : "일정 등록";
@@ -1744,6 +1967,46 @@
   document.addEventListener("keydown", e => {
     if (e.key === "Escape" && eventModal.classList.contains("open")) closeEventModal();
   });
+
+  // ── 날짜·시각 빠른 입력 ─────────────────────────────
+  const evStartEl = document.getElementById("event-start"), evEndEl = document.getElementById("event-end");
+  const evStimeEl = document.getElementById("event-stime"), evEtimeEl = document.getElementById("event-etime");
+  const pad2 = n => String(n).padStart(2, "0");
+
+  // 종료일은 시작일과 연동: 시작일을 뒤로 옮겨 종료일보다 늦어지면 종료일을 맞춰 준다
+  evStartEl.addEventListener("change", () => {
+    if (evEndEl.value && evEndEl.value < evStartEl.value) evEndEl.value = evStartEl.value;
+  });
+
+  // 시각 칸에서 마우스 휠로 30분 단위 조절
+  function bindTimeWheel(el) {
+    el.addEventListener("wheel", e => {
+      e.preventDefault();
+      let t;
+      if (el.value) {
+        const p = el.value.split(":").map(Number);
+        t = ((p[0] * 60 + p[1] + (e.deltaY < 0 ? 30 : -30)) % 1440 + 1440) % 1440;
+      } else {
+        t = 9 * 60;
+      }
+      el.value = pad2(Math.floor(t / 60)) + ":" + pad2(t % 60);
+      el.dispatchEvent(new Event("change"));
+    }, { passive: false });
+  }
+  bindTimeWheel(evStimeEl);
+  bindTimeWheel(evEtimeEl);
+
+  // 시작 시각을 정하면 종료 시각을 1시간 뒤로 자동 제안 (사용자가 직접 고치면 더는 건드리지 않음)
+  evStimeEl.addEventListener("change", () => {
+    if (!evStimeEl.value) return;
+    if (!evEtimeEl.value || evEtimeEl.dataset.auto === "1") {
+      const p = evStimeEl.value.split(":").map(Number);
+      const t = (p[0] * 60 + p[1] + 60) % 1440;
+      evEtimeEl.value = pad2(Math.floor(t / 60)) + ":" + pad2(t % 60);
+      evEtimeEl.dataset.auto = "1";
+    }
+  });
+  evEtimeEl.addEventListener("change", () => { evEtimeEl.dataset.auto = "0"; });
 
   eventForm.addEventListener("submit", async e => {
     e.preventDefault();
@@ -1797,7 +2060,9 @@
       return;
     }
     boardRoot.innerHTML =
-      '<div class="post-form"><h3>새 글 쓰기</h3><form id="fp-form">'
+      '<button type="button" class="write-toggle" id="fp-write-toggle" aria-expanded="false">✏️ 새 글 쓰기</button>'
+      + '<p class="form-ok" id="fp-ok" role="status"></p>'
+      + '<div class="form-wrap" id="fp-form-wrap"><div class="post-form"><form id="fp-form">'
       + '<div class="field"><label for="fp-title">제목 <span style="color:#A33;">*</span></label>'
       + '<input id="fp-title" type="text" maxlength="200" required></div>'
       + '<div class="field"><label for="fp-body">내용 (선택)</label>'
@@ -1805,13 +2070,25 @@
       + fileFieldHtml("fp-file")
       + '<label class="checkbox-row"><input type="checkbox" id="fp-pin"> 공지로 상단 고정</label>'
       + '<button type="submit" class="btn-primary" id="fp-submit">등록하기</button>'
-      + '<p class="form-error" id="fp-error" role="alert"></p></form></div>'
+      + '<p class="form-error" id="fp-error" role="alert"></p></form></div></div>'
       + '<input type="search" class="filter-input" id="fp-filter" placeholder="🔎 글 검색 — 제목·내용·작성자">'
       + '<div id="fp-list"><p class="status">글을 불러오는 중입니다…</p></div>';
     document.getElementById("fp-form").addEventListener("submit", submitFreePost);
     document.getElementById("fp-filter").addEventListener("input", paintBoard);
     bindFileField("fp-file");
+    document.getElementById("fp-write-toggle").addEventListener("click", () => toggleBoardForm());
     loadFreePosts();
+  }
+
+  function toggleBoardForm(open) {
+    const wrap = document.getElementById("fp-form-wrap"), btn = document.getElementById("fp-write-toggle");
+    if (!wrap) return;
+    const isOpen = open !== undefined ? open : !wrap.classList.contains("open");
+    wrap.classList.toggle("open", isOpen);
+    btn.classList.toggle("open", isOpen);
+    btn.setAttribute("aria-expanded", isOpen ? "true" : "false");
+    btn.textContent = isOpen ? "▴ 글쓰기 접기" : "✏️ 새 글 쓰기";
+    if (isOpen) document.getElementById("fp-title").focus();
   }
 
   let boardData = [];
@@ -1853,7 +2130,7 @@
     if (p.body) h += '<div class="body">' + esc(p.body) + '</div>';
     h += renderAttachments(boardAtts[p.id]);
     h += '<div class="board-meta"><span class="author">' + esc(p.author_name) + '</span>'
-      + '<span>' + fmtPostDate(p.created_at) + (p.updated_at ? ' (수정됨)' : '') + '</span>';
+      + timeMeta(p.created_at, p.updated_at);
     if (mine) h += '<span class="acts"><button class="mini-btn" data-edit="' + p.id + '">수정</button>'
       + '<button class="mini-btn danger" data-delp="' + p.id + '">삭제</button></span>';
     h += '</div>' + renderComments(p.id);
@@ -1871,7 +2148,7 @@
     for (const c of shown) {
       const mine = c.author_id === currentUser.id;
       h += '<div class="comment"><div class="c-main"><div class="c-text">' + esc(c.body) + '</div>'
-        + '<div class="c-meta"><span class="c-author">' + esc(c.author_name) + '</span> · ' + fmtPostDate(c.created_at) + '</div></div>'
+        + '<div class="c-meta"><span class="c-author">' + esc(c.author_name) + '</span> · <span title="' + fmtDateTime(c.created_at) + '">' + timeAgo(c.created_at) + '</span></div></div>'
         + (mine ? '<button class="c-del" data-delc="' + c.id + '" title="댓글 삭제">✕</button>' : '') + '</div>';
     }
     if (list.length > 2 && expanded) {
@@ -1914,9 +2191,14 @@
       catch (up) { failMsg = "파일 업로드 실패: " + (up.message || up); }
     }
     btn.disabled = false;
-    if (failMsg) { err.textContent = "글을 올리지 못했습니다. (" + failMsg + ")"; err.classList.add("show"); return; }
+    if (failMsg) { err.textContent = "글을 올리지 못했습니다. 입력하신 내용은 그대로 남아 있으니 다시 시도해 주세요. (" + failMsg + ")"; err.classList.add("show"); return; }
     document.getElementById("fp-form").reset();
     document.getElementById("fp-file-chosen").innerHTML = "";
+    toggleBoardForm(false);
+    const okEl = document.getElementById("fp-ok");
+    okEl.textContent = "✓ 「" + title + "」 글이 등록되었습니다.";
+    okEl.classList.add("show");
+    setTimeout(() => { const el = document.getElementById("fp-ok"); if (el) el.classList.remove("show"); }, 6000);
     setSeen("board");
     loadFreePosts();
   }
