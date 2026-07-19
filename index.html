@@ -258,7 +258,7 @@
     background:#fff;border:1px solid var(--line);border-radius:999px;
     padding:7px 16px;font-size:13.5px;color:var(--slate);font-weight:500;white-space:nowrap;
   }
-  .brief-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:16px;align-items:start;}
+  .brief-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:16px;align-items:stretch;}
   .cat-band{grid-column:1/-1;display:flex;align-items:center;gap:10px;margin-top:12px;}
   .cat-band:first-child{margin-top:0;}
   .cat-band .dot{width:9px;height:9px;border-radius:50%;flex:none;}
@@ -269,19 +269,28 @@
   .cat-band.world .dot{background:var(--slate);}
   .brief-card{
     background:var(--card);border:1px solid var(--line);border-radius:16px;
-    padding:20px 22px 18px;box-shadow:0 2px 10px rgba(14,95,168,.05);
+    height:300px;display:flex;flex-direction:column;
+    padding:18px 20px 0;box-shadow:0 2px 10px rgba(14,95,168,.05);
     position:relative;overflow:hidden;
     transition:transform .18s ease,box-shadow .18s ease,border-color .18s ease;
   }
-  .brief-card::before{content:"";position:absolute;left:0;top:0;bottom:0;width:4px;}
+  .brief-card::before{content:"";position:absolute;left:0;top:0;bottom:0;width:4px;z-index:1;}
   .brief-card.gov::before{background:var(--gwanak-deep);}
   .brief-card.seoul::before{background:var(--sky);}
   .brief-card.world::before{background:var(--slate);}
   .brief-card:hover{transform:translateY(-3px);box-shadow:0 12px 28px rgba(14,95,168,.13);border-color:#C2D4E8;}
-  .brief-card h3{font-family:'Noto Serif KR',serif;font-size:17.5px;font-weight:600;line-height:1.5;margin-bottom:9px;color:var(--ink);}
+  .brief-card h3{flex:none;font-family:'Noto Serif KR',serif;font-size:17.5px;font-weight:600;line-height:1.5;
+    margin-bottom:8px;padding-bottom:8px;color:var(--ink);border-bottom:1px solid var(--line);}
+  .bc-scroll{flex:1;overflow-y:auto;padding:0 6px 18px 0;scrollbar-width:thin;scrollbar-color:#CBD8E6 transparent;}
+  .bc-scroll::-webkit-scrollbar{width:6px;}
+  .bc-scroll::-webkit-scrollbar-thumb{background:#CBD8E6;border-radius:3px;}
+  .bc-scroll::-webkit-scrollbar-track{background:transparent;}
   .brief-card p.sum{font-size:14.5px;color:#3B4756;line-height:1.72;}
   .brief-card a.src{display:inline-block;margin-top:12px;font-size:13px;font-weight:500;color:var(--gwanak);}
   .brief-card a.src:hover{color:var(--gwanak-deep);}
+  .brief-card.more::after{content:"⌄";position:absolute;left:0;right:0;bottom:0;height:38px;pointer-events:none;
+    background:linear-gradient(to bottom,rgba(255,255,255,0),var(--card) 82%);border-radius:0 0 15px 15px;
+    text-align:center;color:var(--slate);font-size:15px;line-height:46px;font-weight:700;}
   .brief-empty{
     grid-column:1/-1;color:var(--muted);font-size:14px;background:#F7F9FC;
     border:1px dashed var(--line);border-radius:14px;padding:15px 20px;
@@ -610,19 +619,31 @@
       } else {
         for (const it of catItems) {
           html += '<article class="brief-card ' + cat.key + '"><h3>' + esc(it.title) + '</h3>'
-            + '<p class="sum">' + esc(it.summary) + '</p>';
+            + '<div class="bc-scroll"><p class="sum">' + esc(it.summary) + '</p>';
           if (it.implication) {
             html += '<div class="implication"><strong>함의</strong> · ' + esc(it.implication) + '</div>';
           }
           if (it.source_url) {
             html += '<a class="src" href="' + esc(it.source_url) + '" target="_blank" rel="noopener">원문 보기 →</a>';
           }
-          html += '</article>';
+          html += '</div></article>';
         }
       }
     }
     html += '</div>';
     document.getElementById("briefing-view").innerHTML = html;
+    markBriefOverflow();
+  }
+
+  // 카드 내용이 넘치면 '더 있음' 페이드 표시, 맨 아래로 스크롤하면 숨김
+  function markBriefOverflow() {
+    document.querySelectorAll("#briefing-view .brief-card").forEach(card => {
+      const sc = card.querySelector(".bc-scroll");
+      if (!sc) return;
+      const update = () => card.classList.toggle("more", sc.scrollTop + sc.clientHeight < sc.scrollHeight - 4);
+      update();
+      sc.addEventListener("scroll", update);
+    });
   }
 
   async function loadIssue(briefing) {
