@@ -120,6 +120,20 @@
     margin-bottom:14px;padding-bottom:10px;border-bottom:1px solid var(--line);
   }
   .post-form .btn-primary{display:block;width:100%;padding:13px 0;font-size:16px;margin-top:6px;}
+  .res-type{display:flex;gap:8px;margin-bottom:16px;}
+  .res-type button{flex:1;appearance:none;cursor:pointer;border:1.5px solid var(--line);background:#fff;
+    border-radius:10px;padding:11px 6px;font-family:inherit;font-size:14.5px;font-weight:600;color:var(--muted);word-break:keep-all;}
+  .res-type button[aria-pressed="true"]{border-color:var(--gwanak);background:#EFF6FF;color:var(--gwanak-deep);}
+  .res-type button .rt-sub{display:block;font-size:11.5px;font-weight:500;margin-top:2px;color:var(--muted);}
+  .form-ok{display:none;margin-top:12px;background:#EAF7EF;border:1px solid #BFE3CC;color:#20713C;
+    border-radius:8px;padding:11px 14px;font-size:14px;font-weight:600;}
+  .form-ok.show{display:block;}
+  .kind-tag{display:inline-block;font-size:11.5px;font-weight:700;border-radius:5px;padding:2px 8px;margin-bottom:7px;}
+  .kind-tag.file{background:#EEF3F9;color:var(--gwanak-deep);border:1px solid #CFE0F0;}
+  .kind-tag.link{background:#EAF6F5;color:#0F6D66;border:1px solid #C3E4E1;}
+  .kind-tag.note{background:#F6F1E7;color:#7A6420;border:1px solid #E7DCC0;}
+  .item.post.flash{animation:postFlash 2.5s ease;}
+  @keyframes postFlash{0%,35%{background:#FFF6DC;}100%{background:transparent;}}
   .post-meta{margin-top:12px;display:flex;gap:12px;flex-wrap:wrap;align-items:baseline;font-size:13px;color:var(--muted);}
   .post-meta .author{font-weight:700;color:var(--slate);}
   .post-del{
@@ -1260,23 +1274,74 @@
     }
     resourcesView.innerHTML =
       '<div class="post-form"><h3>새 자료 올리기</h3>'
+      + '<div class="res-type" role="group" aria-label="자료 유형 선택">'
+      + '<button type="button" id="rt-link" aria-pressed="true">🔗 링크 · 글 자료<span class="rt-sub">기사 · 사이트 주소나 메모를 공유</span></button>'
+      + '<button type="button" id="rt-file" aria-pressed="false">📎 파일 자료<span class="rt-sub">문서 · 이미지 파일을 올려서 공유</span></button>'
+      + '</div>'
       + '<form id="post-form">'
       + '<div class="field"><label for="post-title">제목 <span style="color:#A33;">*</span></label>'
       + '<input id="post-title" type="text" maxlength="200" required></div>'
-      + '<div class="field"><label for="post-url">링크 (선택)</label>'
+      + '<div class="field" id="post-url-field"><label for="post-url">링크 (선택)</label>'
       + '<input id="post-url" type="text" placeholder="https://..."></div>'
+      + '<div id="post-file-field">' + fileFieldHtml("post-file").replace("파일 첨부 (선택)", '파일 첨부 <span style="color:#A33;">*</span>') + '</div>'
       + '<div class="field"><label for="post-comment">코멘트 (선택)</label>'
       + '<textarea id="post-comment" placeholder="자료에 대한 짧은 소개나 의견을 남겨 주세요."></textarea></div>'
-      + fileFieldHtml("post-file")
       + '<button type="submit" class="btn-primary" id="post-submit">등록하기</button>'
       + '<p class="form-error" id="post-error" role="alert"></p>'
+      + '<p class="form-ok" id="post-ok" role="status"></p>'
       + '</form></div>'
       + '<input type="search" class="filter-input" id="res-filter" placeholder="🔎 자료 검색 — 제목·링크·코멘트·작성자">'
       + '<div id="post-list"><p class="status">자료를 불러오는 중입니다…</p></div>';
     document.getElementById("post-form").addEventListener("submit", submitPost);
     document.getElementById("res-filter").addEventListener("input", paintPosts);
     bindFileField("post-file");
+    document.getElementById("rt-link").addEventListener("click", () => setResMode("link"));
+    document.getElementById("rt-file").addEventListener("click", () => setResMode("file"));
+    restoreResDraft();
+    ["post-title", "post-url", "post-comment"].forEach(id =>
+      document.getElementById(id).addEventListener("input", saveResDraft));
     loadPosts();
+  }
+
+  // 작성 중 초안을 기기에 저장해 두어, 화면이 새로 고쳐져도 입력한 내용이 사라지지 않게 한다.
+  const RES_DRAFT_KEY = "gwanak_res_draft";
+  let resMode = "link";
+
+  function setResMode(mode) {
+    resMode = mode;
+    const linkBtn = document.getElementById("rt-link"), fileBtn = document.getElementById("rt-file");
+    if (!linkBtn) return;
+    linkBtn.setAttribute("aria-pressed", mode === "link" ? "true" : "false");
+    fileBtn.setAttribute("aria-pressed", mode === "file" ? "true" : "false");
+    document.getElementById("post-url-field").style.display = mode === "link" ? "" : "none";
+    document.getElementById("post-file-field").style.display = mode === "file" ? "" : "none";
+    saveResDraft();
+  }
+
+  function saveResDraft() {
+    try {
+      localStorage.setItem(RES_DRAFT_KEY, JSON.stringify({
+        m: resMode,
+        t: document.getElementById("post-title").value,
+        u: document.getElementById("post-url").value,
+        c: document.getElementById("post-comment").value
+      }));
+    } catch (e) { /* 저장 공간 문제 시 초안 저장만 건너뜀 */ }
+  }
+
+  function restoreResDraft() {
+    let d = null;
+    try { d = JSON.parse(localStorage.getItem(RES_DRAFT_KEY) || "null"); } catch (e) {}
+    if (d) {
+      document.getElementById("post-title").value = d.t || "";
+      document.getElementById("post-url").value = d.u || "";
+      document.getElementById("post-comment").value = d.c || "";
+    }
+    setResMode(d && d.m === "file" ? "file" : "link");
+  }
+
+  function clearResDraft() {
+    try { localStorage.removeItem(RES_DRAFT_KEY); } catch (e) {}
   }
 
   let resourceData = [], resourceAtts = {};
@@ -1313,7 +1378,11 @@
     }
     const attMap = resourceAtts;
     listEl.innerHTML = data.map(p => {
-      let html = '<article class="item post" data-post="' + p.id + '"><h3>' + esc(p.title) + '</h3>';
+      const hasFile = (attMap[p.id] || []).length > 0;
+      const kind = hasFile ? ['file', '📎 파일'] : (p.url ? ['link', '🔗 링크'] : ['note', '📝 메모']);
+      let html = '<article class="item post" data-post="' + p.id + '">'
+        + '<span class="kind-tag ' + kind[0] + '">' + kind[1] + '</span>'
+        + '<h3>' + esc(p.title) + '</h3>';
       if (p.url) {
         html += '<p style="margin-top:2px;"><a class="src" href="' + esc(linkHref(p.url)) + '" target="_blank" rel="noopener">' + esc(p.url) + '</a></p>';
       }
@@ -1341,17 +1410,26 @@
     e.preventDefault();
     const submitBtn = document.getElementById("post-submit");
     const errEl = document.getElementById("post-error");
+    const okEl = document.getElementById("post-ok");
     errEl.classList.remove("show");
+    okEl.classList.remove("show");
     const title = document.getElementById("post-title").value.trim();
     if (!title) return;
-    const files = Array.from(document.getElementById("post-file").files || []);
+    // 파일 자료 모드일 때만 첨부를 저장 대상으로 삼는다 (링크 모드에서는 파일란이 숨겨져 있음)
+    const files = resMode === "file" ? Array.from(document.getElementById("post-file").files || []) : [];
+    if (resMode === "file" && files.length === 0) {
+      errEl.textContent = "파일 자료를 선택하셨습니다. 파일을 첨부하시거나, 링크·글 자료로 바꿔서 등록해 주세요. 입력하신 내용은 그대로 남아 있습니다.";
+      errEl.classList.add("show");
+      return;
+    }
     const vErr = validateFiles(files);
     if (vErr) { errEl.textContent = vErr; errEl.classList.add("show"); return; }
     submitBtn.disabled = true;
+    submitBtn.textContent = "등록 중…";
     const ins = await sb.from("posts").insert({
       author_name: (currentUser.email || "").split("@")[0],
       title: title,
-      url: document.getElementById("post-url").value.trim() || null,
+      url: resMode === "link" ? (document.getElementById("post-url").value.trim() || null) : null,
       comment: document.getElementById("post-comment").value.trim() || null
     }).select().single();
     let failMsg = ins.error ? ins.error.message : null;
@@ -1360,15 +1438,27 @@
       catch (up) { failMsg = "파일 업로드 실패: " + (up.message || up); }
     }
     submitBtn.disabled = false;
+    submitBtn.textContent = "등록하기";
     if (failMsg) {
-      errEl.textContent = "저장하지 못했습니다. (" + failMsg + ")";
+      errEl.textContent = "저장하지 못했습니다. 입력하신 내용은 그대로 남아 있으니 다시 시도해 주세요. (" + failMsg + ")";
       errEl.classList.add("show");
       return;
     }
+    clearResDraft();
     document.getElementById("post-form").reset();
     document.getElementById("post-file-chosen").innerHTML = "";
+    okEl.textContent = "✓ 「" + title + "」 자료가 등록되었습니다. 아래 목록 맨 위에서 확인하실 수 있습니다.";
+    okEl.classList.add("show");
+    setTimeout(() => { const el = document.getElementById("post-ok"); if (el) el.classList.remove("show"); }, 6000);
     setSeen("resources");
-    loadPosts();
+    const fEl = document.getElementById("res-filter");
+    if (fEl) fEl.value = "";
+    await loadPosts();
+    const newCard = document.querySelector('.item.post[data-post="' + ins.data.id + '"]');
+    if (newCard) {
+      newCard.classList.add("flash");
+      newCard.scrollIntoView({ behavior: "smooth", block: "center" });
+    }
   }
 
   async function deletePost(id) {
