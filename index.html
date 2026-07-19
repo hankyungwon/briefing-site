@@ -393,7 +393,17 @@
     margin-bottom:18px;max-width:660px;color:var(--gwanak-deep);
   }
   .about-body{max-width:660px;color:#3B4756;margin-bottom:36px;font-size:15.5px;}
-  .team-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(230px,1fr));gap:14px;margin-bottom:36px;}
+  .team-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(380px,1fr));gap:14px;margin-bottom:36px;}
+  @media(max-width:520px){.team-grid{grid-template-columns:1fr;}}
+  .join-badge{
+    display:inline-block;font-size:11px;font-weight:700;color:var(--sky);
+    background:#EAF4F7;border:1px solid #CBE4EC;border-radius:999px;padding:2px 9px;
+    margin-left:8px;vertical-align:2px;
+  }
+  .duties{list-style:none;margin-top:12px;padding-top:11px;border-top:1px solid var(--line);display:flex;flex-direction:column;gap:9px;}
+  .duties li{font-size:13px;color:var(--muted);line-height:1.6;padding-left:13px;position:relative;}
+  .duties li::before{content:"";position:absolute;left:0;top:8px;width:5px;height:5px;border-radius:50%;background:var(--sky);}
+  .duties li strong{display:block;font-size:13.5px;color:var(--ink);font-weight:600;}
   .member{
     background:var(--card);border:1px solid var(--line);border-radius:10px;
     padding:18px 18px 16px;box-shadow:0 1px 3px rgba(14,95,168,.05);
@@ -519,8 +529,56 @@
       브리핑은 AI가 자동 수집·작성하고 연구단이 검토합니다.
     </p>
     <div class="team-grid">
-      <div class="member head"><div class="role-tag">단장</div><h4>한경원</h4><p>연구단 총괄 · 정책 방향 설계</p></div>
-      <div class="member"><div class="role-tag">행정지원 주무관</div><h4>송신영</h4><p>연구단 운영 지원 및 행정 사무</p></div>
+      <div class="member head">
+        <div class="role-tag">단장</div>
+        <h4>한경원</h4>
+        <p>연구단 총괄 · 정책 방향 설계</p>
+      </div>
+      <div class="member">
+        <div class="role-tag">AI혁신 선임연구관</div>
+        <h4>OOO<span class="join-badge">9. 1. 합류 예정</span></h4>
+        <ul class="duties">
+          <li><strong>혁신경제도시 및 AI스마트도시 연구</strong>관악구 맞춤형 혁신경제 정책 및 AI 기반의 스마트도시 조성을 위한 과제 연구</li>
+          <li><strong>관악구의 AI 전환(AX) 지원</strong>부서별 맞춤형 AI 활용 컨설팅 제공 및 관악구청 내 인공지능 기반의 업무 혁신 방향 제시</li>
+          <li><strong>AI 기반의 공공서비스 혁신 방안 도출</strong>AI 기술을 활용한 구민 맞춤형 공공서비스 개선 및 스마트 행정을 위한 신규 서비스 기획</li>
+          <li><strong>AI 정책 거버넌스 운영 및 구정 홍보</strong>정책 기획·도입 과정에서 유관 부서, 외부 전문가, 구민과의 원활한 소통 체계 구축·운영, 대외에 주요 구정 홍보</li>
+        </ul>
+      </div>
+      <div class="member">
+        <div class="role-tag">지역개발 연구관</div>
+        <h4>OOO<span class="join-badge">9. 1. 합류 예정</span></h4>
+        <ul class="duties">
+          <li><strong>힐링정원도시 및 지역 활성화 연구</strong>민선 9기 핵심 목표인 힐링정원도시 조성 및 지역 활성화 추진과제 연구</li>
+          <li><strong>융복합적 지역 활성화 정책 연구</strong>도시재생, 마을공동체 활성화, 지역 문화 진흥, 관광 콘텐츠 개발 등 융복합적 지역개발 정책 연구 추진</li>
+          <li><strong>지역개발 분야 부서 업무 지원</strong>상권 활성화, 도시재생, 문화·관광 등 지역개발 관련 외부 공모사업 기획 및 평가 대응 등 지원</li>
+          <li><strong>지역 현장의 협력 체계 운영 및 구정 홍보</strong>정책 추진 과정에서 마을공동체, 주민협의체 등 다양한 이해관계자의 의견 수렴 및 현장 중심의 협력 체계 운영, 대외에 주요 구정 홍보</li>
+        </ul>
+      </div>
+      <div class="member">
+        <div class="role-tag">도시행정 연구관</div>
+        <h4>OOO<span class="join-badge">9. 1. 합류 예정</span></h4>
+        <ul class="duties">
+          <li><strong>청년친화도시 정책 연구</strong>민선 9기 핵심 목표인 청년친화도시 조성을 위한 맞춤형 청년 정책 연구 추진</li>
+          <li><strong>협치 기반의 행정혁신 과제 연구</strong>시민단체, 대학, 구의회 등 주요 기관과의 긴밀한 소통을 바탕으로 행정혁신 과제 연구</li>
+          <li><strong>도시행정 분야 부서 업무 지원</strong>일반행정, 제도 개선, 청년 분야의 외부 공모사업 기획 및 평가 대응 등 업무 지원</li>
+          <li><strong>소통 채널 운영 및 구정 홍보</strong>행정 제도 혁신과 청년 정책 발굴 과정에서 실무 부서 및 정책 수혜자와의 지속적인 소통 채널 운영, 대외에 주요 구정 홍보</li>
+        </ul>
+      </div>
+      <div class="member">
+        <div class="role-tag">대외협력 연구관</div>
+        <h4>OOO<span class="join-badge">9. 1. 합류 예정</span></h4>
+        <ul class="duties">
+          <li><strong>주민 의견 수렴 및 정책 수요 발굴</strong>정책포럼, 표적집단면접, 구민 설문조사 등의 기획과 운영을 통한 정책 수요 발굴</li>
+          <li><strong>외부 전문가 네트워크 구축 및 자문회의 등 개최</strong>학계, 기업, 민간단체 등 전문가 네트워크 구축 및 각계 의견 수렴</li>
+          <li><strong>주요 정책 동향 모니터링</strong>중앙부처와 타 지자체의 정책 동향, 국회와 구의회 및 정당의 입법 동향, 사회적 현안에 대한 심층 분석</li>
+          <li><strong>정책 동향 자료 공유 및 구정 홍보</strong>외부 정책 동향 조사 자료를 구청 내 유관 부서에 전파하고 대외에 주요 구정 홍보</li>
+        </ul>
+      </div>
+      <div class="member">
+        <div class="role-tag">행정지원 주무관</div>
+        <h4>송신영</h4>
+        <p>연구단 운영 지원 및 행정 사무</p>
+      </div>
     </div>
     <div class="contact">
       <h5>오시는 길 · 연락처</h5>
