@@ -4,14 +4,14 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>관악구 AI혁신정책연구단 지식 플랫폼</title>
-<meta name="description" content="매일 아침 발행되는 AI 정책 동향 브리핑과 연구단 일정·자료·소통 공간. 관악의 내일을 여는 AI 정책 인사이트.">
+<meta name="description" content="AI혁신으로 모두가 행복한 더불어 으뜸 관악구 — AI혁신정책연구단이 선도합니다. 매일 아침 발행되는 AI 정책 동향 브리핑과 연구단 일정·자료·소통 공간.">
 <link rel="canonical" href="https://hanpro.io/">
 <link rel="icon" type="image/png" href="/favicon.png">
 <link rel="apple-touch-icon" href="/apple-touch-icon.png">
 <!-- 카톡·SNS 공유 미리보기 (도메인 변경 시 og:url·og:image 주소도 함께 갱신) -->
 <meta property="og:type" content="website">
 <meta property="og:title" content="관악구 AI혁신정책연구단 지식 플랫폼">
-<meta property="og:description" content="매일 아침, AI 정책의 흐름을 함께 읽습니다 — 브리핑·일정·자료·소통 공간">
+<meta property="og:description" content="AI혁신으로 모두가 행복한 더불어 으뜸 관악구 — AI혁신정책연구단이 선도합니다">
 <meta property="og:url" content="https://hanpro.io/">
 <meta property="og:image" content="https://hanpro.io/og.png">
 <meta property="og:image:width" content="1200">
@@ -28,8 +28,20 @@
   html{scroll-behavior:smooth;}
   body{background:var(--bg);color:var(--ink);font-family:'Noto Sans KR',sans-serif;line-height:1.7;font-size:16px;}
   .serif{font-family:'Noto Serif KR',serif;}
-  .header-band{background:linear-gradient(135deg,var(--gwanak-deep) 0%,var(--gwanak) 70%,#1470C4 100%);color:#fff;}
-  header{padding:38px 24px 30px;max-width:920px;margin:0 auto;}
+  .header-band{position:relative;overflow:hidden;color:#fff;
+    background:linear-gradient(135deg,var(--gwanak-deep) 0%,var(--gwanak) 55%,var(--sky) 100%);}
+  .header-band::before{content:"";position:absolute;top:-90px;right:-70px;width:360px;height:360px;border-radius:50%;
+    background:radial-gradient(circle,rgba(255,255,255,.14),transparent 65%);}
+  .header-band::after{content:"";position:absolute;bottom:-120px;left:-80px;width:300px;height:300px;border-radius:50%;
+    background:radial-gradient(circle,rgba(20,137,167,.35),transparent 65%);}
+  .hero-deco{position:absolute;inset:0;pointer-events:none;}
+  .hero-deco svg{position:absolute;right:0;top:0;height:100%;width:min(48%,440px);opacity:.55;}
+  @media(max-width:640px){.hero-deco svg{width:70%;opacity:.3;}}
+  header{position:relative;z-index:1;padding:38px 24px 30px;max-width:920px;margin:0 auto;}
+  .hero-chips{margin-top:14px;display:flex;gap:8px;flex-wrap:wrap;}
+  .chip{font-size:12.5px;font-weight:700;letter-spacing:.02em;border-radius:999px;padding:5px 15px;line-height:1.5;word-break:keep-all;}
+  .chip-youth{background:#fff;color:var(--gwanak-deep);box-shadow:0 2px 8px rgba(0,0,0,.16);}
+  .chip-ai{background:rgba(255,255,255,.13);color:#fff;border:1px solid rgba(255,255,255,.4);}
   .masthead{display:flex;align-items:flex-start;gap:18px;}
   .seal{
     flex:none;width:54px;height:54px;
@@ -42,7 +54,8 @@
   }
   .masthead-text .eyebrow{font-size:12.5px;letter-spacing:.35em;color:rgba(255,255,255,.75);text-transform:uppercase;margin-bottom:5px;}
   .masthead-text h1{font-family:'Noto Serif KR',serif;font-size:clamp(24px,4.5vw,34px);font-weight:700;color:#fff;}
-  .masthead-text .tagline{margin-top:7px;color:rgba(255,255,255,.85);font-size:14.5px;}
+  .masthead-text .tagline{margin-top:7px;color:rgba(255,255,255,.88);font-size:14.5px;word-break:keep-all;}
+  .masthead-text .tagline strong{color:#FFE9A8;font-weight:700;}
   nav{
     max-width:920px;margin:0 auto;display:flex;gap:4px;padding:0 24px;
     border-bottom:1px solid var(--line);background:var(--card);
@@ -135,11 +148,15 @@
   .item.post.flash{animation:postFlash 2.5s ease;}
   @keyframes postFlash{0%,35%{background:#FFF6DC;}100%{background:transparent;}}
   /* ── 글쓰기 접기/펼치기 (목록 우선 배치) ── */
-  .write-toggle{display:flex;align-items:center;justify-content:center;gap:8px;width:100%;appearance:none;cursor:pointer;
-    background:#fff;border:1.5px dashed var(--gwanak);color:var(--gwanak-deep);border-radius:12px;
-    padding:13px 0;font-family:inherit;font-size:15px;font-weight:700;margin-bottom:14px;}
-  .write-toggle:hover{background:#EFF6FF;}
-  .write-toggle.open{border-style:solid;background:#EFF6FF;}
+  .list-toolbar{display:flex;gap:10px;align-items:center;margin-bottom:14px;}
+  .list-toolbar .filter-input{flex:1;min-width:0;margin-bottom:0;}
+  .write-toggle{appearance:none;cursor:pointer;flex:none;display:inline-flex;align-items:center;gap:6px;
+    background:var(--gwanak);color:#fff;border:1.5px solid var(--gwanak);border-radius:999px;padding:8px 18px;
+    font-family:inherit;font-size:14px;font-weight:700;white-space:nowrap;box-shadow:0 2px 8px rgba(14,95,168,.22);
+    transition:background .15s,box-shadow .15s;}
+  .write-toggle:hover{background:var(--gwanak-deep);border-color:var(--gwanak-deep);}
+  .write-toggle.open{background:#fff;color:var(--gwanak-deep);box-shadow:none;}
+  @media(max-width:480px){.write-toggle{padding:8px 13px;font-size:13.5px;}}
   .form-wrap{display:none;}
   .form-wrap.open{display:block;}
   /* ── 해외 및 기타 동향 단신 목록 ── */
@@ -240,7 +257,9 @@
   .type-tag{font-size:11.5px;font-weight:700;color:#fff;border-radius:5px;padding:2px 8px;}
   /* ── 자유게시판 ── */
   .board-card{background:var(--card);border:1px solid var(--line);border-radius:16px;
-    padding:20px 22px 18px;margin-bottom:14px;box-shadow:0 2px 10px rgba(14,95,168,.05);}
+    padding:20px 22px 18px;margin-bottom:14px;box-shadow:0 2px 10px rgba(14,95,168,.05);
+    transition:box-shadow .18s,border-color .18s;}
+  .board-card:hover{border-color:#BFD3E6;box-shadow:0 4px 14px rgba(14,95,168,.1);}
   .board-card.pinned{border-color:#E4C989;background:linear-gradient(180deg,#FFFDF5,#fff);}
   .pin-badge{display:inline-block;font-size:11.5px;font-weight:700;color:#fff;background:var(--gold);
     border-radius:5px;padding:2px 9px;margin-bottom:9px;}
@@ -387,6 +406,7 @@
     height:300px;display:flex;flex-direction:column;
     padding:18px 20px 0;box-shadow:0 2px 10px rgba(14,95,168,.05);
     position:relative;overflow:hidden;
+    transition:box-shadow .18s,transform .18s;
     transition:transform .18s ease,box-shadow .18s ease,border-color .18s ease;
   }
   .brief-card::before{content:"";position:absolute;left:0;top:0;bottom:0;width:4px;z-index:1;}
@@ -406,6 +426,7 @@
   .brief-card.more::after{content:"⌄";position:absolute;left:0;right:0;bottom:0;height:38px;pointer-events:none;
     background:linear-gradient(to bottom,rgba(255,255,255,0),var(--card) 82%);border-radius:0 0 15px 15px;
     text-align:center;color:var(--slate);font-size:15px;line-height:46px;font-weight:700;}
+  .brief-card:hover{transform:translateY(-2px);box-shadow:0 6px 18px rgba(14,95,168,.13);}
   .brief-empty{
     grid-column:1/-1;color:var(--muted);font-size:14px;background:#F7F9FC;
     border:1px dashed var(--line);border-radius:14px;padding:15px 20px;
@@ -414,7 +435,9 @@
   article.item{
     background:var(--card);border:1px solid var(--line);border-radius:10px;
     padding:20px 22px;margin-bottom:14px;box-shadow:0 1px 3px rgba(14,95,168,.05);
+    transition:box-shadow .18s,border-color .18s;
   }
+  article.item:hover{border-color:#BFD3E6;box-shadow:0 4px 14px rgba(14,95,168,.1);}
   article.item h3{font-family:'Noto Serif KR',serif;font-size:18px;font-weight:600;line-height:1.5;margin-bottom:8px;}
   article.item p{font-size:15px;color:#3B4756;}
   article.item a.src{font-size:13.5px;color:var(--gwanak);}
@@ -495,13 +518,38 @@
 <body>
 
 <div class="header-band">
+  <div class="hero-deco" aria-hidden="true">
+    <svg viewBox="0 0 440 260" preserveAspectRatio="xMaxYMid slice">
+      <g stroke="rgba(255,255,255,.22)" stroke-width="1" fill="none">
+        <line x1="60" y1="48" x2="158" y2="96"/><line x1="158" y1="96" x2="252" y2="36"/>
+        <line x1="252" y1="36" x2="338" y2="112"/><line x1="158" y1="96" x2="128" y2="186"/>
+        <line x1="128" y1="186" x2="266" y2="176"/><line x1="266" y1="176" x2="338" y2="112"/>
+        <line x1="338" y1="112" x2="384" y2="54"/><line x1="266" y1="176" x2="396" y2="212"/>
+        <line x1="158" y1="96" x2="210" y2="128"/><line x1="210" y1="128" x2="266" y2="176"/>
+        <line x1="210" y1="128" x2="338" y2="112"/><line x1="60" y1="48" x2="128" y2="186"/>
+      </g>
+      <g fill="rgba(255,255,255,.85)">
+        <circle cx="60" cy="48" r="3"/><circle cx="252" cy="36" r="2.5"/>
+        <circle cx="338" cy="112" r="3.5"/><circle cx="128" cy="186" r="2.5"/>
+        <circle cx="266" cy="176" r="3"/><circle cx="384" cy="54" r="2"/>
+        <circle cx="396" cy="212" r="2.5"/><circle cx="210" cy="128" r="2"/>
+      </g>
+      <circle cx="158" cy="96" r="5" fill="#F5C64F"/>
+      <circle cx="158" cy="96" r="10" fill="none" stroke="rgba(245,198,79,.45)" stroke-width="1.5"/>
+      <circle cx="338" cy="112" r="16" fill="none" stroke="rgba(255,255,255,.18)" stroke-width="1"/>
+    </svg>
+  </div>
   <header>
     <div class="masthead">
       <div class="seal" aria-hidden="true">지식<br>공유</div>
       <div class="masthead-text">
         <div class="eyebrow">GWANAK-GU · AI POLICY</div>
         <h1>관악구 AI혁신정책연구단 지식 플랫폼</h1>
-        <p class="tagline">관악의 내일을 여는 AI 정책 인사이트 — 매일 아침, 정책의 흐름을 함께 읽습니다.</p>
+        <p class="tagline">AI혁신으로 모두가 행복한 <strong>더불어 으뜸 관악구</strong> — AI혁신정책연구단이 선도합니다.</p>
+        <div class="hero-chips">
+          <span class="chip chip-youth">대한민국 청년수도, 관악</span>
+          <span class="chip chip-ai">✦ AI INNOVATION</span>
+        </div>
       </div>
     </div>
   </header>
@@ -1478,7 +1526,10 @@
       return;
     }
     resourcesView.innerHTML =
-      '<button type="button" class="write-toggle" id="res-write-toggle" aria-expanded="false">✏️ 새 자료 올리기</button>'
+      '<div class="list-toolbar">'
+      + '<input type="search" class="filter-input" id="res-filter" placeholder="🔎 자료 검색 — 제목·링크·코멘트·작성자">'
+      + '<button type="button" class="write-toggle" id="res-write-toggle" aria-expanded="false">✏️ 새 자료 올리기</button>'
+      + '</div>'
       + '<p class="form-ok" id="post-ok" role="status"></p>'
       + '<div class="form-wrap" id="res-form-wrap"><div class="post-form">'
       + '<div class="res-type" role="group" aria-label="자료 유형 선택">'
@@ -1496,7 +1547,6 @@
       + '<button type="submit" class="btn-primary" id="post-submit">등록하기</button>'
       + '<p class="form-error" id="post-error" role="alert"></p>'
       + '</form></div></div>'
-      + '<input type="search" class="filter-input" id="res-filter" placeholder="🔎 자료 검색 — 제목·링크·코멘트·작성자">'
       + '<div id="post-list"><p class="status">자료를 불러오는 중입니다…</p></div>';
     document.getElementById("post-form").addEventListener("submit", submitPost);
     document.getElementById("res-filter").addEventListener("input", paintPosts);
@@ -1519,7 +1569,7 @@
     wrap.classList.toggle("open", isOpen);
     btn.classList.toggle("open", isOpen);
     btn.setAttribute("aria-expanded", isOpen ? "true" : "false");
-    btn.textContent = isOpen ? "▴ 글쓰기 접기" : "✏️ 새 자료 올리기";
+    btn.textContent = isOpen ? "✕ 닫기" : "✏️ 새 자료 올리기";
     if (isOpen) document.getElementById("post-title").focus();
   }
 
@@ -2060,7 +2110,10 @@
       return;
     }
     boardRoot.innerHTML =
-      '<button type="button" class="write-toggle" id="fp-write-toggle" aria-expanded="false">✏️ 새 글 쓰기</button>'
+      '<div class="list-toolbar">'
+      + '<input type="search" class="filter-input" id="fp-filter" placeholder="🔎 글 검색 — 제목·내용·작성자">'
+      + '<button type="button" class="write-toggle" id="fp-write-toggle" aria-expanded="false">✏️ 새 글 쓰기</button>'
+      + '</div>'
       + '<p class="form-ok" id="fp-ok" role="status"></p>'
       + '<div class="form-wrap" id="fp-form-wrap"><div class="post-form"><form id="fp-form">'
       + '<div class="field"><label for="fp-title">제목 <span style="color:#A33;">*</span></label>'
@@ -2071,7 +2124,6 @@
       + '<label class="checkbox-row"><input type="checkbox" id="fp-pin"> 공지로 상단 고정</label>'
       + '<button type="submit" class="btn-primary" id="fp-submit">등록하기</button>'
       + '<p class="form-error" id="fp-error" role="alert"></p></form></div></div>'
-      + '<input type="search" class="filter-input" id="fp-filter" placeholder="🔎 글 검색 — 제목·내용·작성자">'
       + '<div id="fp-list"><p class="status">글을 불러오는 중입니다…</p></div>';
     document.getElementById("fp-form").addEventListener("submit", submitFreePost);
     document.getElementById("fp-filter").addEventListener("input", paintBoard);
@@ -2087,7 +2139,7 @@
     wrap.classList.toggle("open", isOpen);
     btn.classList.toggle("open", isOpen);
     btn.setAttribute("aria-expanded", isOpen ? "true" : "false");
-    btn.textContent = isOpen ? "▴ 글쓰기 접기" : "✏️ 새 글 쓰기";
+    btn.textContent = isOpen ? "✕ 닫기" : "✏️ 새 글 쓰기";
     if (isOpen) document.getElementById("fp-title").focus();
   }
 
