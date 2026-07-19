@@ -38,23 +38,18 @@
   .hero-deco svg{position:absolute;right:0;top:0;height:100%;width:min(48%,440px);opacity:.55;}
   @media(max-width:640px){.hero-deco svg{width:70%;opacity:.3;}}
   header{position:relative;z-index:1;padding:38px 24px 30px;max-width:920px;margin:0 auto;}
-  .hero-chips{margin-top:14px;display:flex;gap:8px;flex-wrap:wrap;}
-  .chip{font-size:12.5px;font-weight:700;letter-spacing:.02em;border-radius:999px;padding:5px 15px;line-height:1.5;word-break:keep-all;}
-  .chip-brand{background:#fff;padding:6px 13px;display:inline-flex;align-items:center;border-radius:13px;
-    box-shadow:0 2px 8px rgba(0,0,0,.16);}
-  .chip-brand img{height:40px;width:auto;display:block;}
-  .chip-ai{background:rgba(255,255,255,.13);color:#fff;border:1px solid rgba(255,255,255,.4);display:inline-flex;align-items:center;}
-  .masthead{display:flex;align-items:flex-start;gap:18px;}
-  .seal{
-    flex:none;width:54px;height:54px;
-    border:2.5px solid #BE3A2B;color:#BE3A2B;
-    display:flex;align-items:center;justify-content:center;
-    font-family:'Noto Serif KR',serif;font-weight:700;font-size:19px;
-    line-height:1.15;text-align:center;border-radius:6px;transform:rotate(-3deg);
-    letter-spacing:1px;user-select:none;background:#FAF6EE;
-    box-shadow:0 2px 6px rgba(0,0,0,.18);
+  .masthead{display:flex;align-items:center;gap:18px;}
+  .logo-mark{
+    position:relative;flex:none;width:58px;height:58px;border-radius:17px;
+    background:linear-gradient(145deg,rgba(255,255,255,.22),rgba(255,255,255,.06));
+    border:1px solid rgba(255,255,255,.4);
+    display:flex;align-items:center;justify-content:center;user-select:none;
+    box-shadow:0 8px 22px rgba(0,0,0,.22), inset 0 1px 0 rgba(255,255,255,.35);
+    backdrop-filter:blur(2px);
   }
-  .masthead-text .eyebrow{font-size:12.5px;letter-spacing:.35em;color:rgba(255,255,255,.75);text-transform:uppercase;margin-bottom:5px;}
+  .lm-ai{font-weight:800;font-size:23px;color:#fff;letter-spacing:.5px;line-height:1;}
+  .lm-spark{position:absolute;top:5px;right:7px;font-size:12px;color:#F5C64F;line-height:1;text-shadow:0 0 8px rgba(245,198,79,.8);}
+  .masthead-text .eyebrow{font-size:11.5px;letter-spacing:.18em;color:rgba(255,255,255,.78);text-transform:uppercase;margin-bottom:5px;}
   .masthead-text h1{font-family:'Noto Serif KR',serif;font-size:clamp(24px,4.5vw,34px);font-weight:700;color:#fff;}
   .masthead-text .tagline{margin-top:7px;color:rgba(255,255,255,.88);font-size:14.5px;word-break:keep-all;}
   .masthead-text .tagline strong{color:#FFE9A8;font-weight:700;}
@@ -501,7 +496,7 @@
   .contact .tel{font-weight:700;color:var(--gwanak);}
   footer{border-top:1px solid var(--line);background:var(--card);}
   .footer-inner{max-width:920px;margin:0 auto;padding:24px;font-size:13px;color:var(--muted);line-height:1.9;}
-  .footer-ci{height:34px;width:auto;display:block;margin-bottom:12px;}
+  .footer-brand{height:46px;width:auto;display:block;margin-bottom:12px;}
   @media(max-width:560px){
     header{padding:28px 18px 22px;}
     main{padding:24px 18px 60px;}
@@ -544,15 +539,11 @@
   </div>
   <header>
     <div class="masthead">
-      <div class="seal" aria-hidden="true">지식<br>공유</div>
+      <div class="logo-mark" aria-hidden="true"><span class="lm-ai">AI</span><span class="lm-spark">✦</span></div>
       <div class="masthead-text">
-        <div class="eyebrow">GWANAK-GU · AI POLICY</div>
+        <div class="eyebrow">Gwanak-gu AI Innovation and Policy Team</div>
         <h1>관악구 AI혁신정책연구단 지식 플랫폼</h1>
         <p class="tagline">AI혁신으로 모두가 행복한 <strong>더불어 으뜸 관악구</strong> — AI혁신정책연구단이 선도합니다.</p>
-        <div class="hero-chips">
-          <span class="chip chip-brand"><img src="/brand-youth.png" alt="대한민국 청년수도 관악" width="96" height="40"></span>
-          <span class="chip chip-ai">✦ AI INNOVATION</span>
-        </div>
       </div>
     </div>
   </header>
@@ -840,7 +831,7 @@
 
 <footer>
   <div class="footer-inner">
-    <img class="footer-ci" src="/ci-gwanak.png" alt="관악구" width="129" height="34">
+    <img class="footer-brand" src="/brand-youth.png" alt="대한민국 청년수도 관악" width="110" height="46">
     이 사이트는 관악구 AI혁신정책연구단의 지식 관리를 위한 플랫폼으로서 서울특별시 관악구의 공식 견해와 다를 수 있습니다.<br>
     (08832) 서울특별시 관악구 관악로 145, 관악구청 2층 · TEL 02-879-7424<br>
     © 2026 관악구 AI혁신정책연구단 지식 플랫폼
