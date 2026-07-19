@@ -26,7 +26,8 @@
   }
   *{margin:0;padding:0;box-sizing:border-box;}
   html{scroll-behavior:smooth;}
-  body{background:var(--bg);color:var(--ink);font-family:'Noto Sans KR',sans-serif;line-height:1.7;font-size:16px;}
+  body{background:var(--bg);color:var(--ink);font-family:'Noto Sans KR',sans-serif;line-height:1.7;font-size:16px;
+    -webkit-text-size-adjust:100%;text-size-adjust:100%;}
   .serif{font-family:'Noto Serif KR',serif;}
   .header-band{position:relative;overflow:hidden;color:#fff;
     background:linear-gradient(135deg,var(--gwanak-deep) 0%,var(--gwanak) 55%,var(--sky) 100%);}
@@ -272,11 +273,10 @@
     .cal-wcol .wc-head{flex:none;width:72px;border-bottom:none;border-right:1px solid var(--line);
       display:flex;flex-direction:column;justify-content:center;gap:0;}
     .cal-wcol .wc-body{flex:1;min-width:0;justify-content:center;}
-    .cal-day{min-height:56px;padding:4px 3px 5px;}
-    /* 갤럭시 등 최소 글자 크기 강제 브라우저에서도 텍스트가 폭·높이에 영향을 주지 않게
-       font-size:0 대신 text-indent로 밀어내고 max-width로 셀 안에 가둔다 */
-    .cal-ev{height:6px;padding:0;margin-top:3px;border-radius:3px;max-width:100%;
-      text-indent:-500px;overflow:hidden;line-height:6px;}
+    .cal-day{min-height:70px;padding:4px 2px 5px;}
+    /* 좁은 셀에서도 일정 제목 앞 글자가 보이게 — max-width·overflow로 셀 밖 넘침은 차단 */
+    .cal-ev{font-size:9.5px;line-height:1.6;padding:1px 3px;margin-top:2px;border-radius:3px;
+      max-width:100%;overflow:hidden;white-space:nowrap;}
     .cal-more{font-size:9.5px;margin-top:2px;padding-left:2px;}
     .cal-weekdays div{padding:6px 0;font-size:11px;}
     .cal-day .dnum{font-size:11.5px;}
@@ -1956,7 +1956,7 @@
     return '<div class="cal-month"><div class="cal-weekdays">'
       + WEEKDAYS.map((w,i) => '<div class="' + (i===0?'sun':i===6?'sat':'') + '">' + w + '</div>').join("")
       + '</div><div class="cal-days">' + cells + '</div></div>'
-      + '<p class="cal-mobile-hint">일정은 색 막대로 표시됩니다 — 날짜를 누르면 그날의 상세 일정이 열립니다.'
+      + '<p class="cal-mobile-hint">날짜를 누르면 그날의 상세 일정이 열립니다.'
       + ' <span class="ev-dot" style="background:#0E5FA8"></span>회의'
       + ' <span class="ev-dot" style="background:#1E8E5A"></span>출장'
       + ' <span class="ev-dot" style="background:#C7791A"></span>연가'
