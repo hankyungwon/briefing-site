@@ -74,12 +74,17 @@
   .modal-backdrop{
     position:fixed;inset:0;background:rgba(28,43,58,.45);z-index:50;
     display:none;align-items:flex-start;justify-content:center;padding:24px;
+    overflow-y:auto;-webkit-overflow-scrolling:touch;
   }
   .modal-backdrop.open{display:flex;}
   .modal{
     background:var(--card);border:1px solid var(--line);border-radius:10px;
     box-shadow:0 8px 30px rgba(14,95,168,.25);width:100%;max-width:380px;
-    margin-top:10vh;padding:26px 26px 24px;
+    margin:10vh auto 40px;padding:26px 26px 24px;
+  }
+  @media(max-width:560px){
+    .modal-backdrop{padding:12px;}
+    .modal{margin:12px auto 24px;padding:20px 18px 18px;}
   }
   .modal h3{font-family:'Noto Serif KR',serif;font-size:19px;color:var(--gwanak-deep);margin-bottom:4px;}
   .modal .modal-sub{font-size:13.5px;color:var(--muted);margin-bottom:16px;}
@@ -113,6 +118,7 @@
     font-family:'Noto Serif KR',serif;font-size:17px;font-weight:600;color:var(--gwanak-deep);
     margin-bottom:14px;padding-bottom:10px;border-bottom:1px solid var(--line);
   }
+  .post-form .btn-primary{display:block;width:100%;padding:13px 0;font-size:16px;margin-top:6px;}
   .post-meta{margin-top:12px;display:flex;gap:12px;flex-wrap:wrap;align-items:baseline;font-size:13px;color:var(--muted);}
   .post-meta .author{font-weight:700;color:var(--slate);}
   .post-del{
@@ -706,7 +712,7 @@
 
 <footer>
   <div class="footer-inner">
-    본 사이트의 브리핑은 AI가 언론보도·공개자료를 바탕으로 자동 생성한 내부 참고자료로, 관악구청의 공식 입장이 아닙니다.<br>
+    이 사이트는 관악구 AI혁신정책연구단의 지식 관리를 위한 플랫폼으로서 서울특별시 관악구의 공식 견해와 다를 수 있습니다.<br>
     (08832) 서울특별시 관악구 관악로 145, 관악구청 2층 · TEL 02-879-7424<br>
     © 2026 관악구 AI혁신정책연구단 지식 플랫폼
   </div>
@@ -1261,7 +1267,7 @@
       + '<div class="field"><label for="post-comment">코멘트 (선택)</label>'
       + '<textarea id="post-comment" placeholder="자료에 대한 짧은 소개나 의견을 남겨 주세요."></textarea></div>'
       + fileFieldHtml("post-file")
-      + '<button type="submit" class="btn-primary" id="post-submit">올리기</button>'
+      + '<button type="submit" class="btn-primary" id="post-submit">등록하기</button>'
       + '<p class="form-error" id="post-error" role="alert"></p>'
       + '</form></div>'
       + '<input type="search" class="filter-input" id="res-filter" placeholder="🔎 자료 검색 — 제목·링크·코멘트·작성자">'
@@ -1707,7 +1713,7 @@
       + '<textarea id="fp-body" style="min-height:96px;" placeholder="자유롭게 이야기를 남겨 주세요."></textarea></div>'
       + fileFieldHtml("fp-file")
       + '<label class="checkbox-row"><input type="checkbox" id="fp-pin"> 공지로 상단 고정</label>'
-      + '<button type="submit" class="btn-primary" id="fp-submit">올리기</button>'
+      + '<button type="submit" class="btn-primary" id="fp-submit">등록하기</button>'
       + '<p class="form-error" id="fp-error" role="alert"></p></form></div>'
       + '<input type="search" class="filter-input" id="fp-filter" placeholder="🔎 글 검색 — 제목·내용·작성자">'
       + '<div id="fp-list"><p class="status">글을 불러오는 중입니다…</p></div>';
