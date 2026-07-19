@@ -47,8 +47,8 @@
     box-shadow:0 8px 22px rgba(0,0,0,.22), inset 0 1px 0 rgba(255,255,255,.35);
     backdrop-filter:blur(2px);
   }
-  .lm-ai{font-weight:800;font-size:23px;color:#fff;letter-spacing:.5px;line-height:1;}
-  .lm-spark{position:absolute;top:5px;right:7px;font-size:12px;color:#F5C64F;line-height:1;text-shadow:0 0 8px rgba(245,198,79,.8);}
+  .lm-g{width:42px;height:42px;display:block;}
+  .lm-spark{position:absolute;top:4px;right:6px;font-size:11px;color:#F5C64F;line-height:1;text-shadow:0 0 8px rgba(245,198,79,.8);}
   .masthead-text .eyebrow{font-size:11.5px;letter-spacing:.18em;color:rgba(255,255,255,.78);text-transform:uppercase;margin-bottom:5px;}
   .masthead-text h1{font-family:'Noto Serif KR',serif;font-size:clamp(24px,4.5vw,34px);font-weight:700;color:#fff;}
   .masthead-text .tagline{margin-top:7px;color:rgba(255,255,255,.88);font-size:14.5px;word-break:keep-all;}
@@ -67,6 +67,12 @@
   nav button:hover{color:var(--gwanak);}
   nav button:focus-visible{outline:2px solid var(--gwanak);outline-offset:-2px;}
   nav button[aria-selected="true"]{color:var(--gwanak-deep);font-weight:700;border-bottom-color:var(--gwanak);}
+  /* 모바일 메뉴: 가로 스크롤 없이 3×2 격자로 전부 보이게 */
+  @media(max-width:640px){
+    nav{flex-wrap:wrap;padding:0 10px;}
+    nav button{flex:1 1 30%;padding:11px 2px 9px;font-size:13.5px;}
+    .nav-auth{width:100%;justify-content:flex-end;margin-left:0;padding:7px 4px 9px;border-top:1px solid var(--line);}
+  }
   .nav-auth{margin-left:auto;align-self:center;display:flex;align-items:center;gap:10px;min-width:0;padding-left:12px;}
   .auth-email{font-size:13px;color:var(--muted);max-width:160px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
   .auth-btn{
@@ -139,6 +145,9 @@
     border-radius:8px;padding:11px 14px;font-size:14px;font-weight:600;}
   .form-ok.show{display:block;}
   .kind-tag{display:inline-block;font-size:11.5px;font-weight:700;border-radius:5px;padding:2px 8px;margin-bottom:7px;}
+  .post-no{display:inline-block;font-size:11px;font-weight:700;color:var(--muted);border:1px solid var(--line);
+    border-radius:5px;padding:2px 7px;margin:0 0 7px 6px;letter-spacing:.02em;}
+  .post-no:first-child{margin-left:0;}
   .kind-tag.file{background:#EEF3F9;color:var(--gwanak-deep);border:1px solid #CFE0F0;}
   .kind-tag.link{background:#EAF6F5;color:#0F6D66;border:1px solid #C3E4E1;}
   .kind-tag.note{background:#F6F1E7;color:#7A6420;border:1px solid #E7DCC0;}
@@ -252,6 +261,20 @@
   .cal-devt .dmeta{font-size:13px;color:var(--muted);display:flex;gap:8px;flex-wrap:wrap;align-items:center;}
   .cal-devt .dmemo{font-size:13.5px;color:#3B4756;margin-top:7px;white-space:pre-wrap;line-height:1.6;}
   .type-tag{font-size:11.5px;font-weight:700;color:#fff;border-radius:5px;padding:2px 8px;}
+  /* 모바일 달력: 셀을 간결하게 — 일정은 색 막대로 표시, 날짜를 누르면 일별 상세로 이동 */
+  @media(max-width:640px){
+    .cal-day{min-height:56px;padding:4px 3px 5px;}
+    .cal-ev{height:6px;padding:0;margin-top:3px;font-size:0;color:transparent;border-radius:3px;}
+    .cal-more{font-size:9.5px;margin-top:2px;padding-left:2px;}
+    .cal-weekdays div{padding:6px 0;font-size:11px;}
+    .cal-day .dnum{font-size:11.5px;}
+    .cal-day.today .dnum{width:18px;height:18px;line-height:18px;font-size:11px;}
+    .cal-title{font-size:16px;}
+    .cal-toolbar{gap:6px;}
+    .cal-btn{padding:6px 9px;font-size:12.5px;}
+    .cal-views button{padding:5px 9px;font-size:12px;}
+    .cal-add{padding:7px 12px;font-size:13px;}
+  }
   /* ── 자유게시판 ── */
   .board-card{background:var(--card);border:1px solid var(--line);border-radius:16px;
     padding:20px 22px 18px;margin-bottom:14px;box-shadow:0 2px 10px rgba(14,95,168,.05);
@@ -539,7 +562,13 @@
   </div>
   <header>
     <div class="masthead">
-      <div class="logo-mark" aria-hidden="true"><span class="lm-ai">AI</span><span class="lm-spark">✦</span></div>
+      <div class="logo-mark" aria-hidden="true">
+        <svg class="lm-g" viewBox="0 0 64 64">
+          <path d="M45.5 14.7 A22 22 0 1 0 52.7 39.5 L37 39.5" fill="none" stroke="#fff" stroke-width="6.5" stroke-linecap="round"/>
+          <text x="31" y="38" text-anchor="middle" font-size="15" font-weight="800" fill="#F5C64F" font-family="'Noto Sans KR',sans-serif">AI</text>
+        </svg>
+        <span class="lm-spark">✦</span>
+      </div>
       <div class="masthead-text">
         <div class="eyebrow">Gwanak-gu AI Innovation and Policy Team</div>
         <h1>관악구 AI혁신정책연구단 지식 플랫폼</h1>
@@ -832,9 +861,8 @@
 <footer>
   <div class="footer-inner">
     <img class="footer-brand" src="/brand-youth.png" alt="대한민국 청년수도 관악" width="110" height="46">
-    이 사이트는 관악구 AI혁신정책연구단의 지식 관리를 위한 플랫폼으로서 서울특별시 관악구의 공식 견해와 다를 수 있습니다.<br>
-    (08832) 서울특별시 관악구 관악로 145, 관악구청 2층 · TEL 02-879-7424<br>
-    © 2026 관악구 AI혁신정책연구단 지식 플랫폼
+    <div>이 사이트는 관악구 AI혁신정책연구단의 지식 관리를 위한 플랫폼으로서 서울특별시 관악구의 공식 견해와 다를 수 있습니다.</div>
+    <div>(08832) 서울특별시 관악구 관악로 145, 관악구청 2층 · TEL 02-879-7424 · © 2026 관악구 AI혁신정책연구단 지식 플랫폼</div>
   </div>
 </footer>
 
@@ -1648,6 +1676,7 @@
       const kind = hasFile ? ['file', '📎 파일'] : (p.url ? ['link', '🔗 링크'] : ['note', '📝 메모']);
       let html = '<article class="item post" data-post="' + p.id + '">'
         + '<span class="kind-tag ' + kind[0] + '">' + kind[1] + '</span>'
+        + '<span class="post-no">No.' + p.id + '</span>'
         + '<h3>' + esc(p.title) + '</h3>';
       if (p.url) {
         html += '<p style="margin-top:2px;"><a class="src" href="' + esc(linkHref(p.url)) + '" target="_blank" rel="noopener">' + esc(p.url) + '</a></p>';
@@ -2173,6 +2202,7 @@
     const mine = p.author_id === currentUser.id;
     let h = '<article class="board-card' + (p.pinned?' pinned':'') + '" data-post="' + p.id + '">';
     if (p.pinned) h += '<span class="pin-badge">📌 공지</span>';
+    h += '<span class="post-no">No.' + p.id + '</span>';
     h += '<h3>' + esc(p.title) + '</h3>';
     if (p.body) h += '<div class="body">' + esc(p.body) + '</div>';
     h += renderAttachments(boardAtts[p.id]);
