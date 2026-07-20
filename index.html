@@ -515,7 +515,9 @@
     font-size:13px;color:var(--slate);line-height:1.6;word-break:keep-all;}
   .head-message{margin-top:14px;padding-top:13px;border-top:1px solid var(--line);
     display:flex;flex-direction:column;gap:11px;}
-  .head-message p{font-family:'Gowun Batang',serif;font-size:14.5px;color:#3B4756;line-height:1.85;word-break:keep-all;}
+  .head-message p{font-family:'Gowun Batang',serif;font-size:15px;color:var(--ink);line-height:1.85;word-break:keep-all;}
+  /* 단장 카드의 소개글·이력은 흐린 회색 대신 진한 잉크색으로 — 가독성 확보 */
+  .member.head > p{color:var(--ink);}
   .head-cheer{color:var(--gwanak-deep);font-weight:700;}
   .head-cheer strong{color:var(--gwanak);font-weight:700;}
   /* 연구단 소개: 한글이 단어 단위로 줄바꿈되도록 (한 글자만 다음 줄로 넘어가는 것 방지) */
