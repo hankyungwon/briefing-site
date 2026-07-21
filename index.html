@@ -638,12 +638,23 @@
   .cd-row:last-child{margin-bottom:0;}
   .cd-label{flex:none;width:66px;font-size:12px;font-weight:800;color:var(--gold);padding-top:2px;}
   .cd-text{flex:1;min-width:0;font-size:13.5px;color:var(--ink);line-height:1.6;white-space:pre-wrap;word-break:keep-all;}
+  /* 주간회의 자료실 — 목록·문서(작은 글씨·좁은 줄간격) */
+  .pk-row{display:flex;align-items:center;gap:10px;justify-content:space-between;border:1px solid var(--line);
+    border-radius:9px;padding:9px 12px;margin-bottom:8px;}
+  .pk-info{display:flex;align-items:baseline;gap:9px;min-width:0;flex-wrap:wrap;}
+  .pk-date{font-size:12px;font-weight:800;color:var(--gwanak);flex:none;}
+  .pk-title{font-size:13.5px;color:var(--ink);font-weight:600;word-break:keep-all;}
+  .pk-acts{display:flex;gap:6px;flex:none;}
+  .packet-doc{max-height:72vh;overflow-y:auto;padding:6px 4px;}
+  .packet-body{font-family:'Noto Sans KR',sans-serif;font-size:12px;line-height:1.4;color:var(--ink);
+    white-space:pre-wrap;word-break:keep-all;}
   @media print {
+    .packet-body{font-size:11px;line-height:1.35;}
     body * { visibility: hidden; }
-    #compile-modal.open, #compile-modal.open * { visibility: visible; }
-    #compile-modal.open { position: absolute; inset: 0; display: block; background: #fff; padding: 0; overflow: visible; }
-    #compile-modal.open .modal { position: static; box-shadow: none; border: none; max-width: none; width: 100%; margin: 0; padding: 0; max-height: none; }
-    #compile-modal.open .compile-doc { max-height: none; overflow: visible; }
+    #packet-modal.open #packet-doc-view:not([hidden]), #packet-modal.open #packet-doc-view:not([hidden]) * { visibility: visible; }
+    #packet-modal.open { position: absolute; inset: 0; display: block; background: #fff; padding: 0; overflow: visible; }
+    #packet-modal.open .modal { position: static; box-shadow: none; border: none; max-width: none; width: 100%; margin: 0; padding: 0; max-height: none; }
+    #packet-modal.open .packet-doc { max-height: none; overflow: visible; }
     .no-print { display: none !important; }
   }
   .wb-sec{margin-bottom:11px;}
@@ -802,7 +813,7 @@
     <p class="about-body">
       서울특별시 관악구는 인공지능 대전환 추세를 반영하여 AI혁신을 지원하고, 관악구 현실에 적합한 정책을
       연구·개발하기 위해 민선 9기 구청장 공약에 따라 AI혁신정책연구단을 설치해 운영 중입니다.
-      연구단은 관악구 지역 특성에 기반한 창의적이고 혁신적 정책 연구를 충실히 수행하고 있습니다.
+      본 연구단은 AI 으뜸 관악구를 실현하기 위해 지식 관리와 변화 관리에 힘쓰고 있습니다.
     </p>
     <p class="work-info" id="about-workinfo" hidden>💡 매주 월요일 아침 지난주 실적과 이번주 계획을 기록합니다. 매주 초 작성된 자료는 연구단 주간회의 자료로 취합됩니다.</p>
     <div class="team-grid">
@@ -1037,16 +1048,44 @@
   </div>
 </div>
 
-<div class="modal-backdrop" id="compile-modal">
-  <div class="modal compile-modal" role="dialog" aria-modal="true" aria-labelledby="compile-title">
-    <div class="compile-bar no-print">
-      <h3 id="compile-title">주간회의 자료</h3>
-      <div style="display:flex;gap:8px;">
-        <button type="button" class="btn-primary" id="compile-print">🖨 인쇄</button>
-        <button type="button" class="auth-btn" id="compile-cancel">닫기</button>
+<div class="modal-backdrop" id="packet-modal">
+  <div class="modal compile-modal" role="dialog" aria-modal="true" aria-labelledby="packet-title">
+    <!-- 목록 뷰 -->
+    <div id="packet-list-view">
+      <div class="compile-bar no-print">
+        <h3 id="packet-title">주간회의 자료실</h3>
+        <div style="display:flex;gap:8px;">
+          <button type="button" class="btn-primary" id="packet-new" hidden>📋 이번 주 자료 취합</button>
+          <button type="button" class="auth-btn" id="packet-close">닫기</button>
+        </div>
       </div>
+      <p class="modal-sub" id="packet-sub">주간회의 자료를 취합·보관합니다.</p>
+      <div id="packet-list" style="max-height:66vh;overflow-y:auto;"></div>
     </div>
-    <div id="compile-doc" class="compile-doc"></div>
+    <!-- 보기·인쇄 뷰 -->
+    <div id="packet-doc-view" hidden>
+      <div class="compile-bar no-print">
+        <button type="button" class="auth-btn" id="packet-back">← 목록</button>
+        <button type="button" class="btn-primary" id="packet-print">🖨 인쇄</button>
+      </div>
+      <div id="packet-doc" class="packet-doc"></div>
+    </div>
+    <!-- 수정 뷰 -->
+    <div id="packet-edit-view" hidden>
+      <div class="compile-bar no-print"><h3 id="packet-edit-heading">자료 수정</h3></div>
+      <input type="hidden" id="packet-edit-id">
+      <div style="display:flex;gap:12px;">
+        <div class="field" style="flex:2;"><label for="packet-edit-name">제목</label>
+          <input id="packet-edit-name" type="text" maxlength="120"></div>
+        <div class="field" style="flex:1;"><label for="packet-edit-date">날짜</label>
+          <input id="packet-edit-date" type="date"></div>
+      </div>
+      <div class="field"><label for="packet-edit-content">내용</label>
+        <textarea id="packet-edit-content" style="min-height:320px;font-size:12.5px;line-height:1.45;"></textarea></div>
+      <button type="button" class="btn-primary" id="packet-save">저장</button>
+      <button type="button" class="auth-btn" id="packet-edit-cancel" style="margin-left:8px;">취소</button>
+      <p class="form-error" id="packet-error" role="alert"></p>
+    </div>
   </div>
 </div>
 
@@ -2569,34 +2608,120 @@
   document.getElementById("modlog-cancel").addEventListener("click", () => document.getElementById("modlog-modal").classList.remove("open"));
   document.getElementById("modlog-modal").addEventListener("click", e => { if (e.target.id === "modlog-modal") e.currentTarget.classList.remove("open"); });
 
-  // 주간회의 자료 취합 — 각 단원의 최신 주간기록을 하나의 문서로 모아 표출·인쇄
-  const compileModal = document.getElementById("compile-modal");
-  async function openCompile() {
-    const doc = document.getElementById("compile-doc");
-    doc.innerHTML = '<p class="status">자료를 취합하는 중…</p>';
-    compileModal.classList.add("open");
-    const { data, error } = await sb.from("staff_notes").select("*").order("week_start", { ascending: false });
-    if (error) { doc.innerHTML = '<p class="status error">취합하지 못했습니다. (' + esc(error.message) + ')</p>'; return; }
-    const latestByEmail = {};
-    (data || []).forEach(n => { const cur = latestByEmail[n.member_email]; if (!cur || n.week_start > cur.week_start) latestByEmail[n.member_email] = n; }); // 각 단원의 가장 최근 주
-    const now = new Date();
-    const stamp = now.getFullYear() + "." + (now.getMonth() + 1) + "." + now.getDate() + "(" + WEEKDAYS[now.getDay()] + ") " + pad2(now.getHours()) + ":" + pad2(now.getMinutes());
-    let h = '<div class="cd-head"><div class="cd-title">관악구 AI혁신정책연구단 · 주간회의 자료</div>'
-      + '<div class="cd-when">취합 ' + stamp + '</div></div>';
+  // ── 주간회의 자료실 — 취합본을 축적·열람·인쇄 (취합·수정·삭제는 관리자·단장·송프로) ──
+  const packetModal = document.getElementById("packet-modal");
+  let packetCache = [];
+  function packetCanManage() {
+    return isAdminUser || !!(currentUser && (currentUser.email || "").toLowerCase() === MEMBER_EMAILS.song);
+  }
+  function packetView(name) {
+    ["list", "doc", "edit"].forEach(v => { document.getElementById("packet-" + v + "-view").hidden = (v !== name); });
+  }
+  // 각 단원의 최신 주간기록을 하나의 텍스트 문서로 취합
+  function buildPacketContent(latestByEmail, stamp) {
+    let t = "관악구 AI혁신정책연구단 · 주간회의 자료\n취합 " + stamp + "\n";
     MEMBERS.forEach((m, i) => {
       const n = latestByEmail[m.email];
-      h += '<div class="cd-member"><div class="cd-mhead"><span class="cd-mno">' + (i + 1) + '</span>'
-        + '<span class="cd-mname">' + esc(m.name) + '</span><span class="cd-mrole">' + esc(m.role) + '</span>'
-        + (n ? '<span class="cd-mweek">' + fmtWeekRange(n.week_start) + '</span>' : '<span class="cd-mweek none">미작성</span>') + '</div>'
-        + '<div class="cd-row"><span class="cd-label">지난주 실적</span><div class="cd-text">' + (n && n.last_week ? esc(n.last_week) : "—") + '</div></div>'
-        + '<div class="cd-row"><span class="cd-label">이번주 계획</span><div class="cd-text">' + (n && n.this_week ? esc(n.this_week) : "—") + '</div></div>'
-        + '</div>';
+      t += "\n[" + (i + 1) + "] " + m.name + " · " + m.role + "  (" + (n ? fmtWeekRange(n.week_start) : "미작성") + ")\n";
+      t += "· 지난주 실적: " + (n && n.last_week ? n.last_week : "—") + "\n";
+      t += "· 이번주 계획: " + (n && n.this_week ? n.this_week : "—") + "\n";
     });
-    doc.innerHTML = h;
+    return t;
   }
-  document.getElementById("compile-print").addEventListener("click", () => window.print());
-  document.getElementById("compile-cancel").addEventListener("click", () => compileModal.classList.remove("open"));
-  compileModal.addEventListener("click", e => { if (e.target.id === "compile-modal") e.currentTarget.classList.remove("open"); });
+  async function openPacketRoom() {
+    packetView("list");
+    document.getElementById("packet-new").hidden = !packetCanManage();
+    document.getElementById("packet-sub").textContent = packetCanManage()
+      ? "주간회의 자료를 취합·보관합니다. 취합·수정·삭제는 행정지원 주무관·단장·관리자만 할 수 있습니다."
+      : "축적된 주간회의 자료를 열람·인쇄할 수 있습니다.";
+    packetModal.classList.add("open");
+    await loadPackets();
+  }
+  async function loadPackets() {
+    const list = document.getElementById("packet-list");
+    list.innerHTML = '<p class="status">불러오는 중…</p>';
+    const { data, error } = await sb.from("meeting_packets").select("*").order("packet_date", { ascending: false }).order("id", { ascending: false });
+    if (error) { list.innerHTML = '<p class="status error">불러오지 못했습니다. (' + esc(error.message) + ')</p>'; return; }
+    packetCache = data || [];
+    if (!packetCache.length) { list.innerHTML = '<p class="empty-note">아직 취합된 주간회의 자료가 없습니다.</p>'; return; }
+    const mng = packetCanManage();
+    list.innerHTML = packetCache.map(p =>
+      '<div class="pk-row"><div class="pk-info"><span class="pk-date">' + fmtMDW(p.packet_date) + '</span>'
+      + '<span class="pk-title">' + esc(p.title || "주간회의 자료") + '</span></div>'
+      + '<div class="pk-acts"><button type="button" class="wb-mini" data-pk-view="' + p.id + '">보기·인쇄</button>'
+      + (mng ? '<button type="button" class="wb-mini" data-pk-edit="' + p.id + '">수정</button>'
+             + '<button type="button" class="wb-mini danger" data-pk-del="' + p.id + '">삭제</button>' : '')
+      + '</div></div>').join("");
+  }
+  async function generatePacket() {
+    if (!packetCanManage()) return;
+    const btn = document.getElementById("packet-new"); btn.disabled = true;
+    const { data, error } = await sb.from("staff_notes").select("*").order("week_start", { ascending: false });
+    if (error) { btn.disabled = false; alert("주간기록을 불러오지 못했습니다. (" + error.message + ")"); return; }
+    const latestByEmail = {};
+    (data || []).forEach(n => { const cur = latestByEmail[n.member_email]; if (!cur || n.week_start > cur.week_start) latestByEmail[n.member_email] = n; });
+    const now = new Date();
+    const stamp = now.getFullYear() + "." + (now.getMonth() + 1) + "." + now.getDate() + "(" + WEEKDAYS[now.getDay()] + ") " + pad2(now.getHours()) + ":" + pad2(now.getMinutes());
+    const payload = {
+      packet_date: ymd(stripTime(now)),
+      title: "주간회의 자료 (" + (now.getMonth() + 1) + "." + now.getDate() + ")",
+      content: buildPacketContent(latestByEmail, stamp),
+      created_by: currentUser ? currentUser.email : null, updated_at: new Date().toISOString()
+    };
+    const { error: insErr } = await sb.from("meeting_packets").insert(payload);
+    btn.disabled = false;
+    if (insErr) { alert("취합하지 못했습니다. (" + insErr.message + ")"); return; }
+    await loadPackets();
+  }
+  function showPacketDoc(id) {
+    const p = packetCache.find(x => String(x.id) === String(id));
+    if (!p) return;
+    document.getElementById("packet-doc").innerHTML = '<div class="packet-body">' + esc(p.content || "") + '</div>';
+    packetView("doc");
+  }
+  function showPacketEdit(id) {
+    if (!packetCanManage()) return;
+    const p = packetCache.find(x => String(x.id) === String(id));
+    if (!p) return;
+    document.getElementById("packet-error").classList.remove("show");
+    document.getElementById("packet-edit-id").value = p.id;
+    document.getElementById("packet-edit-name").value = p.title || "";
+    document.getElementById("packet-edit-date").value = p.packet_date;
+    document.getElementById("packet-edit-content").value = p.content || "";
+    packetView("edit");
+  }
+  async function savePacket() {
+    const id = document.getElementById("packet-edit-id").value;
+    const err = document.getElementById("packet-error");
+    const btn = document.getElementById("packet-save"); btn.disabled = true;
+    const { error } = await sb.from("meeting_packets").update({
+      title: document.getElementById("packet-edit-name").value.trim() || null,
+      packet_date: document.getElementById("packet-edit-date").value,
+      content: document.getElementById("packet-edit-content").value,
+      updated_at: new Date().toISOString()
+    }).eq("id", Number(id));
+    btn.disabled = false;
+    if (error) { err.textContent = "저장하지 못했습니다. (" + error.message + ")"; err.classList.add("show"); return; }
+    await loadPackets(); packetView("list");
+  }
+  async function deletePacket(id) {
+    if (!confirm("이 주간회의 자료를 삭제할까요? 되돌릴 수 없습니다.")) return;
+    const { error } = await sb.from("meeting_packets").delete().eq("id", Number(id));
+    if (error) { alert("삭제하지 못했습니다. (" + error.message + ")"); return; }
+    await loadPackets();
+  }
+  document.getElementById("packet-list").addEventListener("click", e => {
+    const v = e.target.closest("[data-pk-view]"); if (v) { showPacketDoc(v.dataset.pkView); return; }
+    const ed = e.target.closest("[data-pk-edit]"); if (ed) { showPacketEdit(ed.dataset.pkEdit); return; }
+    const dl = e.target.closest("[data-pk-del]"); if (dl) { deletePacket(dl.dataset.pkDel); return; }
+  });
+  document.getElementById("packet-new").addEventListener("click", generatePacket);
+  document.getElementById("packet-back").addEventListener("click", () => packetView("list"));
+  document.getElementById("packet-print").addEventListener("click", () => window.print());
+  document.getElementById("packet-save").addEventListener("click", savePacket);
+  document.getElementById("packet-edit-cancel").addEventListener("click", () => packetView("list"));
+  document.getElementById("packet-close").addEventListener("click", () => packetModal.classList.remove("open"));
+  packetModal.addEventListener("click", e => { if (e.target.id === "packet-modal") e.currentTarget.classList.remove("open"); });
 
   function toggleBoardForm(open) {
     const wrap = document.getElementById("fp-form-wrap"), btn = document.getElementById("fp-write-toggle");
@@ -2887,9 +3012,9 @@
         const isOwner = !!email && myEmail === email;
         wb.hidden = false;
         wb.innerHTML = staffBoardHtml(byEmail[email] || [], isOwner, key);
-        // 행정지원 주무관(송프로) 카드: 주간회의 자료 취합 버튼 (본인 또는 관리자)
-        if (key === "song" && (isOwner || isAdminUser)) {
-          wb.innerHTML += '<button type="button" class="wb-btn compile-btn" data-compile="1">🗂 주간회의 자료 취합</button>';
+        // 행정지원 주무관(송프로) 카드: 주간회의 자료실 (열람은 전 직원, 취합·수정·삭제는 송프로·단장·관리자)
+        if (key === "song") {
+          wb.innerHTML += '<button type="button" class="wb-btn compile-btn" data-packets="1">🗂 주간회의 자료실</button>';
         }
       }
     });
@@ -2906,7 +3031,7 @@
     if (md) { deleteMeeting(md.dataset.meetingDel); return; }
     const sd = e.target.closest('[data-staff-del]');
     if (sd) { deleteStaffNote(sd.dataset.staffDel); return; }
-    if (e.target.closest('[data-compile]')) { openCompile(); return; }
+    if (e.target.closest('[data-packets]')) { openPacketRoom(); return; }
   });
   async function deleteStaffNote(id) {
     if (!confirm("이 주간 기록을 삭제할까요? 되돌릴 수 없습니다.")) return;
