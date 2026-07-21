@@ -18,7 +18,7 @@
 <meta property="og:image:width" content="1200">
 <meta property="og:image:height" content="630">
 <meta name="twitter:card" content="summary_large_image">
-<link href="https://fonts.googleapis.com/css2?family=Noto+Serif+KR:wght@400;600;700&family=Noto+Sans+KR:wght@400;500;700&family=Gowun+Batang:wght@400;700&family=Gothic+A1:wght@500;700;800&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Noto+Serif+KR:wght@400;600;700&family=Noto+Sans+KR:wght@400;500;700&family=Gowun+Batang:wght@400;700&family=Gothic+A1:wght@500;700;800&family=Nanum+Pen+Script&display=swap" rel="stylesheet">
 <style>
   :root{
     --bg:#F4F7FB; --card:#FFFFFF; --ink:#1C2B3A;
@@ -451,6 +451,17 @@
   .ab-title{font-size:12px;font-weight:800;letter-spacing:.04em;color:var(--gwanak-deep);margin-bottom:10px;
     display:flex;align-items:center;gap:6px;}
   .ab-title::before{content:"";width:3px;height:13px;background:var(--gold);border-radius:2px;}
+  .ab-cfg{margin-left:auto;border:1px solid var(--line);background:#fff;color:var(--slate);
+    font-family:inherit;font-size:11.5px;font-weight:700;letter-spacing:0;padding:4px 10px;border-radius:999px;
+    cursor:pointer;white-space:nowrap;line-height:1;transition:background .15s,border-color .15s;}
+  .ab-cfg:hover{background:#F1F6FC;border-color:var(--gwanak);color:var(--gwanak-deep);}
+  /* 오늘의 AI 한마디 — 하루 하나씩 음미하는 경구 (손글씨 느낌) */
+  .ai-quote{margin-top:6px;display:flex;flex-wrap:wrap;align-items:baseline;column-gap:12px;row-gap:2px;
+    word-break:keep-all;line-height:1.2;}
+  .aq-text{font-family:'Nanum Pen Script','Gowun Batang',serif;font-size:22px;color:var(--gwanak-deep);}
+  .aq-text::before{content:"\201C";} .aq-text::after{content:"\201D";}
+  .aq-by{font-family:'Nanum Pen Script','Gowun Batang',serif;font-size:18px;color:var(--sky);
+    margin-left:auto;white-space:nowrap;}
   .ab-kw{font-family:'Gothic A1','Noto Sans KR',sans-serif;font-size:14.5px;line-height:1.62;color:var(--gwanak-deep);
     word-break:keep-all;display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical;overflow:hidden;}
   .abk{border:none;background:none;font-family:inherit;font-size:14.5px;font-weight:700;color:var(--gwanak-deep);
@@ -731,7 +742,7 @@
         <div class="head-message">
           <p>연구단은 관악구의 지역 특성과 주민의 다양한 행정수요를 반영한 정책 연구를 통해 민선 9기의 성공적인 구정 운영을 지원할 필요가 있으며, 구청장의 과제 검토 요청에 부응할 책무가 있습니다.</p>
           <p>이에 연구단은 민선 9기 주요 정책 관련 연구, 대외 공모사업 및 외부평가 대응 지원, AI 교육 및 AX를 역점 추진하겠습니다.</p>
-          <p class="head-cheer">주민 모두가 행복한 <strong>‘더불어 으뜸 관악구’</strong>를 향해 가즈아!</p>
+          <p class="head-cheer">주민 모두가 행복한 <strong>‘더불어 으뜸 관악구’</strong>를 향해 가즈아이(AI)!</p>
         </div>
       </div>
       <div class="member">
@@ -862,11 +873,11 @@
       <div style="display:flex;gap:12px;">
         <div class="field" style="flex:1;">
           <label for="event-stime">시작 시각 (선택)</label>
-          <input id="event-stime" type="time" step="1800">
+          <input id="event-stime" type="time" step="60">
         </div>
         <div class="field" style="flex:1;">
           <label for="event-etime">종료 시각 (선택)</label>
-          <input id="event-etime" type="time" step="1800">
+          <input id="event-etime" type="time" step="60">
         </div>
       </div>
       <div class="field">
@@ -963,6 +974,27 @@
   const EDITIONS_SHORT = { weekend: "종합", holiday: "연휴" };   // 아카이브 카드용 짧은 배지
   const WEEKDAYS = ["일","월","화","수","목","금","토"];
 
+  // 오늘의 AI 한마디 — 하루 하나씩 음미하는 경구 (날짜에 따라 순환)
+  const AI_QUOTES = [
+    { t: "인공지능은 새로운 전기다.", by: "앤드루 응" },
+    { t: "AI는 불이나 전기보다 인류에게 더 심오한 변화다.", by: "순다르 피차이" },
+    { t: "기계가 생각할 수 있는가? 이것이 우리가 던져야 할 질문이다.", by: "앨런 튜링" },
+    { t: "AI는 PC와 인터넷의 등장만큼이나 근본적인 변화다.", by: "빌 게이츠" },
+    { t: "완전한 인공지능의 개발은 인류의 종말을 부를 수도 있다.", by: "스티븐 호킹" },
+    { t: "AI로 우리는 악마를 소환하고 있는 셈이다.", by: "일론 머스크" },
+    { t: "우리는 지금 우리보다 더 똑똑해질 존재를 만들고 있다.", by: "제프리 힌턴" },
+    { t: "초지능 기계는 인간이 만들 마지막 발명이 될 것이다.", by: "어빙 J. 굿" },
+    { t: "미래를 예측하는 가장 좋은 방법은 그것을 발명하는 것이다.", by: "앨런 케이" },
+    { t: "우리는 앞을 조금밖에 못 보지만, 거기엔 해야 할 일이 산더미다.", by: "앨런 튜링" },
+    { t: "AI가 당신을 대체하지는 않는다. AI를 잘 쓰는 사람이 대체할 것이다.", by: "AI 업계 격언" },
+    { t: "데이터는 새로운 석유이고, AI는 그것을 태우는 엔진이다.", by: "디지털 시대 격언" }
+  ];
+  function todaysQuote() {
+    const n = new Date();
+    const doy = Math.floor((Date.UTC(n.getFullYear(), n.getMonth(), n.getDate()) - Date.UTC(n.getFullYear(), 0, 0)) / 86400000);
+    return AI_QUOTES[doy % AI_QUOTES.length];
+  }
+
   async function api(path) {
     const res = await fetch(SUPABASE_URL + "/rest/v1/" + path, {
       headers: { apikey: SUPABASE_KEY, Authorization: "Bearer " + SUPABASE_KEY }
@@ -1030,15 +1062,18 @@
     }
     const kwHtml = kwParts.join('<span class="abk-sep">·</span>');
 
+    const q = todaysQuote();
     let html = '<div class="brief-head">'
       + '<div class="bh-main">'
       + '<div class="bh-eyebrow">AI POLICY BRIEFING to GWANAK-GU</div>'
       + '<div class="bh-issue">AI 정책 브리핑 <span class="bh-no">제' + briefing.issue_no + '호</span>'
       + (edLabel ? '<span class="edition-chip">' + edLabel + '</span>' : '')
       + ' <span class="bh-date">' + fmtDateShort(briefing.published_date) + '</span></div>'
-      + '<button type="button" class="cal-btn" id="brief-config-btn" style="display:none;align-self:flex-start;margin-top:6px;">⚙️ 수집 설정</button>'
+      + '<div class="ai-quote"><span class="aq-text">' + esc(q.t) + '</span>'
+      + '<span class="aq-by">by ' + esc(q.by) + '</span></div>'
       + '</div>'
-      + '<div class="bh-abstract"><div class="ab-title">오늘의 이슈 키워드</div>'
+      + '<div class="bh-abstract"><div class="ab-title"><span>오늘의 이슈 키워드</span>'
+      + '<button type="button" class="ab-cfg" id="brief-config-btn" style="display:none;">⚙️ 수집 설정</button></div>'
       + '<div class="ab-kw">' + kwHtml + '</div></div>'
       + '</div>';
 
