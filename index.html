@@ -447,7 +447,7 @@
   .brief-head .bh-no{color:var(--gwanak);}
   .brief-head .bh-date{font-family:'Noto Sans KR',sans-serif;font-size:15px;font-weight:600;color:var(--slate);letter-spacing:.01em;}
   /* 오늘의 이슈 키워드 — 핵심어를 가로로 흘려 최대 3줄로 압축 */
-  .bh-abstract{background:#fff;border:1px solid var(--line);border-radius:14px;padding:13px 16px 13px;
+  .bh-abstract{background:#fff;border:1px solid var(--line);border-radius:14px;padding:13px 18px 14px 26px;
     box-shadow:0 1px 3px rgba(14,95,168,.05);display:flex;flex-direction:column;justify-content:center;min-width:0;}
   .ab-title{font-size:12px;font-weight:800;letter-spacing:.04em;color:var(--gwanak-deep);margin-bottom:10px;
     display:flex;align-items:center;gap:6px;}
@@ -987,8 +987,8 @@
     { t: "초지능 기계는 인간이 만들 마지막 발명이 될 것이다.", by: "어빙 J. 굿" },
     { t: "미래를 예측하는 가장 좋은 방법은 그것을 발명하는 것이다.", by: "앨런 케이" },
     { t: "우리는 앞을 조금밖에 못 보지만, 거기엔 해야 할 일이 산더미다.", by: "앨런 튜링" },
-    { t: "AI가 당신을 대체하지는 않는다. AI를 잘 쓰는 사람이 대체할 것이다.", by: "AI 업계 격언" },
-    { t: "데이터는 새로운 석유이고, AI는 그것을 태우는 엔진이다.", by: "디지털 시대 격언" }
+    { t: "AI가 당신을 대체하지는 않는다. AI를 잘 쓰는 사람이 대체할 것이다.", by: "AI 업계" },
+    { t: "데이터는 새로운 석유이고, AI는 그것을 태우는 엔진이다.", by: "디지털 시대" }
   ];
   function todaysQuote() {
     const n = new Date();
@@ -1070,7 +1070,7 @@
       + '<div class="bh-issue">AI 정책 브리핑 <span class="bh-no">제' + briefing.issue_no + '호</span>'
       + (edLabel ? '<span class="edition-chip">' + edLabel + '</span>' : '')
       + ' <span class="bh-date">' + fmtDateShort(briefing.published_date) + '</span></div>'
-      + '<div class="ai-quote"><span class="aq-text">' + esc(q.t) + '</span>'
+      + '<div class="ai-quote"><span class="aq-text">' + esc(q.t).replace(/([.?!])\s+/g, '$1<br>') + '</span>'
       + '<span class="aq-by">by ' + esc(q.by) + '</span></div>'
       + '</div>'
       + '<div class="bh-abstract"><div class="ab-title"><span>오늘의 이슈 키워드</span>'
