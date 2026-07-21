@@ -559,7 +559,7 @@
     font-family:'Noto Serif KR',serif;font-size:clamp(19px,3vw,23px);line-height:1.75;
     margin-bottom:18px;max-width:660px;color:var(--gwanak-deep);
   }
-  .about-body{max-width:660px;color:#3B4756;margin-bottom:36px;font-size:15.5px;}
+  .about-body{max-width:660px;color:#3B4756;margin-bottom:36px;font-size:15.5px;word-break:keep-all;line-height:1.85;}
   .team-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(380px,1fr));gap:14px;margin-bottom:36px;}
   @media(max-width:520px){.team-grid{grid-template-columns:1fr;}}
   .member-credential{margin-top:8px;padding-top:9px;border-top:1px solid var(--line);
@@ -970,7 +970,7 @@
     { key: "seoul", label: "서울시 · 타 지자체" },
     { key: "world", label: "해외 및 기타 동향" }
   ];
-  const EDITIONS = { weekend: "주말 종합", holiday: "연휴 종합" };
+  const EDITIONS = { weekend: "종합", holiday: "연휴" };
   const EDITIONS_SHORT = { weekend: "종합", holiday: "연휴" };   // 아카이브 카드용 짧은 배지
   const WEEKDAYS = ["일","월","화","수","목","금","토"];
 
