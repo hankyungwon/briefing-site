@@ -386,7 +386,8 @@
     border-top:3px solid var(--gwanak);
   }
   .arch-card:hover{transform:translateY(-3px);border-color:var(--gwanak);box-shadow:0 8px 20px rgba(14,95,168,.12);}
-  .arch-head{display:flex;align-items:baseline;gap:7px;flex-wrap:wrap;margin-bottom:2px;}
+  .arch-head{display:flex;align-items:baseline;gap:6px;flex-wrap:nowrap;margin-bottom:2px;min-width:0;}
+  .arch-head .ad{margin-left:auto;flex:none;}
   .arch-card .an{font-family:'Noto Serif KR',serif;font-size:18px;font-weight:700;color:var(--gwanak-deep);}
   .arch-card .ad{font-size:12px;color:var(--muted);font-weight:600;}
   .arch-card.latest .an::after{content:"최신";font-family:'Noto Sans KR',sans-serif;font-size:10px;font-weight:700;
@@ -441,23 +442,18 @@
     border-radius:999px;padding:3px 10px;font-size:12px;font-weight:600;color:var(--slate);}
   .bh-count .cdot{width:7px;height:7px;border-radius:50%;flex:none;}
   .bh-count b{color:var(--gwanak-deep);font-weight:800;font-variant-numeric:tabular-nums;}
-  /* 오늘의 이슈 요약(Abstract) — 스크롤 없이 10초 안에 당일 이슈 파악 */
-  .bh-abstract{background:#fff;border:1px solid var(--line);border-radius:14px;padding:13px 16px 12px;
+  /* 오늘의 이슈 키워드 — 핵심어를 가로로 흘려 3~4줄로 압축 */
+  .bh-abstract{background:#fff;border:1px solid var(--line);border-radius:14px;padding:13px 16px 13px;
     box-shadow:0 1px 3px rgba(14,95,168,.05);display:flex;flex-direction:column;min-width:0;}
-  .ab-title{font-size:12px;font-weight:800;letter-spacing:.04em;color:var(--gwanak-deep);margin-bottom:8px;
+  .ab-title{font-size:12px;font-weight:800;letter-spacing:.04em;color:var(--gwanak-deep);margin-bottom:9px;
     display:flex;align-items:center;gap:6px;}
   .ab-title::before{content:"";width:3px;height:13px;background:var(--gold);border-radius:2px;}
-  .ab-list{display:flex;flex-direction:column;gap:3px;}
-  .ab-item{display:flex;align-items:baseline;gap:7px;font-size:13px;line-height:1.5;color:#3B4756;
-    cursor:pointer;padding:1px 0;border:none;background:none;text-align:left;font-family:inherit;width:100%;word-break:keep-all;}
-  .ab-item:hover .ab-txt{color:var(--gwanak);text-decoration:underline;}
-  .ab-item .ab-dot{width:6px;height:6px;border-radius:50%;flex:none;margin-top:6px;opacity:.55;}
-  .ab-item.gov .ab-dot{background:var(--gwanak-deep);}
-  .ab-item.seoul .ab-dot{background:var(--sky);}
-  .ab-item.world .ab-dot{background:var(--slate);}
-  .ab-item.ahead .ab-dot{background:var(--gold);}
-  .ab-txt{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
-  .ab-more{font-size:12px;color:var(--muted);padding-left:13px;margin-top:1px;}
+  .ab-kw{font-size:14px;line-height:1.95;color:var(--ink);word-break:keep-all;}
+  .abk{border:none;background:none;font-family:inherit;font-size:14px;color:var(--ink);cursor:pointer;padding:0;
+    word-break:keep-all;font-weight:500;}
+  .abk:hover{color:var(--gwanak);text-decoration:underline;}
+  .abk-sep{color:#C4CDD8;margin:0 7px;}
+  .ab-kmore{color:var(--muted);font-weight:500;}
   .brief-card.flashcard,.world-item.flashcard{animation:postFlash 2s ease;}
   @media(max-width:720px){
     .brief-head{grid-template-columns:1fr;gap:14px;padding:18px 18px;}
@@ -473,8 +469,10 @@
   .cat-band.seoul .dot{background:var(--sky);}
   .cat-band.world .dot{background:var(--slate);}
   .cat-band.ahead .dot{background:var(--gold);}
-  .edition-chip{display:inline-block;vertical-align:middle;font-size:12px;font-weight:700;color:#fff;
-    background:var(--gold);border-radius:6px;padding:2px 10px;margin-left:8px;line-height:1.6;}
+  /* 발행 유형 배지 — '최신' 배지와 동일한 작은 크기로 통일, 호수 바로 뒤에 인라인 배치 */
+  .edition-chip{display:inline-block;vertical-align:2px;font-size:10px;font-weight:700;color:#fff;
+    background:var(--gold);border-radius:4px;padding:1px 6px;margin-left:6px;line-height:1.5;white-space:nowrap;}
+  .arch-head .edition-chip{margin-left:0;}
   .brief-card{
     background:var(--card);border:1px solid var(--line);border-radius:16px;
     height:300px;display:flex;flex-direction:column;
@@ -963,6 +961,7 @@
     { key: "world", label: "해외 및 기타 동향" }
   ];
   const EDITIONS = { weekend: "주말 종합", holiday: "연휴 종합" };
+  const EDITIONS_SHORT = { weekend: "종합", holiday: "연휴" };   // 아카이브 카드용 짧은 배지
   const WEEKDAYS = ["일","월","화","수","목","금","토"];
 
   async function api(path) {
@@ -991,13 +990,28 @@
     return p(d.getFullYear() % 100) + "." + p(d.getMonth()+1) + "." + p(d.getDate()) + "(" + WEEKDAYS[d.getDay()] + ")";
   }
 
-  // 제목에서 핵심 문구만 뽑아 요약 한 줄로 (긴 부제·괄호 설명 제거)
+  // 제목에서 핵심 문구만 뽑아 요약 한 줄로 (긴 부제·괄호 설명 제거) — 아카이브 카드용
   function keyPhrase(title) {
     let t = String(title || "").split(/\s[—–-]\s/)[0];   // ' — ' 뒤 부제 제거
     t = t.replace(/\s*\([^)]*\)/g, "").trim();            // 괄호 설명 제거
     if (t.length > 30) t = t.slice(0, 29).trim() + "…";
     return t;
   }
+
+  // 제목에서 더 짧은 핵심 키워드만 추출 (이슈 키워드 가로 흐름용)
+  const KW_TAIL = /\s(본격\s?시행|시행|개시|가동|공개|도입|확대|추진|착수|발표|의결|승인|개편|개정|출시|신설|제안|촉구|창설|체결|개최|운영|지원|마련|공모|선정)\s*$/;
+  function abKeyword(title) {
+    let t = String(title || "").split(/\s[—–·:]\s/)[0];   // 부제·구분자 뒤 제거
+    t = t.replace(/\s*\([^)]*\)/g, "").trim();            // 괄호 설명 제거
+    t = t.replace(/^(정부|과기정통부|서울시|국회|구글|중국|미국|일본|EU|UN)\s*[,·]\s*/, "$1 ");  // 주체 쉼표를 공백으로
+    t = t.replace(/,\s*/g, " ").trim();
+    for (let i = 0; i < 2; i++) t = t.replace(KW_TAIL, "").trim();  // 끝의 서술 동사 제거
+    if (t.length > 18) t = t.slice(0, 17).trim() + "…";
+    return t;
+  }
+
+  // 저장된 키워드가 있으면 우선 사용, 없으면 제목에서 추출
+  function issueKw(it) { return (it.keyword && it.keyword.trim()) ? it.keyword.trim() : abKeyword(it.title); }
 
   let currentIssue = null;
   let currentItemsById = {};
@@ -1015,30 +1029,31 @@
       ({ahead:"var(--gold)",gov:"var(--gwanak-deep)",seoul:"var(--sky)",world:"var(--slate)"}[c.key]) + '"></span>'
       + esc(c.label.split(" · ")[0].split(" 및 ")[0]) + ' <b>' + cntBy[c.key] + '</b></span>').join("");
 
-    // Abstract: gov·seoul·ahead는 전부, world는 앞 5건 + 나머지 요약
-    let abLines = "";
+    // 오늘의 이슈 키워드: 항목마다 핵심어 1개를 뽑아 가로로 흘려 배치 (gov·seoul·ahead 전부, world 앞 4건)
+    const kwParts = [];
     for (const c of CATS) {
       const its = items.filter(i => i.category === c.key);
       if (!its.length) continue;
-      const shown = c.key === "world" ? its.slice(0, 5) : its;
+      const shown = c.key === "world" ? its.slice(0, 4) : its;
       shown.forEach(it => {
-        abLines += '<button type="button" class="ab-item ' + c.key + '" data-goto="' + it.id + '">'
-          + '<span class="ab-dot"></span><span class="ab-txt">' + esc(keyPhrase(it.title)) + '</span></button>';
+        const kw = issueKw(it);
+        if (kw) kwParts.push('<button type="button" class="abk" data-goto="' + it.id + '">' + esc(kw) + '</button>');
       });
-      if (c.key === "world" && its.length > 5) abLines += '<div class="ab-more">외 ' + (its.length - 5) + '건</div>';
+      if (c.key === "world" && its.length > 4) kwParts.push('<span class="ab-kmore">외 ' + (its.length - 4) + '건</span>');
     }
+    const kwHtml = kwParts.join('<span class="abk-sep">·</span>');
 
     let html = '<div class="brief-head">'
       + '<div class="bh-main">'
       + '<div class="bh-eyebrow">AI POLICY BRIEFING to GWANAK-GU</div>'
-      + '<div class="bh-issue">AI 정책 브리핑 <span class="bh-no">제' + briefing.issue_no + '호</span> '
-      + '<span class="bh-date">' + fmtDateShort(briefing.published_date) + '</span>'
-      + (edLabel ? ' <span class="edition-chip">' + edLabel + '</span>' : '') + '</div>'
+      + '<div class="bh-issue">AI 정책 브리핑 <span class="bh-no">제' + briefing.issue_no + '호</span>'
+      + (edLabel ? '<span class="edition-chip">' + edLabel + '</span>' : '')
+      + ' <span class="bh-date">' + fmtDateShort(briefing.published_date) + '</span></div>'
       + '<div class="bh-counts">' + countPills + '</div>'
       + '<button type="button" class="cal-btn" id="brief-config-btn" style="display:none;align-self:flex-start;margin-top:4px;">⚙️ 수집 설정</button>'
       + '</div>'
-      + '<div class="bh-abstract"><div class="ab-title">오늘의 이슈 요약</div>'
-      + '<div class="ab-list">' + abLines + '</div></div>'
+      + '<div class="bh-abstract"><div class="ab-title">오늘의 이슈 키워드</div>'
+      + '<div class="ab-kw">' + kwHtml + '</div></div>'
       + '</div>';
 
     html += '<div class="brief-grid">';
@@ -1087,8 +1102,8 @@
       b.addEventListener("click", () => scrapItem(b.dataset.scrap, b)));
     document.querySelectorAll("#briefing-view [data-request]").forEach(b =>
       b.addEventListener("click", () => openRequestModal(b.dataset.request, b)));
-    // 요약 항목 클릭 → 해당 원문 카드로 스크롤·강조 (world 숨김 항목이면 먼저 펼침)
-    document.querySelectorAll("#briefing-view .ab-item").forEach(b =>
+    // 키워드 클릭 → 해당 원문 카드로 스크롤·강조 (world 숨김 항목이면 먼저 펼침)
+    document.querySelectorAll("#briefing-view .abk").forEach(b =>
       b.addEventListener("click", () => {
         const card = document.getElementById("bc-" + b.dataset.goto);
         if (!card) return;
@@ -1306,7 +1321,7 @@
       let itemsByBrief = {};
       try {
         const ids = briefings.map(b => b.id).join(",");
-        const allItems = await api("briefing_items?select=briefing_id,category,title,position&briefing_id=in.(" + ids + ")&order=position.asc");
+        const allItems = await api("briefing_items?select=briefing_id,category,title,keyword,position&briefing_id=in.(" + ids + ")&order=position.asc");
         allItems.forEach(it => { (itemsByBrief[it.briefing_id] = itemsByBrief[it.briefing_id] || []).push(it); });
       } catch (e) { itemsByBrief = {}; }
       const catRank = { gov: 0, seoul: 1, ahead: 2, world: 3 };
@@ -1316,7 +1331,7 @@
         if (!its.length) return "";
         const shown = its.slice(0, 4);
         let h = '<div class="arch-kw">' + shown.map(it =>
-          '<div class="k ' + it.category + '"><span class="kd"></span><span class="kt">' + esc(keyPhrase(it.title)) + '</span></div>').join("");
+          '<div class="k ' + it.category + '"><span class="kd"></span><span class="kt">' + esc(issueKw(it)) + '</span></div>').join("");
         if (its.length > shown.length) h += '<div class="kmore">외 ' + (its.length - shown.length) + '건</div>';
         return h + '</div>';
       }
@@ -1325,8 +1340,8 @@
       list.innerHTML = briefings.map((b, idx) =>
         '<button class="arch-card' + (idx === 0 ? ' latest' : '') + '" data-idx="' + idx + '">'
         + '<div class="arch-head"><span class="an">제' + b.issue_no + '호</span>'
-        + '<span class="ad">' + esc(fmtDateShort(b.published_date)) + '</span>'
-        + (EDITIONS[b.edition] ? ' <span class="edition-chip">' + EDITIONS[b.edition] + '</span>' : '') + '</div>'
+        + (EDITIONS_SHORT[b.edition] ? '<span class="edition-chip">' + EDITIONS_SHORT[b.edition] + '</span>' : '')
+        + '<span class="ad">' + esc(fmtDateShort(b.published_date)) + '</span></div>'
         + archKeywords(b.id)
         + '</button>'
       ).join("");
