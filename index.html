@@ -612,6 +612,40 @@
   .mlog-when{margin-left:auto;font-size:11.5px;color:var(--muted);}
   .mlog-sum{font-size:13px;color:var(--ink);line-height:1.5;word-break:keep-all;white-space:pre-wrap;}
   .mlog-meta{font-size:11.5px;color:var(--muted);margin-top:5px;}
+  /* 연구단마당 업무 안내 배너 */
+  .work-info{background:#FFF7DC;border:1px solid #F0E4B8;border-radius:10px;padding:11px 14px;margin-bottom:20px;
+    font-size:13.5px;color:#6B5A18;line-height:1.6;word-break:keep-all;}
+  /* 주간회의 자료 취합 버튼 (송프로 카드) */
+  .compile-btn{display:block;width:100%;margin-top:12px;background:var(--gwanak-deep);color:#fff !important;border-color:var(--gwanak-deep) !important;
+    box-shadow:0 1px 3px rgba(11,74,134,.2);}
+  .compile-btn:hover{background:var(--gwanak) !important;}
+  /* 취합 문서 */
+  .compile-modal{max-width:780px;}
+  .compile-bar{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:14px;}
+  .compile-doc{max-height:72vh;overflow-y:auto;padding:4px 2px;}
+  .cd-head{text-align:center;border-bottom:2px solid var(--gwanak-deep);padding-bottom:12px;margin-bottom:16px;}
+  .cd-title{font-family:'Noto Serif KR',serif;font-size:20px;font-weight:700;color:var(--gwanak-deep);word-break:keep-all;}
+  .cd-when{font-size:12.5px;color:var(--muted);margin-top:5px;}
+  .cd-member{border:1px solid var(--line);border-radius:10px;padding:12px 14px;margin-bottom:12px;break-inside:avoid;}
+  .cd-mhead{display:flex;align-items:baseline;gap:8px;flex-wrap:wrap;margin-bottom:9px;padding-bottom:8px;border-bottom:1px dashed var(--line);}
+  .cd-mno{background:var(--gwanak);color:#fff;font-size:11px;font-weight:800;border-radius:50%;width:18px;height:18px;
+    display:inline-flex;align-items:center;justify-content:center;flex:none;}
+  .cd-mname{font-family:'Noto Serif KR',serif;font-size:16px;font-weight:700;color:var(--ink);}
+  .cd-mrole{font-size:12.5px;color:var(--sky);font-weight:700;}
+  .cd-mweek{margin-left:auto;font-size:12px;color:var(--muted);font-weight:600;}
+  .cd-mweek.none{color:#C0392B;}
+  .cd-row{display:flex;gap:10px;margin-bottom:7px;}
+  .cd-row:last-child{margin-bottom:0;}
+  .cd-label{flex:none;width:66px;font-size:12px;font-weight:800;color:var(--gold);padding-top:2px;}
+  .cd-text{flex:1;min-width:0;font-size:13.5px;color:var(--ink);line-height:1.6;white-space:pre-wrap;word-break:keep-all;}
+  @media print {
+    body * { visibility: hidden; }
+    #compile-modal.open, #compile-modal.open * { visibility: visible; }
+    #compile-modal.open { position: absolute; inset: 0; display: block; background: #fff; padding: 0; overflow: visible; }
+    #compile-modal.open .modal { position: static; box-shadow: none; border: none; max-width: none; width: 100%; margin: 0; padding: 0; max-height: none; }
+    #compile-modal.open .compile-doc { max-height: none; overflow: visible; }
+    .no-print { display: none !important; }
+  }
   .wb-sec{margin-bottom:11px;}
   .wb-sec:last-child{margin-bottom:0;}
   .wb-sec .wl{display:block;font-size:11.5px;font-weight:800;letter-spacing:.03em;color:var(--gold);margin-bottom:4px;}
@@ -770,6 +804,7 @@
       연구·개발하기 위해 민선 9기 구청장 공약에 따라 AI혁신정책연구단을 설치해 운영 중입니다.
       연구단은 관악구 지역 특성에 기반한 창의적이고 혁신적 정책 연구를 충실히 수행하고 있습니다.
     </p>
+    <p class="work-info" id="about-workinfo" hidden>💡 매주 월요일 아침 지난주 실적과 이번주 계획을 기록합니다. 매주 초 작성된 자료는 연구단 주간회의 자료로 취합됩니다.</p>
     <div class="team-grid">
       <div class="member head" data-member="lead">
         <div class="role-tag">단장</div>
@@ -999,6 +1034,19 @@
     <p class="modal-sub">게시글·댓글·주간기록의 삭제 내역입니다. 관리자만 열람할 수 있습니다.</p>
     <div id="modlog-body" style="max-height:60vh;overflow-y:auto;margin:4px 0 14px;"></div>
     <button type="button" class="auth-btn" id="modlog-cancel">닫기</button>
+  </div>
+</div>
+
+<div class="modal-backdrop" id="compile-modal">
+  <div class="modal compile-modal" role="dialog" aria-modal="true" aria-labelledby="compile-title">
+    <div class="compile-bar no-print">
+      <h3 id="compile-title">주간회의 자료</h3>
+      <div style="display:flex;gap:8px;">
+        <button type="button" class="btn-primary" id="compile-print">🖨 인쇄</button>
+        <button type="button" class="auth-btn" id="compile-cancel">닫기</button>
+      </div>
+    </div>
+    <div id="compile-doc" class="compile-doc"></div>
   </div>
 </div>
 
@@ -1867,6 +1915,7 @@
     resourcesView.innerHTML =
       '<div class="list-toolbar">'
       + '<input type="search" class="filter-input" id="res-filter" placeholder="🔎 자료 검색 — 제목·링크·코멘트·작성자">'
+      + (isAdminUser ? '<button type="button" class="write-toggle modlog-toggle" id="res-modlog-btn">🛡 삭제 이력</button>' : '')
       + '<button type="button" class="write-toggle" id="res-write-toggle" aria-expanded="false">✏️ 새 자료 올리기</button>'
       + '</div>'
       + '<p class="form-ok" id="post-ok" role="status"></p>'
@@ -1893,6 +1942,8 @@
     document.getElementById("rt-link").addEventListener("click", () => setResMode("link"));
     document.getElementById("rt-file").addEventListener("click", () => setResMode("file"));
     document.getElementById("res-write-toggle").addEventListener("click", () => toggleResForm());
+    const rml = document.getElementById("res-modlog-btn");
+    if (rml) rml.addEventListener("click", openModlog);
     const hasDraft = restoreResDraft();
     if (hasDraft) toggleResForm(true);
     ["post-title", "post-url", "post-comment"].forEach(id =>
@@ -2006,6 +2057,8 @@
       if (currentUser && p.author_id === currentUser.id) {
         html += '<span class="acts"><button type="button" class="mini-btn" data-editr="' + p.id + '">수정</button>'
           + '<button type="button" class="mini-btn danger" data-delr="' + p.id + '">삭제</button></span>';
+      } else if (isAdminUser) {
+        html += '<span class="acts"><button type="button" class="mini-btn danger" data-delr="' + p.id + '" title="관리자 삭제">🛡 삭제</button></span>';
       }
       html += '</div></article>';
       return html;
@@ -2305,7 +2358,8 @@
         + (ev.location ? '<span>· ' + esc(ev.location) + '</span>' : '')
         + '<span>· ' + esc(ev.author_name) + '</span>'
         + (mine ? '<span style="margin-left:auto;display:flex;gap:6px;"><button class="mini-btn" data-edit-ev="' + ev.id + '">수정</button>'
-          + '<button class="mini-btn danger" data-del-ev="' + ev.id + '">삭제</button></span>' : '')
+          + '<button class="mini-btn danger" data-del-ev="' + ev.id + '">삭제</button></span>'
+          : (isAdminUser ? '<span style="margin-left:auto;"><button class="mini-btn danger" data-del-ev="' + ev.id + '" title="관리자 삭제">🛡 삭제</button></span>' : ''))
         + '</div>'
         + (ev.memo ? '<div class="dmemo">' + linkify(ev.memo) + '</div>' : '') + '</div>';
     }).join("");
@@ -2494,7 +2548,7 @@
   }
 
   // 감사 로그(삭제 이력) 뷰어 — 관리자 전용
-  const MODLOG_TABLES = { free_posts: "게시글", free_comments: "댓글", staff_notes: "주간기록" };
+  const MODLOG_TABLES = { free_posts: "게시글", free_comments: "댓글", staff_notes: "주간기록", posts: "자료", events: "일정", research_requests: "조사요청" };
   async function openModlog() {
     if (!isAdminUser) return;
     const modal = document.getElementById("modlog-modal"), body = document.getElementById("modlog-body");
@@ -2514,6 +2568,35 @@
   }
   document.getElementById("modlog-cancel").addEventListener("click", () => document.getElementById("modlog-modal").classList.remove("open"));
   document.getElementById("modlog-modal").addEventListener("click", e => { if (e.target.id === "modlog-modal") e.currentTarget.classList.remove("open"); });
+
+  // 주간회의 자료 취합 — 각 단원의 최신 주간기록을 하나의 문서로 모아 표출·인쇄
+  const compileModal = document.getElementById("compile-modal");
+  async function openCompile() {
+    const doc = document.getElementById("compile-doc");
+    doc.innerHTML = '<p class="status">자료를 취합하는 중…</p>';
+    compileModal.classList.add("open");
+    const { data, error } = await sb.from("staff_notes").select("*").order("week_start", { ascending: false });
+    if (error) { doc.innerHTML = '<p class="status error">취합하지 못했습니다. (' + esc(error.message) + ')</p>'; return; }
+    const latestByEmail = {};
+    (data || []).forEach(n => { const cur = latestByEmail[n.member_email]; if (!cur || n.week_start > cur.week_start) latestByEmail[n.member_email] = n; }); // 각 단원의 가장 최근 주
+    const now = new Date();
+    const stamp = now.getFullYear() + "." + (now.getMonth() + 1) + "." + now.getDate() + "(" + WEEKDAYS[now.getDay()] + ") " + pad2(now.getHours()) + ":" + pad2(now.getMinutes());
+    let h = '<div class="cd-head"><div class="cd-title">관악구 AI혁신정책연구단 · 주간회의 자료</div>'
+      + '<div class="cd-when">취합 ' + stamp + '</div></div>';
+    MEMBERS.forEach((m, i) => {
+      const n = latestByEmail[m.email];
+      h += '<div class="cd-member"><div class="cd-mhead"><span class="cd-mno">' + (i + 1) + '</span>'
+        + '<span class="cd-mname">' + esc(m.name) + '</span><span class="cd-mrole">' + esc(m.role) + '</span>'
+        + (n ? '<span class="cd-mweek">' + fmtWeekRange(n.week_start) + '</span>' : '<span class="cd-mweek none">미작성</span>') + '</div>'
+        + '<div class="cd-row"><span class="cd-label">지난주 실적</span><div class="cd-text">' + (n && n.last_week ? esc(n.last_week) : "—") + '</div></div>'
+        + '<div class="cd-row"><span class="cd-label">이번주 계획</span><div class="cd-text">' + (n && n.this_week ? esc(n.this_week) : "—") + '</div></div>'
+        + '</div>';
+    });
+    doc.innerHTML = h;
+  }
+  document.getElementById("compile-print").addEventListener("click", () => window.print());
+  document.getElementById("compile-cancel").addEventListener("click", () => compileModal.classList.remove("open"));
+  compileModal.addEventListener("click", e => { if (e.target.id === "compile-modal") e.currentTarget.classList.remove("open"); });
 
   function toggleBoardForm(open) {
     const wrap = document.getElementById("fp-form-wrap"), btn = document.getElementById("fp-write-toggle");
@@ -2699,13 +2782,15 @@
   // ── 연구단마당 업무게시판 (로그인 직원 전용) ─────────────────
   // 각 단원 카드 → 본인만 편집하는 '지난주 실적·이번주 계획' 포스트잇
   // 단장 카드 → 관리자만 편집하는 '회의결과·단장 지시사항' (회의별 이력 보관)
-  const MEMBER_EMAILS = {
-    two:  "twopro@hanmail.net",    // 이프로 · AI혁신 선임연구관
-    three:"threepro@hanmail.net",  // 삼프로 · 지역개발 연구관
-    four: "fourpro@hanmail.net",   // 사프로 · 도시행정 연구관
-    five: "fivepro@hanmail.net",   // 오프로 · 대외협력 연구관
-    song: "syho99@naver.com"       // 송프로 · 행정지원 주무관
-  };
+  // 단원 메타 — 주간회의 자료 취합·주간기록 매핑에 공용으로 사용 (이메일은 잠정값, 채용 후 교체)
+  const MEMBERS = [
+    { key: "two",   name: "이프로", role: "AI혁신 선임연구관", email: "twopro@hanmail.net" },
+    { key: "three", name: "삼프로", role: "지역개발 연구관",   email: "threepro@hanmail.net" },
+    { key: "four",  name: "사프로", role: "도시행정 연구관",   email: "fourpro@hanmail.net" },
+    { key: "five",  name: "오프로", role: "대외협력 연구관",   email: "fivepro@hanmail.net" },
+    { key: "song",  name: "송프로", role: "행정지원 주무관",   email: "syho99@naver.com" }
+  ];
+  const MEMBER_EMAILS = Object.fromEntries(MEMBERS.map(m => [m.key, m.email]));
   function mondayOf(d) { const s = stripTime(d); const g = s.getDay(); s.setDate(s.getDate() + (g === 0 ? -6 : 1 - g)); return s; }
   function fmtWeekRange(iso) {
     const s = new Date(iso + "T00:00:00"), e = new Date(s); e.setDate(e.getDate() + 6);
@@ -2714,10 +2799,13 @@
   function fmtMDW(iso) { const d = new Date(iso + "T00:00:00"); return (d.getMonth() + 1) + "." + d.getDate() + "(" + WEEKDAYS[d.getDay()] + ")"; }
   let staffNotesCache = [], meetingNotesCache = [];
 
-  function staffNoteHtml(n, canDelete) {
+  function staffNoteHtml(n, isOwner, key) {
+    const canDel = isOwner || isAdminUser;
+    let acts = "";
+    if (isOwner) acts += '<button type="button" class="wb-mini" data-memo-edit="' + key + '" data-memo-week="' + n.week_start + '">수정</button>';
+    if (canDel) acts += '<button type="button" class="wb-mini danger" data-staff-del="' + n.id + '"' + (!isOwner ? ' title="관리자 삭제"' : '') + '>삭제</button>';
     return '<div class="wb-note">'
-      + (canDelete ? '<div class="wb-actions"><button type="button" class="wb-mini danger" data-staff-del="' + n.id + '"'
-        + (n.member_email && (!currentUser || (currentUser.email || "").toLowerCase() !== n.member_email) ? ' title="관리자 삭제"' : '') + '>삭제</button></div>' : '')
+      + (acts ? '<div class="wb-actions">' + acts + '</div>' : '')
       + '<div class="wb-sec"><span class="wl">지난주 실적</span><div class="wt">' + (n.last_week ? linkify(n.last_week) : "—") + '</div></div>'
       + '<div class="wb-sec"><span class="wl">이번주 계획</span><div class="wt">' + (n.this_week ? linkify(n.this_week) : "—") + '</div></div>'
       + '</div>';
@@ -2734,14 +2822,13 @@
   function staffBoardHtml(notes, isOwner, key) {
     const latest = notes[0];
     let h = '<div class="wb-head"><span class="wb-when">' + (latest ? "최근 " + fmtWeekRange(latest.week_start) : "주간 업무 기록") + '</span>'
-      + (isOwner ? '<button type="button" class="wb-btn" data-memo-edit="' + key + '">✏️ 기록</button>' : '') + '</div>';
-    if (!latest) { h += '<p class="wb-empty">' + (isOwner ? "아직 작성한 주간 기록이 없습니다. ‘✏️ 기록’으로 시작하세요." : "아직 작성된 주간 기록이 없습니다.") + '</p>'; return h; }
-    const canDel = isOwner || isAdminUser;
-    h += staffNoteHtml(latest, canDel);
+      + (isOwner ? '<button type="button" class="wb-btn" data-memo-edit="' + key + '">✏️ 주간 기록 작성</button>' : '') + '</div>';
+    if (!latest) { h += '<p class="wb-empty">' + (isOwner ? "아직 작성한 주간 기록이 없습니다. ‘✏️ 주간 기록 작성’으로 시작하세요." : "아직 작성된 주간 기록이 없습니다.") + '</p>'; return h; }
+    h += staffNoteHtml(latest, isOwner, key);
     const past = notes.slice(1);
     if (past.length) {
       h += '<details class="wb-hist"><summary>지난 기록 ' + past.length + '주</summary>'
-        + past.map(n => '<div class="wb-when" style="margin-top:9px;">' + fmtWeekRange(n.week_start) + '</div>' + staffNoteHtml(n, canDel)).join("") + '</details>';
+        + past.map(n => '<div class="wb-when" style="margin-top:9px;">' + fmtWeekRange(n.week_start) + '</div>' + staffNoteHtml(n, isOwner, key)).join("") + '</details>';
     }
     return h;
   }
@@ -2762,14 +2849,17 @@
   async function renderAboutBoards() {
     const cards = document.querySelectorAll('#about .member');
     if (!cards.length) return;
+    const workInfo = document.getElementById('about-workinfo');
     if (!currentUser) {
       // 비로그인: 공개 소개 화면 복원 (.head-message·.duties는 display:flex라 style로 제어)
+      if (workInfo) workInfo.hidden = true;
       cards.forEach(c => {
         c.querySelectorAll('.head-message, .duties').forEach(el => { el.style.display = ""; });
         c.querySelectorAll('.wb').forEach(w => { w.hidden = true; w.innerHTML = ""; });
       });
       return;
     }
+    if (workInfo) workInfo.hidden = false;
     // 로그인: 업무게시판으로 전환
     let staff = [], meetings = [];
     try {
@@ -2794,8 +2884,13 @@
         const wb = card.querySelector('.wb-staff');
         if (!wb) return;
         const email = MEMBER_EMAILS[key];
+        const isOwner = !!email && myEmail === email;
         wb.hidden = false;
-        wb.innerHTML = staffBoardHtml(byEmail[email] || [], !!email && myEmail === email, key);
+        wb.innerHTML = staffBoardHtml(byEmail[email] || [], isOwner, key);
+        // 행정지원 주무관(송프로) 카드: 주간회의 자료 취합 버튼 (본인 또는 관리자)
+        if (key === "song" && (isOwner || isAdminUser)) {
+          wb.innerHTML += '<button type="button" class="wb-btn compile-btn" data-compile="1">🗂 주간회의 자료 취합</button>';
+        }
       }
     });
   }
@@ -2803,7 +2898,7 @@
   // 편집 버튼 위임
   document.getElementById('about').addEventListener('click', e => {
     const mb = e.target.closest('[data-memo-edit]');
-    if (mb) { openMemoModal(mb.dataset.memoEdit); return; }
+    if (mb) { openMemoModal(mb.dataset.memoEdit, mb.dataset.memoWeek || null); return; }
     if (e.target.closest('[data-meeting-new]')) { openMeetingModal(null); return; }
     const me = e.target.closest('[data-meeting-edit]');
     if (me) { openMeetingModal(me.dataset.meetingEdit); return; }
@@ -2811,6 +2906,7 @@
     if (md) { deleteMeeting(md.dataset.meetingDel); return; }
     const sd = e.target.closest('[data-staff-del]');
     if (sd) { deleteStaffNote(sd.dataset.staffDel); return; }
+    if (e.target.closest('[data-compile]')) { openCompile(); return; }
   });
   async function deleteStaffNote(id) {
     if (!confirm("이 주간 기록을 삭제할까요? 되돌릴 수 없습니다.")) return;
@@ -2829,13 +2925,13 @@
     document.getElementById('memo-last').value = ex ? (ex.last_week || "") : "";
     document.getElementById('memo-this').value = ex ? (ex.this_week || "") : "";
   }
-  function openMemoModal(key) {
+  function openMemoModal(key, week) {
     const email = MEMBER_EMAILS[key];
     if (!currentUser || !email || (currentUser.email || "").toLowerCase() !== email) return; // 본인만
     memoError.classList.remove('show');
     memoModal.dataset.email = email;
-    document.getElementById('memo-week').value = ymd(mondayOf(new Date()));
-    document.getElementById('memo-sub').textContent = "해당 주의 실적·계획을 기록합니다. 같은 주에 다시 저장하면 갱신됩니다.";
+    document.getElementById('memo-week').value = week || ymd(mondayOf(new Date()));
+    document.getElementById('memo-sub').textContent = "매주 월요일 아침 지난주 실적과 이번주 계획을 기록합니다. 같은 주에 다시 저장하면 갱신되고, 새로운 주는 별도로 쌓입니다. 매주 초 작성된 자료는 연구단 주간회의 자료로 취합됩니다.";
     prefillMemo();
     memoModal.classList.add('open');
   }
