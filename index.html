@@ -375,17 +375,29 @@
   .sr-item p{font-size:13.5px;color:var(--muted);overflow:hidden;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;}
   .sr-item .sr-meta{font-size:12px;color:var(--sky);font-weight:700;margin-bottom:3px;}
   /* ── 아카이브 카드 ── */
-  .archive-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(160px,1fr));gap:12px;}
+  /* 아카이브: 포스트잇형 카드가 4열로 세로로 길게 쌓임 (당일 키워드 미리보기 포함) */
+  .archive-grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:14px;}
+  @media(max-width:820px){.archive-grid{grid-template-columns:repeat(2,minmax(0,1fr));}}
+  @media(max-width:460px){.archive-grid{grid-template-columns:1fr;}}
   .arch-card{
-    appearance:none;cursor:pointer;font-family:inherit;text-align:left;
-    background:var(--card);border:1px solid var(--line);border-radius:14px;padding:16px 16px 14px;
+    appearance:none;cursor:pointer;font-family:inherit;text-align:left;display:flex;flex-direction:column;
+    background:var(--card);border:1px solid var(--line);border-radius:12px;padding:15px 15px 14px;
     box-shadow:0 1px 3px rgba(14,95,168,.05);transition:transform .15s,border-color .15s,box-shadow .15s;
+    border-top:3px solid var(--gwanak);
   }
-  .arch-card:hover{transform:translateY(-2px);border-color:var(--gwanak);box-shadow:0 8px 20px rgba(14,95,168,.12);}
-  .arch-card .an{font-family:'Noto Serif KR',serif;font-size:19px;font-weight:700;color:var(--gwanak-deep);}
-  .arch-card .ad{font-size:12.5px;color:var(--muted);margin-top:5px;}
-  .arch-card.latest .an::after{content:"최신";font-family:'Noto Sans KR',sans-serif;font-size:10.5px;font-weight:700;
-    color:#fff;background:var(--gold);border-radius:4px;padding:2px 6px;margin-left:8px;vertical-align:2px;}
+  .arch-card:hover{transform:translateY(-3px);border-color:var(--gwanak);box-shadow:0 8px 20px rgba(14,95,168,.12);}
+  .arch-head{display:flex;align-items:baseline;gap:7px;flex-wrap:wrap;margin-bottom:2px;}
+  .arch-card .an{font-family:'Noto Serif KR',serif;font-size:18px;font-weight:700;color:var(--gwanak-deep);}
+  .arch-card .ad{font-size:12px;color:var(--muted);font-weight:600;}
+  .arch-card.latest .an::after{content:"최신";font-family:'Noto Sans KR',sans-serif;font-size:10px;font-weight:700;
+    color:#fff;background:var(--gold);border-radius:4px;padding:1px 6px;margin-left:6px;vertical-align:2px;}
+  .arch-kw{margin-top:10px;padding-top:10px;border-top:1px dashed var(--line);display:flex;flex-direction:column;gap:5px;}
+  .arch-kw .k{display:flex;align-items:baseline;gap:6px;font-size:12.5px;line-height:1.45;color:#3B4756;word-break:keep-all;}
+  .arch-kw .k .kd{width:5px;height:5px;border-radius:50%;flex:none;margin-top:5px;opacity:.6;}
+  .arch-kw .k .kt{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+  .arch-kw .k.gov .kd{background:var(--gwanak-deep);} .arch-kw .k.seoul .kd{background:var(--sky);}
+  .arch-kw .k.world .kd{background:var(--slate);} .arch-kw .k.ahead .kd{background:var(--gold);}
+  .arch-kw .kmore{font-size:11.5px;color:var(--muted);padding-left:11px;}
   /* ── 브리핑 카드 액션(스크랩·조사요청) ── */
   .bc-actions{display:flex;gap:7px;margin-top:12px;flex-wrap:wrap;}
   .bc-btn{
@@ -415,15 +427,41 @@
   .cat.world .cat-label{background:var(--slate);}
   /* ── 오늘의 브리핑: 2단 카드 레이아웃 ── */
   .brief-head{
-    display:flex;justify-content:space-between;align-items:flex-end;flex-wrap:wrap;gap:16px;
+    display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1.05fr);gap:22px;align-items:stretch;
     margin-bottom:24px;padding:22px 26px;border-radius:18px;
     background:linear-gradient(135deg,#EFF5FC 0%,#E7EFF8 100%);border:1px solid var(--line);
   }
-  .brief-head .bh-eyebrow{font-size:11.5px;letter-spacing:.22em;color:var(--sky);font-weight:700;margin-bottom:5px;}
-  .brief-head .bh-issue{font-family:'Noto Serif KR',serif;font-weight:700;font-size:clamp(19px,2.8vw,25px);color:var(--gwanak-deep);line-height:1.3;}
-  .brief-head .bh-date{
-    background:#fff;border:1px solid var(--line);border-radius:999px;
-    padding:7px 16px;font-size:13.5px;color:var(--slate);font-weight:500;white-space:nowrap;
+  .bh-main{display:flex;flex-direction:column;justify-content:center;gap:8px;min-width:0;}
+  .brief-head .bh-eyebrow{font-size:11px;letter-spacing:.14em;color:var(--sky);font-weight:700;text-transform:uppercase;}
+  .brief-head .bh-issue{font-family:'Noto Serif KR',serif;font-weight:700;font-size:clamp(20px,2.6vw,26px);color:var(--gwanak-deep);line-height:1.25;word-break:keep-all;}
+  .brief-head .bh-no{color:var(--gwanak);}
+  .brief-head .bh-date{font-family:'Noto Sans KR',sans-serif;font-size:15px;font-weight:600;color:var(--slate);letter-spacing:.01em;}
+  .bh-counts{display:flex;gap:6px;flex-wrap:wrap;margin-top:2px;}
+  .bh-count{display:inline-flex;align-items:center;gap:5px;background:#fff;border:1px solid var(--line);
+    border-radius:999px;padding:3px 10px;font-size:12px;font-weight:600;color:var(--slate);}
+  .bh-count .cdot{width:7px;height:7px;border-radius:50%;flex:none;}
+  .bh-count b{color:var(--gwanak-deep);font-weight:800;font-variant-numeric:tabular-nums;}
+  /* 오늘의 이슈 요약(Abstract) — 스크롤 없이 10초 안에 당일 이슈 파악 */
+  .bh-abstract{background:#fff;border:1px solid var(--line);border-radius:14px;padding:13px 16px 12px;
+    box-shadow:0 1px 3px rgba(14,95,168,.05);display:flex;flex-direction:column;min-width:0;}
+  .ab-title{font-size:12px;font-weight:800;letter-spacing:.04em;color:var(--gwanak-deep);margin-bottom:8px;
+    display:flex;align-items:center;gap:6px;}
+  .ab-title::before{content:"";width:3px;height:13px;background:var(--gold);border-radius:2px;}
+  .ab-list{display:flex;flex-direction:column;gap:3px;}
+  .ab-item{display:flex;align-items:baseline;gap:7px;font-size:13px;line-height:1.5;color:#3B4756;
+    cursor:pointer;padding:1px 0;border:none;background:none;text-align:left;font-family:inherit;width:100%;word-break:keep-all;}
+  .ab-item:hover .ab-txt{color:var(--gwanak);text-decoration:underline;}
+  .ab-item .ab-dot{width:6px;height:6px;border-radius:50%;flex:none;margin-top:6px;opacity:.55;}
+  .ab-item.gov .ab-dot{background:var(--gwanak-deep);}
+  .ab-item.seoul .ab-dot{background:var(--sky);}
+  .ab-item.world .ab-dot{background:var(--slate);}
+  .ab-item.ahead .ab-dot{background:var(--gold);}
+  .ab-txt{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+  .ab-more{font-size:12px;color:var(--muted);padding-left:13px;margin-top:1px;}
+  .brief-card.flashcard,.world-item.flashcard{animation:postFlash 2s ease;}
+  @media(max-width:720px){
+    .brief-head{grid-template-columns:1fr;gap:14px;padding:18px 18px;}
+    .bh-abstract{order:2;}
   }
   .brief-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:16px;align-items:stretch;}
   .cat-band{grid-column:1/-1;display:flex;align-items:center;gap:10px;margin-top:12px;}
@@ -545,8 +583,13 @@
   .contact p{font-size:15px;color:#3B4756;}
   .contact .tel{font-weight:700;color:var(--gwanak);}
   footer{border-top:1px solid var(--line);background:var(--card);}
-  .footer-inner{max-width:920px;margin:0 auto;padding:24px;font-size:13px;color:var(--muted);line-height:1.9;}
-  .footer-brand{height:46px;width:auto;display:block;margin-bottom:12px;}
+  .footer-inner{max-width:920px;margin:0 auto;padding:22px 24px;font-size:13px;color:var(--muted);line-height:1.7;
+    display:flex;align-items:center;gap:20px;}
+  .footer-brand{height:48px;width:auto;display:block;flex:none;}
+  .footer-text{display:flex;flex-direction:column;gap:3px;word-break:keep-all;}
+  @media(max-width:640px){
+    .footer-inner{flex-direction:column;align-items:flex-start;gap:12px;line-height:1.8;}
+  }
   @media(max-width:560px){
     header{padding:28px 18px 22px;}
     main{padding:24px 18px 60px;}
@@ -734,9 +777,8 @@
         <h4>송신영</h4>
         <ul class="duties">
           <li><strong>연구과제 발굴 및 연구계획 수립</strong>구정 현안과 연계한 연구과제를 발굴하고 연간 연구계획을 수립</li>
-          <li><strong>연구과제 수행 및 정책 개발</strong>연구과제를 직접 수행하며 실행 가능한 정책 대안을 개발</li>
           <li><strong>연구과제 목록 및 연구사업비 관리</strong>과제 진행 현황을 총괄 관리하고 연구사업비를 집행·정산</li>
-          <li><strong>AI혁신정책연구단 서무 업무</strong>연구단 운영에 필요한 행정 사무와 서무를 총괄</li>
+          <li><strong>AI혁신정책연구단 서무 및 지원 업무</strong>연구단 운영에 필요한 행정 사무와 서무를 총괄하고, 단장 및 연구관들의 활동 지원</li>
           <li><strong>목민관클럽 운영 및 우수 정책 벤치마킹</strong>목민관클럽을 운영하고 타 지자체 우수 정책을 발굴·벤치마킹</li>
         </ul>
       </div>
@@ -899,8 +941,10 @@
 <footer>
   <div class="footer-inner">
     <img class="footer-brand" src="/brand-youth.png" alt="대한민국 청년수도 관악" width="110" height="46">
-    <div>이 사이트는 관악구 AI혁신정책연구단의 지식 관리를 위한 플랫폼으로서 서울특별시 관악구의 공식 견해와 다를 수 있습니다.</div>
-    <div>(08832) 서울특별시 관악구 관악로 145, 관악구청 2층 · TEL 02-879-7424 · © 2026 관악구 AI혁신정책연구단 지식 플랫폼</div>
+    <div class="footer-text">
+      <div>이 사이트는 관악구 AI혁신정책연구단의 지식 관리를 위한 플랫폼으로서 서울특별시 관악구의 공식 견해와 다를 수 있습니다.</div>
+      <div>(08832) 서울특별시 관악구 관악로 145, 관악구청 2층 · TEL 02-879-7424 · © 2026 관악구 AI혁신정책연구단 지식 플랫폼</div>
+    </div>
   </div>
 </footer>
 
@@ -940,6 +984,21 @@
     return d.getFullYear() + "년 " + (d.getMonth()+1) + "월 " + d.getDate() + "일 (" + WEEKDAYS[d.getDay()] + ") 발행";
   }
 
+  // 26.07.21(화) 형태의 짧은 날짜
+  function fmtDateShort(iso) {
+    const d = new Date(iso + "T00:00:00");
+    const p = n => String(n).padStart(2, "0");
+    return p(d.getFullYear() % 100) + "." + p(d.getMonth()+1) + "." + p(d.getDate()) + "(" + WEEKDAYS[d.getDay()] + ")";
+  }
+
+  // 제목에서 핵심 문구만 뽑아 요약 한 줄로 (긴 부제·괄호 설명 제거)
+  function keyPhrase(title) {
+    let t = String(title || "").split(/\s[—–-]\s/)[0];   // ' — ' 뒤 부제 제거
+    t = t.replace(/\s*\([^)]*\)/g, "").trim();            // 괄호 설명 제거
+    if (t.length > 30) t = t.slice(0, 29).trim() + "…";
+    return t;
+  }
+
   let currentIssue = null;
   let currentItemsById = {};
 
@@ -948,14 +1007,39 @@
     currentItemsById = {};
     items.forEach(it => { currentItemsById[it.id] = it; });
     const edLabel = EDITIONS[briefing.edition];
+    // 섹션별 건수 (요약 배지·Abstract 공용)
+    const cntBy = {};
+    CATS.forEach(c => { cntBy[c.key] = items.filter(i => i.category === c.key).length; });
+    const countPills = CATS.filter(c => cntBy[c.key] > 0).map(c =>
+      '<span class="bh-count"><span class="cdot" style="background:' +
+      ({ahead:"var(--gold)",gov:"var(--gwanak-deep)",seoul:"var(--sky)",world:"var(--slate)"}[c.key]) + '"></span>'
+      + esc(c.label.split(" · ")[0].split(" 및 ")[0]) + ' <b>' + cntBy[c.key] + '</b></span>').join("");
+
+    // Abstract: gov·seoul·ahead는 전부, world는 앞 5건 + 나머지 요약
+    let abLines = "";
+    for (const c of CATS) {
+      const its = items.filter(i => i.category === c.key);
+      if (!its.length) continue;
+      const shown = c.key === "world" ? its.slice(0, 5) : its;
+      shown.forEach(it => {
+        abLines += '<button type="button" class="ab-item ' + c.key + '" data-goto="' + it.id + '">'
+          + '<span class="ab-dot"></span><span class="ab-txt">' + esc(keyPhrase(it.title)) + '</span></button>';
+      });
+      if (c.key === "world" && its.length > 5) abLines += '<div class="ab-more">외 ' + (its.length - 5) + '건</div>';
+    }
+
     let html = '<div class="brief-head">'
-      + '<div><div class="bh-eyebrow">GWANAK-GU · AI POLICY BRIEFING</div>'
-      + '<div class="bh-issue">AI 정책 동향 브리핑 · 제' + briefing.issue_no + '호'
-      + (edLabel ? ' <span class="edition-chip">' + edLabel + '</span>' : '') + '</div></div>'
-      + '<div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;">'
-      + '<span class="bh-date">' + fmtDate(briefing.published_date) + '</span>'
-      + '<button type="button" class="cal-btn" id="brief-config-btn" style="display:none;">⚙️ 수집 설정</button>'
-      + '</div></div>';
+      + '<div class="bh-main">'
+      + '<div class="bh-eyebrow">AI POLICY BRIEFING to GWANAK-GU</div>'
+      + '<div class="bh-issue">AI 정책 브리핑 <span class="bh-no">제' + briefing.issue_no + '호</span> '
+      + '<span class="bh-date">' + fmtDateShort(briefing.published_date) + '</span>'
+      + (edLabel ? ' <span class="edition-chip">' + edLabel + '</span>' : '') + '</div>'
+      + '<div class="bh-counts">' + countPills + '</div>'
+      + '<button type="button" class="cal-btn" id="brief-config-btn" style="display:none;align-self:flex-start;margin-top:4px;">⚙️ 수집 설정</button>'
+      + '</div>'
+      + '<div class="bh-abstract"><div class="ab-title">오늘의 이슈 요약</div>'
+      + '<div class="ab-list">' + abLines + '</div></div>'
+      + '</div>';
 
     html += '<div class="brief-grid">';
     for (const cat of CATS) {
@@ -969,7 +1053,7 @@
         html += renderWorldList(catItems, cat.key);
       } else {
         for (const it of catItems) {
-          html += '<article class="brief-card ' + cat.key + '"><h3>' + esc(it.title) + '</h3>'
+          html += '<article class="brief-card ' + cat.key + '" id="bc-' + it.id + '"><h3>' + esc(it.title) + '</h3>'
             + '<div class="bc-scroll"><p class="sum">' + esc(it.summary) + '</p>';
           if (it.implication) {
             html += '<div class="implication"><strong>함의</strong> · ' + esc(it.implication) + '</div>';
@@ -1003,13 +1087,27 @@
       b.addEventListener("click", () => scrapItem(b.dataset.scrap, b)));
     document.querySelectorAll("#briefing-view [data-request]").forEach(b =>
       b.addEventListener("click", () => openRequestModal(b.dataset.request, b)));
+    // 요약 항목 클릭 → 해당 원문 카드로 스크롤·강조 (world 숨김 항목이면 먼저 펼침)
+    document.querySelectorAll("#briefing-view .ab-item").forEach(b =>
+      b.addEventListener("click", () => {
+        const card = document.getElementById("bc-" + b.dataset.goto);
+        if (!card) return;
+        const hidden = card.closest(".world-hidden");
+        if (hidden && !hidden.classList.contains("open")) {
+          const mb = document.querySelector('.world-more[data-morekey="' + (card.closest(".world-list") ? "world" : "") + '"]');
+          hidden.classList.add("open");
+          if (mb) mb.textContent = "단신 접기 ▴";
+        }
+        card.scrollIntoView({ behavior: "smooth", block: "center" });
+        card.classList.remove("flashcard"); void card.offsetWidth; card.classList.add("flashcard");
+      }));
   }
 
   // 짧은 단신 목록 (해외 및 기타 동향 · 이번 주 전망 공용) — 6건 초과분은 '더 보기'로 감춤
   const WORLD_SHOW = 6;
   function renderWorldList(items, key) {
     const row = it => {
-      let h = '<div class="world-item"><div class="wi-main"><span class="wi-title">' + esc(it.title) + '</span>';
+      let h = '<div class="world-item" id="bc-' + it.id + '"><div class="wi-main"><span class="wi-title">' + esc(it.title) + '</span>';
       if (it.summary) h += ' <span class="wi-sum">— ' + esc(it.summary) + '</span>';
       if (it.source_url) {
         h += ' <a class="wi-src" href="' + esc(it.source_url) + '" target="_blank" rel="noopener">'
@@ -1204,12 +1302,32 @@
       }
       await loadIssue(briefings[0]);
 
+      // 아카이브 카드용: 모든 호의 항목을 한 번에 가져와 호별 키워드 미리보기 구성
+      let itemsByBrief = {};
+      try {
+        const ids = briefings.map(b => b.id).join(",");
+        const allItems = await api("briefing_items?select=briefing_id,category,title,position&briefing_id=in.(" + ids + ")&order=position.asc");
+        allItems.forEach(it => { (itemsByBrief[it.briefing_id] = itemsByBrief[it.briefing_id] || []).push(it); });
+      } catch (e) { itemsByBrief = {}; }
+      const catRank = { gov: 0, seoul: 1, ahead: 2, world: 3 };
+      function archKeywords(bid) {
+        const its = (itemsByBrief[bid] || []).slice()
+          .sort((a, b) => (catRank[a.category] - catRank[b.category]) || (a.position - b.position));
+        if (!its.length) return "";
+        const shown = its.slice(0, 4);
+        let h = '<div class="arch-kw">' + shown.map(it =>
+          '<div class="k ' + it.category + '"><span class="kd"></span><span class="kt">' + esc(keyPhrase(it.title)) + '</span></div>').join("");
+        if (its.length > shown.length) h += '<div class="kmore">외 ' + (its.length - shown.length) + '건</div>';
+        return h + '</div>';
+      }
+
       const list = document.getElementById("archive-list");
       list.innerHTML = briefings.map((b, idx) =>
         '<button class="arch-card' + (idx === 0 ? ' latest' : '') + '" data-idx="' + idx + '">'
-        + '<div class="an">제' + b.issue_no + '호'
+        + '<div class="arch-head"><span class="an">제' + b.issue_no + '호</span>'
+        + '<span class="ad">' + esc(fmtDateShort(b.published_date)) + '</span>'
         + (EDITIONS[b.edition] ? ' <span class="edition-chip">' + EDITIONS[b.edition] + '</span>' : '') + '</div>'
-        + '<div class="ad">' + esc(fmtDate(b.published_date).replace(" 발행", "")) + '</div>'
+        + archKeywords(b.id)
         + '</button>'
       ).join("");
       list.addEventListener("click", async e => {
