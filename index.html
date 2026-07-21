@@ -592,8 +592,14 @@
   .wb-btn{border:1px solid var(--line);background:#fff;color:var(--gwanak);font-family:inherit;font-size:12px;font-weight:700;
     padding:4px 11px;border-radius:999px;cursor:pointer;white-space:nowrap;line-height:1;transition:background .15s,border-color .15s;}
   .wb-btn:hover{background:var(--gwanak);color:#fff;border-color:var(--gwanak);}
-  .wb-note{background:#FFF9E6;border:1px solid #F0E4B8;border-radius:10px;padding:12px 14px;
+  .wb-note{background:#FFF9E6;border:1px solid #F0E4B8;border-radius:10px;padding:12px 14px;position:relative;
     box-shadow:0 1px 3px rgba(180,150,20,.10);}
+  .wb-actions{position:absolute;top:8px;right:10px;display:flex;gap:6px;}
+  .wb-mini{border:1px solid rgba(0,0,0,.12);background:rgba(255,255,255,.75);color:var(--slate);font-family:inherit;
+    font-size:11px;font-weight:700;padding:2px 8px;border-radius:6px;cursor:pointer;line-height:1.4;}
+  .wb-mini:hover{background:#fff;color:var(--gwanak-deep);}
+  .wb-mini.danger{color:#C0392B;}
+  .wb-mini.danger:hover{background:#C0392B;color:#fff;border-color:#C0392B;}
   .wb-sec{margin-bottom:11px;}
   .wb-sec:last-child{margin-bottom:0;}
   .wb-sec .wl{display:block;font-size:11.5px;font-weight:800;letter-spacing:.03em;color:var(--gold);margin-bottom:4px;}
@@ -946,16 +952,23 @@
 
 <div class="modal-backdrop" id="meeting-modal">
   <div class="modal" role="dialog" aria-modal="true" aria-labelledby="meeting-title">
-    <h3 id="meeting-title">회의결과 · 단장 지시사항</h3>
-    <p class="modal-sub">주간회의(월요일) 또는 수시회의 후 결과와 지시사항을 정리합니다.</p>
+    <h3 id="meeting-title">회의 기록</h3>
+    <p class="modal-sub">주간회의(월요일) 또는 수시회의 후 개요·결과와 지시사항을 기록합니다. 회의마다 새로 추가되어 쌓입니다.</p>
     <form id="meeting-form">
-      <div class="field">
-        <label for="meeting-date">회의 날짜</label>
-        <input id="meeting-date" type="date" required>
+      <input type="hidden" id="meeting-id">
+      <div style="display:flex;gap:12px;">
+        <div class="field" style="flex:1.4;">
+          <label for="meeting-date">회의 날짜 <span style="color:#A33;">*</span></label>
+          <input id="meeting-date" type="date" required>
+        </div>
+        <div class="field" style="flex:1;">
+          <label for="meeting-time">회의 시간 (선택)</label>
+          <input id="meeting-time" type="time" step="60">
+        </div>
       </div>
       <div class="field">
-        <label for="meeting-result">회의결과</label>
-        <textarea id="meeting-result" maxlength="2000" placeholder="회의에서 논의·결정된 내용을 압축해 정리하세요."></textarea>
+        <label for="meeting-result">회의 개요 및 결과</label>
+        <textarea id="meeting-result" maxlength="2500" placeholder="회의 명칭 / 장소 / 주요 참석자 / 주요 안건을 적고, 논의·결정된 결과를 압축해 정리하세요."></textarea>
       </div>
       <div class="field">
         <label for="meeting-directive">단장 지시사항</label>
@@ -2658,9 +2671,12 @@
       + '<div class="wb-sec"><span class="wl">이번주 계획</span><div class="wt">' + (n.this_week ? linkify(n.this_week) : "—") + '</div></div>'
       + '</div>';
   }
-  function meetingNoteHtml(m) {
+  function fmtMeetingWhen(m) { return fmtMDW(m.meeting_date) + (m.meeting_time ? " " + m.meeting_time.slice(0, 5) : ""); }
+  function meetingNoteHtml(m, canEdit) {
     return '<div class="wb-note">'
-      + '<div class="wb-sec"><span class="wl">회의결과</span><div class="wt">' + (m.result ? linkify(m.result) : "—") + '</div></div>'
+      + (canEdit ? '<div class="wb-actions"><button type="button" class="wb-mini" data-meeting-edit="' + m.id + '">수정</button>'
+        + '<button type="button" class="wb-mini danger" data-meeting-del="' + m.id + '">삭제</button></div>' : '')
+      + '<div class="wb-sec"><span class="wl">회의 개요 및 결과</span><div class="wt">' + (m.result ? linkify(m.result) : "—") + '</div></div>'
       + '<div class="wb-sec"><span class="wl">단장 지시사항</span><div class="wt">' + (m.directive ? linkify(m.directive) : "—") + '</div></div>'
       + '</div>';
   }
@@ -2679,14 +2695,14 @@
   }
   function meetingBoardHtml(meetings) {
     const latest = meetings[0];
-    let h = '<div class="wb-head"><span class="wb-when">' + (latest ? "최근 회의 " + fmtMDW(latest.meeting_date) : "회의결과 · 지시사항") + '</span>'
-      + (isAdminUser ? '<button type="button" class="wb-btn" data-meeting-edit="1">✏️ 기록</button>' : '') + '</div>';
-    if (!latest) { h += '<p class="wb-empty">' + (isAdminUser ? "아직 기록된 회의결과가 없습니다. ‘✏️ 기록’으로 작성하세요." : "아직 기록된 회의결과가 없습니다.") + '</p>'; return h; }
-    h += meetingNoteHtml(latest);
+    let h = '<div class="wb-head"><span class="wb-when">' + (latest ? "최근 회의 " + fmtMeetingWhen(latest) : "회의 개요·결과 · 지시사항") + '</span>'
+      + (isAdminUser ? '<button type="button" class="wb-btn" data-meeting-new="1">✏️ 새 회의 기록</button>' : '') + '</div>';
+    if (!latest) { h += '<p class="wb-empty">' + (isAdminUser ? "아직 기록된 회의가 없습니다. ‘✏️ 새 회의 기록’으로 작성하세요." : "아직 기록된 회의가 없습니다.") + '</p>'; return h; }
+    h += meetingNoteHtml(latest, isAdminUser);
     const past = meetings.slice(1);
     if (past.length) {
       h += '<details class="wb-hist"><summary>지난 회의록 ' + past.length + '건</summary>'
-        + past.map(m => '<div class="wb-when" style="margin-top:9px;">' + fmtMDW(m.meeting_date) + '</div>' + meetingNoteHtml(m)).join("") + '</details>';
+        + past.map(m => '<div class="wb-when" style="margin-top:9px;">' + fmtMeetingWhen(m) + '</div>' + meetingNoteHtml(m, isAdminUser)).join("") + '</details>';
     }
     return h;
   }
@@ -2707,7 +2723,7 @@
     try {
       const [rs, rm] = await Promise.all([
         sb.from('staff_notes').select('*').order('week_start', { ascending: false }),
-        sb.from('meeting_notes').select('*').order('meeting_date', { ascending: false })
+        sb.from('meeting_notes').select('*').order('meeting_date', { ascending: false }).order('meeting_time', { ascending: false, nullsFirst: false }).order('id', { ascending: false })
       ]);
       staff = rs.data || []; meetings = rm.data || [];
     } catch (e) { /* 네트워크 오류 시 조용히 빈 상태로 */ }
@@ -2736,8 +2752,11 @@
   document.getElementById('about').addEventListener('click', e => {
     const mb = e.target.closest('[data-memo-edit]');
     if (mb) { openMemoModal(mb.dataset.memoEdit); return; }
+    if (e.target.closest('[data-meeting-new]')) { openMeetingModal(null); return; }
     const me = e.target.closest('[data-meeting-edit]');
-    if (me) { openMeetingModal(); return; }
+    if (me) { openMeetingModal(me.dataset.meetingEdit); return; }
+    const md = e.target.closest('[data-meeting-del]');
+    if (md) { deleteMeeting(md.dataset.meetingDel); return; }
   });
 
   // 단원 주간 메모 모달
@@ -2780,38 +2799,48 @@
     await renderAboutBoards();
   });
 
-  // 회의결과 모달 (관리자 전용)
+  // 회의 기록 모달 (관리자 전용) — 회의마다 새 항목 추가, 기존 항목은 id로 수정·삭제
   const meetingModal = document.getElementById('meeting-modal');
   const meetingForm = document.getElementById('meeting-form');
   const meetingError = document.getElementById('meeting-error');
-  function prefillMeeting() {
-    const date = document.getElementById('meeting-date').value;
-    const ex = meetingNotesCache.find(m => m.meeting_date === date);
-    document.getElementById('meeting-result').value = ex ? (ex.result || "") : "";
-    document.getElementById('meeting-directive').value = ex ? (ex.directive || "") : "";
-  }
-  function openMeetingModal() {
+  function openMeetingModal(id) {
     if (!isAdminUser) return;
     meetingError.classList.remove('show');
-    document.getElementById('meeting-date').value = ymd(stripTime(new Date()));
-    prefillMeeting();
+    const ex = id ? meetingNotesCache.find(m => String(m.id) === String(id)) : null;
+    document.getElementById('meeting-id').value = ex ? ex.id : "";
+    document.getElementById('meeting-title').textContent = ex ? "회의 기록 수정" : "새 회의 기록";
+    document.getElementById('meeting-date').value = ex ? ex.meeting_date : ymd(stripTime(new Date()));
+    document.getElementById('meeting-time').value = ex && ex.meeting_time ? ex.meeting_time.slice(0, 5) : "";
+    document.getElementById('meeting-result').value = ex ? (ex.result || "") : "";
+    document.getElementById('meeting-directive').value = ex ? (ex.directive || "") : "";
     meetingModal.classList.add('open');
   }
-  document.getElementById('meeting-date').addEventListener('change', prefillMeeting);
+  async function deleteMeeting(id) {
+    if (!isAdminUser) return;
+    if (!confirm("이 회의 기록을 삭제할까요? 되돌릴 수 없습니다.")) return;
+    const { error } = await sb.from('meeting_notes').delete().eq('id', Number(id));
+    if (error) { alert("삭제하지 못했습니다. (" + error.message + ")"); return; }
+    await renderAboutBoards();
+  }
   document.getElementById('meeting-cancel').addEventListener('click', () => meetingModal.classList.remove('open'));
   meetingModal.addEventListener('click', e => { if (e.target === meetingModal) meetingModal.classList.remove('open'); });
   meetingForm.addEventListener('submit', async e => {
     e.preventDefault();
     const date = document.getElementById('meeting-date').value;
     if (!date) return;
-    const btn = document.getElementById('meeting-submit'); btn.disabled = true;
-    const { error } = await sb.from('meeting_notes').upsert({
+    const id = document.getElementById('meeting-id').value;
+    const payload = {
       meeting_date: date,
+      meeting_time: document.getElementById('meeting-time').value || null,
       result: document.getElementById('meeting-result').value.trim() || null,
       directive: document.getElementById('meeting-directive').value.trim() || null,
       author_email: currentUser ? currentUser.email : null,
       updated_at: new Date().toISOString()
-    }, { onConflict: 'meeting_date' });
+    };
+    const btn = document.getElementById('meeting-submit'); btn.disabled = true;
+    const { error } = id
+      ? await sb.from('meeting_notes').update(payload).eq('id', Number(id))
+      : await sb.from('meeting_notes').insert(payload);
     btn.disabled = false;
     if (error) { meetingError.textContent = "저장하지 못했습니다. (" + error.message + ")"; meetingError.classList.add('show'); return; }
     meetingModal.classList.remove('open');
