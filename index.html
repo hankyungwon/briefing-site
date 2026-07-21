@@ -979,8 +979,8 @@
         </div>
       </div>
       <div class="field">
-        <label for="meeting-result">회의 개요 및 결과</label>
-        <textarea id="meeting-result" maxlength="2500" placeholder="회의 명칭 / 장소 / 주요 참석자 / 주요 안건을 적고, 논의·결정된 결과를 압축해 정리하세요."></textarea>
+        <label for="meeting-result">회의 결과 (명칭, 장소, 주요참석자, 논의 및 결정 사항)</label>
+        <textarea id="meeting-result" maxlength="2500"></textarea>
       </div>
       <div class="field">
         <label for="meeting-directive">단장 지시사항</label>
@@ -2727,7 +2727,7 @@
     return '<div class="wb-note">'
       + (canEdit ? '<div class="wb-actions"><button type="button" class="wb-mini" data-meeting-edit="' + m.id + '">수정</button>'
         + '<button type="button" class="wb-mini danger" data-meeting-del="' + m.id + '">삭제</button></div>' : '')
-      + '<div class="wb-sec"><span class="wl">회의 개요 및 결과</span><div class="wt">' + (m.result ? linkify(m.result) : "—") + '</div></div>'
+      + '<div class="wb-sec"><span class="wl">회의 결과</span><div class="wt">' + (m.result ? linkify(m.result) : "—") + '</div></div>'
       + '<div class="wb-sec"><span class="wl">단장 지시사항</span><div class="wt">' + (m.directive ? linkify(m.directive) : "—") + '</div></div>'
       + '</div>';
   }
