@@ -18,7 +18,7 @@
 <meta property="og:image:width" content="1200">
 <meta property="og:image:height" content="630">
 <meta name="twitter:card" content="summary_large_image">
-<link href="https://fonts.googleapis.com/css2?family=Noto+Serif+KR:wght@400;600;700&family=Noto+Sans+KR:wght@400;500;700&family=Gowun+Batang:wght@400;700&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Noto+Serif+KR:wght@400;600;700&family=Noto+Sans+KR:wght@400;500;700&family=Gowun+Batang:wght@400;700&family=Gothic+A1:wght@500;700;800&display=swap" rel="stylesheet">
 <style>
   :root{
     --bg:#F4F7FB; --card:#FFFFFF; --ink:#1C2B3A;
@@ -243,6 +243,10 @@
     line-height:22px;text-align:center;}
   .cal-day .dnum.sun{color:#C0392B;}
   .cal-day .dnum.sat{color:var(--gwanak);}
+  .cal-day .dnum.hol{color:#C0392B;}
+  .cal-day.today .dnum.hol{color:#fff;}
+  .cal-holname{display:block;font-size:9.5px;color:#C0392B;font-weight:600;line-height:1.25;margin-top:1px;
+    white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:100%;}
   .cal-ev{margin-top:3px;font-size:11.5px;color:#fff;border-radius:5px;padding:2px 6px;
     white-space:nowrap;overflow:hidden;text-overflow:ellipsis;line-height:1.55;cursor:pointer;}
   .cal-ev.mid,.cal-ev.end{border-top-left-radius:0;border-bottom-left-radius:0;}
@@ -263,11 +267,12 @@
   .cal-devt .dmeta{font-size:13px;color:var(--muted);display:flex;gap:8px;flex-wrap:wrap;align-items:center;}
   .cal-devt .dmemo{font-size:13.5px;color:#3B4756;margin-top:7px;white-space:pre-wrap;line-height:1.6;}
   .type-tag{font-size:11.5px;font-weight:700;color:#fff;border-radius:5px;padding:2px 8px;}
-  .cal-mobile-hint{display:none;}
-  /* 모바일 달력: 셀을 간결하게 — 일정은 색 막대로 표시, 날짜를 누르면 일별 상세로 이동 */
+  .cal-legend{font-size:12.5px;color:var(--muted);margin-top:11px;line-height:1.9;}
+  .cal-legend .ev-dot{display:inline-block;width:8px;height:8px;border-radius:50%;vertical-align:middle;margin:0 4px 0 10px;}
+  /* 모바일 달력: 셀을 간결하게, 날짜를 누르면 일별 상세로 이동 */
   @media(max-width:640px){
-    .cal-mobile-hint{display:block;font-size:12px;color:var(--muted);margin-top:9px;line-height:1.8;}
-    .cal-mobile-hint .ev-dot{display:inline-block;width:8px;height:8px;border-radius:50%;vertical-align:middle;margin:0 3px 0 8px;}
+    .cal-legend{font-size:11.5px;margin-top:9px;line-height:1.8;}
+    .cal-legend .ev-dot{margin:0 3px 0 7px;}
     /* 주간 보기: 좁은 화면에서는 요일을 세로로 쌓아 읽기 쉽게 */
     .cal-week{grid-template-columns:1fr;gap:8px;}
     .cal-wcol{min-height:0;display:flex;align-items:stretch;}
@@ -390,8 +395,11 @@
   .arch-head .ad{margin-left:auto;flex:none;}
   .arch-card .an{font-family:'Noto Serif KR',serif;font-size:18px;font-weight:700;color:var(--gwanak-deep);}
   .arch-card .ad{font-size:12px;color:var(--muted);font-weight:600;}
-  .arch-card.latest .an::after{content:"최신";font-family:'Noto Sans KR',sans-serif;font-size:10px;font-weight:700;
-    color:#fff;background:var(--gold);border-radius:4px;padding:1px 6px;margin-left:6px;vertical-align:2px;}
+  /* '최신'은 hot issue 느낌의 따뜻·강렬한 색(주황빨강), '종합/연휴'는 골드로 구분 */
+  .arch-card.latest .an::after{content:"최신";font-family:'Noto Sans KR',sans-serif;font-size:10px;font-weight:800;
+    color:#fff;background:#E8542B;border-radius:4px;padding:1px 6px;margin-left:6px;vertical-align:2px;
+    box-shadow:0 1px 4px rgba(232,84,43,.35);}
+  .arch-card.latest{border-top-color:#E8542B;}
   .arch-kw{margin-top:10px;padding-top:10px;border-top:1px dashed var(--line);display:flex;flex-direction:column;gap:5px;}
   .arch-kw .k{display:flex;align-items:baseline;gap:6px;font-size:12.5px;line-height:1.45;color:#3B4756;word-break:keep-all;}
   .arch-kw .k .kd{width:5px;height:5px;border-radius:50%;flex:none;margin-top:5px;opacity:.6;}
@@ -437,27 +445,23 @@
   .brief-head .bh-issue{font-family:'Noto Serif KR',serif;font-weight:700;font-size:clamp(20px,2.6vw,26px);color:var(--gwanak-deep);line-height:1.25;word-break:keep-all;}
   .brief-head .bh-no{color:var(--gwanak);}
   .brief-head .bh-date{font-family:'Noto Sans KR',sans-serif;font-size:15px;font-weight:600;color:var(--slate);letter-spacing:.01em;}
-  .bh-counts{display:flex;gap:6px;flex-wrap:wrap;margin-top:2px;}
-  .bh-count{display:inline-flex;align-items:center;gap:5px;background:#fff;border:1px solid var(--line);
-    border-radius:999px;padding:3px 10px;font-size:12px;font-weight:600;color:var(--slate);}
-  .bh-count .cdot{width:7px;height:7px;border-radius:50%;flex:none;}
-  .bh-count b{color:var(--gwanak-deep);font-weight:800;font-variant-numeric:tabular-nums;}
-  /* 오늘의 이슈 키워드 — 핵심어를 가로로 흘려 3~4줄로 압축 */
+  /* 오늘의 이슈 키워드 — 핵심어를 가로로 흘려 최대 3줄로 압축 */
   .bh-abstract{background:#fff;border:1px solid var(--line);border-radius:14px;padding:13px 16px 13px;
-    box-shadow:0 1px 3px rgba(14,95,168,.05);display:flex;flex-direction:column;min-width:0;}
-  .ab-title{font-size:12px;font-weight:800;letter-spacing:.04em;color:var(--gwanak-deep);margin-bottom:9px;
+    box-shadow:0 1px 3px rgba(14,95,168,.05);display:flex;flex-direction:column;justify-content:center;min-width:0;}
+  .ab-title{font-size:12px;font-weight:800;letter-spacing:.04em;color:var(--gwanak-deep);margin-bottom:10px;
     display:flex;align-items:center;gap:6px;}
   .ab-title::before{content:"";width:3px;height:13px;background:var(--gold);border-radius:2px;}
-  .ab-kw{font-size:14px;line-height:1.95;color:var(--ink);word-break:keep-all;}
-  .abk{border:none;background:none;font-family:inherit;font-size:14px;color:var(--ink);cursor:pointer;padding:0;
-    word-break:keep-all;font-weight:500;}
+  .ab-kw{font-family:'Gothic A1','Noto Sans KR',sans-serif;font-size:14.5px;line-height:1.62;color:var(--gwanak-deep);
+    word-break:keep-all;display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical;overflow:hidden;}
+  .abk{border:none;background:none;font-family:inherit;font-size:14.5px;font-weight:700;color:var(--gwanak-deep);
+    cursor:pointer;padding:0;word-break:keep-all;letter-spacing:-.01em;}
   .abk:hover{color:var(--gwanak);text-decoration:underline;}
-  .abk-sep{color:#C4CDD8;margin:0 7px;}
-  .ab-kmore{color:var(--muted);font-weight:500;}
+  .abk-sep{color:#B9C6D6;margin:0 8px;font-weight:400;}
   .brief-card.flashcard,.world-item.flashcard{animation:postFlash 2s ease;}
   @media(max-width:720px){
     .brief-head{grid-template-columns:1fr;gap:14px;padding:18px 18px;}
     .bh-abstract{order:2;}
+    .ab-kw{font-size:14px;-webkit-line-clamp:4;}
   }
   .brief-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:16px;align-items:stretch;}
   .cat-band{grid-column:1/-1;display:flex;align-items:center;gap:10px;margin-top:12px;}
@@ -781,11 +785,6 @@
         </ul>
       </div>
     </div>
-    <div class="contact">
-      <h5>오시는 길 · 연락처</h5>
-      <p>(08832) 서울특별시 관악구 관악로 145, 관악구청 2층</p>
-      <p class="tel">TEL 02-879-7424</p>
-    </div>
   </section>
 </main>
 
@@ -844,6 +843,7 @@
         <label for="event-type">유형</label>
         <select id="event-type">
           <option value="meeting">회의</option>
+          <option value="meal">식사</option>
           <option value="trip">출장</option>
           <option value="leave">연가</option>
           <option value="etc">기타</option>
@@ -869,7 +869,6 @@
           <input id="event-etime" type="time" step="1800">
         </div>
       </div>
-      <div class="file-hint" style="margin:-6px 0 14px;">시각 칸에 마우스를 올려 휠을 굴리면 30분 단위로 빠르게 바뀝니다. 시작 시각을 정하면 종료 시각은 1시간 뒤로 자동 제안됩니다.</div>
       <div class="field">
         <label for="event-loc">장소 (선택)</label>
         <input id="event-loc" type="text" maxlength="120">
@@ -1021,25 +1020,13 @@
     currentItemsById = {};
     items.forEach(it => { currentItemsById[it.id] = it; });
     const edLabel = EDITIONS[briefing.edition];
-    // 섹션별 건수 (요약 배지·Abstract 공용)
-    const cntBy = {};
-    CATS.forEach(c => { cntBy[c.key] = items.filter(i => i.category === c.key).length; });
-    const countPills = CATS.filter(c => cntBy[c.key] > 0).map(c =>
-      '<span class="bh-count"><span class="cdot" style="background:' +
-      ({ahead:"var(--gold)",gov:"var(--gwanak-deep)",seoul:"var(--sky)",world:"var(--slate)"}[c.key]) + '"></span>'
-      + esc(c.label.split(" · ")[0].split(" 및 ")[0]) + ' <b>' + cntBy[c.key] + '</b></span>').join("");
-
-    // 오늘의 이슈 키워드: 항목마다 핵심어 1개를 뽑아 가로로 흘려 배치 (gov·seoul·ahead 전부, world 앞 4건)
+    // 오늘의 이슈 키워드: 항목마다 핵심어 1개를 뽑아 가로로 흘려 배치 (최대 3줄은 CSS로 클램프)
     const kwParts = [];
     for (const c of CATS) {
-      const its = items.filter(i => i.category === c.key);
-      if (!its.length) continue;
-      const shown = c.key === "world" ? its.slice(0, 4) : its;
-      shown.forEach(it => {
+      items.filter(i => i.category === c.key).forEach(it => {
         const kw = issueKw(it);
         if (kw) kwParts.push('<button type="button" class="abk" data-goto="' + it.id + '">' + esc(kw) + '</button>');
       });
-      if (c.key === "world" && its.length > 4) kwParts.push('<span class="ab-kmore">외 ' + (its.length - 4) + '건</span>');
     }
     const kwHtml = kwParts.join('<span class="abk-sep">·</span>');
 
@@ -1049,8 +1036,7 @@
       + '<div class="bh-issue">AI 정책 브리핑 <span class="bh-no">제' + briefing.issue_no + '호</span>'
       + (edLabel ? '<span class="edition-chip">' + edLabel + '</span>' : '')
       + ' <span class="bh-date">' + fmtDateShort(briefing.published_date) + '</span></div>'
-      + '<div class="bh-counts">' + countPills + '</div>'
-      + '<button type="button" class="cal-btn" id="brief-config-btn" style="display:none;align-self:flex-start;margin-top:4px;">⚙️ 수집 설정</button>'
+      + '<button type="button" class="cal-btn" id="brief-config-btn" style="display:none;align-self:flex-start;margin-top:6px;">⚙️ 수집 설정</button>'
       + '</div>'
       + '<div class="bh-abstract"><div class="ab-title">오늘의 이슈 키워드</div>'
       + '<div class="ab-kw">' + kwHtml + '</div></div>'
@@ -2008,14 +1994,17 @@
 
   // ── 연구단일정 ─────────────────────────────
   const EV_TYPES = {
-    meeting: { label: "회의", color: "#0E5FA8" },
-    trip:    { label: "출장", color: "#1E8E5A" },
-    leave:   { label: "연가", color: "#C7791A" },
-    etc:     { label: "기타", color: "#556A8D" }
+    meeting: { label: "회의", color: "#D64541" },   // 가장 중요 — 붉은 계열
+    meal:    { label: "식사", color: "#E8883A" },   // 친목 — 따뜻한 주황
+    trip:    { label: "출장", color: "#2E9E6B" },   // 이동 — 초록
+    leave:   { label: "연가", color: "#3B82C4" },   // 휴식 — 파랑
+    etc:     { label: "기타", color: "#6B7A8F" }    // 기타 — 슬레이트
   };
+  const EV_ORDER = ["meeting","meal","trip","leave","etc"];
   const evType = t => EV_TYPES[t] || EV_TYPES.etc;
   const calView = { mode: "month", anchor: new Date() };
   let calEvents = [];
+  let calHolidays = {};   // { 'YYYY-MM-DD': '공휴일명' }
   const calRoot = document.getElementById("calendar-view");
 
   function ymd(d) {
@@ -2046,6 +2035,10 @@
     const { data, error } = await sb.from("events").select("*").order("start_date", { ascending: true });
     if (error) { calRoot.innerHTML = '<p class="status error">일정을 불러오지 못했습니다. (' + esc(error.message) + ')</p>'; return; }
     calEvents = data || [];
+    if (!Object.keys(calHolidays).length) {
+      const { data: hol } = await sb.from("holidays").select("day,name");
+      (hol || []).forEach(h => { calHolidays[h.day] = h.name; });
+    }
     drawCalendar();
   }
 
@@ -2113,19 +2106,20 @@
           + (showTitle ? esc(ev.title) : '&nbsp;') + '</div>';
       }
       if (dayEvents.length > 3) evHtml += '<div class="cal-more">+' + (dayEvents.length-3) + '개</div>';
-      cells += '<div class="cal-day' + (isOther?' other':'') + (isToday?' today':'') + '" data-day="' + ymd(day) + '">'
-        + '<span class="dnum' + (dow===0?' sun':dow===6?' sat':'') + '">' + day.getDate() + '</span>'
+      const holName = calHolidays[ymd(day)];
+      const dnumCls = holName ? " hol" : (dow===0 ? " sun" : dow===6 ? " sat" : "");
+      cells += '<div class="cal-day' + (isOther?' other':'') + (isToday?' today':'') + (holName?' ishol':'') + '" data-day="' + ymd(day) + '">'
+        + '<span class="dnum' + dnumCls + '">' + day.getDate() + '</span>'
+        + (holName ? '<span class="cal-holname">' + esc(holName) + '</span>' : '')
         + evHtml + '</div>';
       cur.setDate(cur.getDate()+1);
     }
     return '<div class="cal-month"><div class="cal-weekdays">'
       + WEEKDAYS.map((w,i) => '<div class="' + (i===0?'sun':i===6?'sat':'') + '">' + w + '</div>').join("")
       + '</div><div class="cal-days">' + cells + '</div></div>'
-      + '<p class="cal-mobile-hint">날짜를 누르면 그날의 상세 일정이 열립니다.'
-      + ' <span class="ev-dot" style="background:#0E5FA8"></span>회의'
-      + ' <span class="ev-dot" style="background:#1E8E5A"></span>출장'
-      + ' <span class="ev-dot" style="background:#C7791A"></span>연가'
-      + ' <span class="ev-dot" style="background:#556A8D"></span>기타</p>';
+      + '<p class="cal-legend">날짜를 누르면 그날의 상세 일정이 열립니다.'
+      + EV_ORDER.map(k => ' <span class="ev-dot" style="background:' + EV_TYPES[k].color + '"></span>' + EV_TYPES[k].label).join("")
+      + '</p>';
   }
 
   function weekView() {
