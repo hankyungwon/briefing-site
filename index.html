@@ -600,6 +600,18 @@
   .wb-mini:hover{background:#fff;color:var(--gwanak-deep);}
   .wb-mini.danger{color:#C0392B;}
   .wb-mini.danger:hover{background:#C0392B;color:#fff;border-color:#C0392B;}
+  /* 감사 로그(삭제 이력) 뷰어 */
+  .modlog-toggle{background:#fff !important;color:var(--gwanak-deep) !important;border:1px solid var(--line) !important;box-shadow:none !important;}
+  .modlog-toggle:hover{background:#F1F6FC !important;border-color:var(--gwanak) !important;}
+  .mlog{border:1px solid var(--line);border-radius:9px;padding:10px 12px;margin-bottom:8px;background:#fff;}
+  .mlog.mod{border-color:#F0C6BC;background:#FFF6F4;}
+  .mlog-top{display:flex;align-items:center;gap:7px;margin-bottom:5px;flex-wrap:wrap;}
+  .mlog-kind{font-size:12px;font-weight:800;color:var(--gwanak-deep);}
+  .mlog-badge{font-size:10.5px;font-weight:700;color:#fff;background:#C0392B;border-radius:999px;padding:1px 8px;}
+  .mlog-badge.self{background:#8A98A8;}
+  .mlog-when{margin-left:auto;font-size:11.5px;color:var(--muted);}
+  .mlog-sum{font-size:13px;color:var(--ink);line-height:1.5;word-break:keep-all;white-space:pre-wrap;}
+  .mlog-meta{font-size:11.5px;color:var(--muted);margin-top:5px;}
   .wb-sec{margin-bottom:11px;}
   .wb-sec:last-child{margin-bottom:0;}
   .wb-sec .wl{display:block;font-size:11.5px;font-weight:800;letter-spacing:.03em;color:var(--gold);margin-bottom:4px;}
@@ -978,6 +990,15 @@
       <button type="button" class="auth-btn" id="meeting-cancel" style="margin-left:8px;">닫기</button>
       <p class="form-error" id="meeting-error" role="alert"></p>
     </form>
+  </div>
+</div>
+
+<div class="modal-backdrop" id="modlog-modal">
+  <div class="modal" role="dialog" aria-modal="true" aria-labelledby="modlog-title" style="max-width:520px;">
+    <h3 id="modlog-title">삭제 이력 (감사 로그)</h3>
+    <p class="modal-sub">게시글·댓글·주간기록의 삭제 내역입니다. 관리자만 열람할 수 있습니다.</p>
+    <div id="modlog-body" style="max-height:60vh;overflow-y:auto;margin:4px 0 14px;"></div>
+    <button type="button" class="auth-btn" id="modlog-cancel">닫기</button>
   </div>
 </div>
 
@@ -1682,13 +1703,14 @@
     }
   }
 
-  sb.auth.onAuthStateChange((event, session) => {
+  sb.auth.onAuthStateChange(async (event, session) => {
     const nextUser = session ? session.user : null;
     // 토큰 자동 갱신처럼 같은 사용자면 화면을 다시 그리지 않음(작성 중인 폼 보호)
     const sameUser = !!(nextUser && currentUser && nextUser.id === currentUser.id);
     currentUser = nextUser;
     renderAuthNav();
-    if (!sameUser) { renderResources(); renderCalendar(); renderBoard(); checkNewBadges(); checkAdmin(); }
+    // 관리자 여부를 먼저 확정한 뒤 화면을 그려야 모더레이션 버튼·삭제 이력이 올바르게 표시됨
+    if (!sameUser) { await checkAdmin(); renderResources(); renderCalendar(); renderBoard(); checkNewBadges(); }
     // 초대/재설정 링크로 접속한 경우 비밀번호 설정 화면을 띄운다.
     if (!pwFlowHandled && session &&
         (event === "PASSWORD_RECOVERY" || authHashType === "invite" || authHashType === "recovery")) {
@@ -2448,6 +2470,7 @@
     boardRoot.innerHTML =
       '<div class="list-toolbar">'
       + '<input type="search" class="filter-input" id="fp-filter" placeholder="🔎 글 검색 — 제목·내용·작성자">'
+      + (isAdminUser ? '<button type="button" class="write-toggle modlog-toggle" id="modlog-btn">🛡 삭제 이력</button>' : '')
       + '<button type="button" class="write-toggle" id="fp-write-toggle" aria-expanded="false">✏️ 새 글 쓰기</button>'
       + '</div>'
       + '<p class="form-ok" id="fp-ok" role="status"></p>'
@@ -2465,8 +2488,32 @@
     document.getElementById("fp-filter").addEventListener("input", paintBoard);
     bindFileField("fp-file");
     document.getElementById("fp-write-toggle").addEventListener("click", () => toggleBoardForm());
+    const mlBtn = document.getElementById("modlog-btn");
+    if (mlBtn) mlBtn.addEventListener("click", openModlog);
     loadFreePosts();
   }
+
+  // 감사 로그(삭제 이력) 뷰어 — 관리자 전용
+  const MODLOG_TABLES = { free_posts: "게시글", free_comments: "댓글", staff_notes: "주간기록" };
+  async function openModlog() {
+    if (!isAdminUser) return;
+    const modal = document.getElementById("modlog-modal"), body = document.getElementById("modlog-body");
+    body.innerHTML = '<p class="status">불러오는 중…</p>';
+    modal.classList.add("open");
+    const { data, error } = await sb.from("moderation_log").select("*").order("deleted_at", { ascending: false }).limit(200);
+    if (error) { body.innerHTML = '<p class="status error">불러오지 못했습니다. (' + esc(error.message) + ')</p>'; return; }
+    if (!data || !data.length) { body.innerHTML = '<p class="empty-note">삭제 이력이 없습니다.</p>'; return; }
+    body.innerHTML = data.map(r =>
+      '<div class="mlog' + (r.was_moderation ? ' mod' : '') + '">'
+      + '<div class="mlog-top"><span class="mlog-kind">' + (MODLOG_TABLES[r.table_name] || esc(r.table_name)) + '</span>'
+      + (r.was_moderation ? '<span class="mlog-badge">관리자 삭제</span>' : '<span class="mlog-badge self">본인 삭제</span>')
+      + '<span class="mlog-when">' + fmtDateTime(r.deleted_at) + '</span></div>'
+      + '<div class="mlog-sum">' + esc(r.target_summary || "(내용 없음)") + '</div>'
+      + '<div class="mlog-meta">작성자 ' + esc(r.target_owner || "—") + ' · 삭제자 ' + esc(r.deleted_by || "—") + '</div>'
+      + '</div>').join("");
+  }
+  document.getElementById("modlog-cancel").addEventListener("click", () => document.getElementById("modlog-modal").classList.remove("open"));
+  document.getElementById("modlog-modal").addEventListener("click", e => { if (e.target.id === "modlog-modal") e.currentTarget.classList.remove("open"); });
 
   function toggleBoardForm(open) {
     const wrap = document.getElementById("fp-form-wrap"), btn = document.getElementById("fp-write-toggle");
@@ -2522,6 +2569,7 @@
       + timeMeta(p.created_at, p.updated_at);
     if (mine) h += '<span class="acts"><button class="mini-btn" data-edit="' + p.id + '">수정</button>'
       + '<button class="mini-btn danger" data-delp="' + p.id + '">삭제</button></span>';
+    else if (isAdminUser) h += '<span class="acts"><button class="mini-btn danger" data-delp="' + p.id + '" title="관리자 삭제">🛡 삭제</button></span>';
     h += '</div>' + renderComments(p.id);
     return h + '</article>';
   }
@@ -2536,9 +2584,10 @@
     const shown = (list.length > 2 && !expanded) ? list.slice(-2) : list;
     for (const c of shown) {
       const mine = c.author_id === currentUser.id;
+      const canDel = mine || isAdminUser;
       h += '<div class="comment"><div class="c-main"><div class="c-text">' + linkify(c.body) + '</div>'
         + '<div class="c-meta"><span class="c-author">' + esc(c.author_name) + '</span> · <span title="' + fmtDateTime(c.created_at) + '">' + timeAgo(c.created_at) + '</span></div></div>'
-        + (mine ? '<button class="c-del" data-delc="' + c.id + '" title="댓글 삭제">✕</button>' : '') + '</div>';
+        + (canDel ? '<button class="c-del" data-delc="' + c.id + '" title="' + (mine ? '댓글 삭제' : '관리자 삭제') + '">✕</button>' : '') + '</div>';
     }
     if (list.length > 2 && expanded) {
       h += '<button class="c-toggle" data-collapse="' + postId + '">댓글 접기 ▴</button>';
@@ -2665,8 +2714,10 @@
   function fmtMDW(iso) { const d = new Date(iso + "T00:00:00"); return (d.getMonth() + 1) + "." + d.getDate() + "(" + WEEKDAYS[d.getDay()] + ")"; }
   let staffNotesCache = [], meetingNotesCache = [];
 
-  function staffNoteHtml(n) {
+  function staffNoteHtml(n, canDelete) {
     return '<div class="wb-note">'
+      + (canDelete ? '<div class="wb-actions"><button type="button" class="wb-mini danger" data-staff-del="' + n.id + '"'
+        + (n.member_email && (!currentUser || (currentUser.email || "").toLowerCase() !== n.member_email) ? ' title="관리자 삭제"' : '') + '>삭제</button></div>' : '')
       + '<div class="wb-sec"><span class="wl">지난주 실적</span><div class="wt">' + (n.last_week ? linkify(n.last_week) : "—") + '</div></div>'
       + '<div class="wb-sec"><span class="wl">이번주 계획</span><div class="wt">' + (n.this_week ? linkify(n.this_week) : "—") + '</div></div>'
       + '</div>';
@@ -2685,11 +2736,12 @@
     let h = '<div class="wb-head"><span class="wb-when">' + (latest ? "최근 " + fmtWeekRange(latest.week_start) : "주간 업무 기록") + '</span>'
       + (isOwner ? '<button type="button" class="wb-btn" data-memo-edit="' + key + '">✏️ 기록</button>' : '') + '</div>';
     if (!latest) { h += '<p class="wb-empty">' + (isOwner ? "아직 작성한 주간 기록이 없습니다. ‘✏️ 기록’으로 시작하세요." : "아직 작성된 주간 기록이 없습니다.") + '</p>'; return h; }
-    h += staffNoteHtml(latest);
+    const canDel = isOwner || isAdminUser;
+    h += staffNoteHtml(latest, canDel);
     const past = notes.slice(1);
     if (past.length) {
       h += '<details class="wb-hist"><summary>지난 기록 ' + past.length + '주</summary>'
-        + past.map(n => '<div class="wb-when" style="margin-top:9px;">' + fmtWeekRange(n.week_start) + '</div>' + staffNoteHtml(n)).join("") + '</details>';
+        + past.map(n => '<div class="wb-when" style="margin-top:9px;">' + fmtWeekRange(n.week_start) + '</div>' + staffNoteHtml(n, canDel)).join("") + '</details>';
     }
     return h;
   }
@@ -2757,7 +2809,15 @@
     if (me) { openMeetingModal(me.dataset.meetingEdit); return; }
     const md = e.target.closest('[data-meeting-del]');
     if (md) { deleteMeeting(md.dataset.meetingDel); return; }
+    const sd = e.target.closest('[data-staff-del]');
+    if (sd) { deleteStaffNote(sd.dataset.staffDel); return; }
   });
+  async function deleteStaffNote(id) {
+    if (!confirm("이 주간 기록을 삭제할까요? 되돌릴 수 없습니다.")) return;
+    const { error } = await sb.from('staff_notes').delete().eq('id', Number(id));
+    if (error) { alert("삭제하지 못했습니다. (" + error.message + ")"); return; }
+    await renderAboutBoards();
+  }
 
   // 단원 주간 메모 모달
   const memoModal = document.getElementById('memo-modal');
