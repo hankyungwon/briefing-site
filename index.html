@@ -687,6 +687,14 @@
   .pk-editor img{max-width:100%;height:auto;}
   .pk-editor-sm{min-height:min(620px,44vh);}
   @media(max-width:640px){ .pk-editor{padding:22px 18px;min-height:44vh;margin:10px auto;} }
+  /* 편집기 하단 글자·쪽수 표시 */
+  .pk-count{font-size:11px;color:var(--muted);text-align:right;margin:2px 4px 0;}
+  /* 개인 인쇄·파일 저장 막대 */
+  .pk-export{display:flex;flex-wrap:wrap;gap:6px;align-items:center;margin:12px 0 2px;padding:9px 11px;
+    background:#F4F8FC;border:1px solid var(--line);border-radius:9px;}
+  .pk-export .pk-xlabel{font-size:12px;color:var(--slate);font-weight:700;margin-right:2px;}
+  .pk-export select{font-family:inherit;font-size:12.5px;border:1px solid var(--line);border-radius:6px;padding:4px 6px;
+    background:#fff;color:var(--slate);cursor:pointer;}
   @media print {
     .packet-body{font-size:11.5px;line-height:1.4;}
     .packet-body h3{font-size:15px;} .packet-body h4{font-size:13px;}
@@ -1050,6 +1058,16 @@
         <div id="memo-this" class="pk-editor pk-editor-sm" contenteditable="true" data-ph="이번 주에 추진할 업무를 적으세요."></div>
       </div>
       <input type="file" id="memo-img-input" accept="image/*" multiple hidden>
+      <div class="pk-export no-print">
+        <span class="pk-xlabel">출력 범위</span>
+        <select id="memo-export-scope">
+          <option value="both">지난주 실적 ＋ 이번주 계획 (통합)</option>
+          <option value="last">지난주 실적만</option>
+          <option value="this">이번주 계획만</option>
+        </select>
+        <button type="button" class="wb-mini" id="memo-print">🖨 인쇄 / PDF</button>
+        <button type="button" class="wb-mini" id="memo-download">💾 파일 저장(한글·워드)</button>
+      </div>
       <button type="submit" class="btn-primary" id="memo-submit">저장</button>
       <button type="button" class="auth-btn" id="memo-cancel" style="margin-left:8px;">닫기</button>
       <p class="form-error" id="memo-error" role="alert"></p>
@@ -1105,6 +1123,7 @@
         <h3 id="packet-title" style="font-size:16px;">주간회의 자료</h3>
         <div style="display:flex;gap:8px;">
           <button type="button" class="btn-primary" id="packet-print">🖨 인쇄</button>
+          <button type="button" class="auth-btn" id="packet-download">💾 파일 저장</button>
           <button type="button" class="auth-btn" id="packet-doc-close">닫기</button>
         </div>
       </div>
@@ -2757,6 +2776,7 @@
   function showPacketDoc(id) {
     const p = packetCache.find(x => String(x.id) === String(id));
     if (!p) return;
+    document.getElementById("packet-title").textContent = p.title || "주간회의 자료";
     document.getElementById("packet-doc").innerHTML = '<div class="packet-body">' + sanitizePacketHtml(p.content || "") + '</div>';
     packetView("doc");
   }
@@ -2768,7 +2788,9 @@
     document.getElementById("packet-edit-id").value = p.id;
     document.getElementById("packet-edit-name").value = p.title || "";
     document.getElementById("packet-edit-date").value = p.packet_date;
-    document.getElementById("packet-edit-body").innerHTML = sanitizePacketHtml(p.content || "");
+    const pe = document.getElementById("packet-edit-body");
+    pe.innerHTML = sanitizePacketHtml(p.content || "");
+    if (pe._updCount) pe._updCount();
     packetView("edit");
   }
   async function savePacket() {
@@ -2791,7 +2813,50 @@
     if (error) { alert("삭제하지 못했습니다. (" + error.message + ")"); return; }
     await loadPackets();
   }
-  document.getElementById("packet-print").addEventListener("click", () => window.print());
+  // ── 인쇄·파일 저장 공용 유틸 — 브랜드 서식이 담긴 독립 문서를 만들어 인쇄(PDF)하거나 한글·워드용 파일로 내려받는다 ──
+  function buildStandaloneHtml(title, bodyHtml) {
+    return '<!DOCTYPE html><html lang="ko"><head><meta charset="utf-8">'
+      + '<meta name="viewport" content="width=device-width, initial-scale=1">'
+      + '<title>' + esc(title) + '</title>'
+      + '<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;500;700;800&family=Noto+Serif+KR:wght@600;700;800&display=swap">'
+      + '<style>'
+      + '@page{size:A4;margin:20mm 20mm;}'
+      + '*{box-sizing:border-box;}'
+      + 'body{font-family:"Noto Sans KR","맑은 고딕","Malgun Gothic",sans-serif;color:#1B2733;font-size:11pt;line-height:1.75;word-break:keep-all;margin:0;padding:24px;}'
+      + 'h1{font-family:"Noto Serif KR",serif;font-size:18pt;color:#0B4A86;margin:0 0 6pt;}'
+      + '.doc-meta{color:#5B6B7B;font-size:9.5pt;margin:0 0 16pt;border-bottom:2px solid #0E5FA8;padding-bottom:9pt;}'
+      + 'h2{font-size:12.5pt;color:#0B4A86;border-left:4px solid #FFE600;padding-left:9px;margin:18pt 0 7pt;}'
+      + 'h3{font-size:13pt;color:#0B4A86;margin:14pt 0 5pt;} h4{font-size:11.5pt;color:#0B4A86;margin:11pt 0 4pt;}'
+      + 'p{margin:4pt 0;} ul,ol{margin:4pt 0;padding-left:22px;} li{margin:2pt 0;}'
+      + 'table{border-collapse:collapse;width:100%;margin:7pt 0;} td,th{border:1px solid #99A7B5;padding:5pt 7pt;font-size:10.5pt;vertical-align:top;word-break:keep-all;}'
+      + 'img{max-width:100%;height:auto;} hr{border:none;border-top:1px solid #CBD5E0;margin:9pt 0;}'
+      + '</style></head><body>' + bodyHtml + '</body></html>';
+  }
+  function printHtml(fullHtml) {
+    const f = document.createElement("iframe");
+    f.setAttribute("aria-hidden", "true");
+    f.style.cssText = "position:fixed;left:-9999px;top:0;width:800px;height:1120px;border:0;";
+    document.body.appendChild(f);
+    const d = f.contentWindow.document; d.open(); d.write(fullHtml); d.close();
+    const go = () => { try { f.contentWindow.focus(); f.contentWindow.print(); } catch (e) {} setTimeout(() => f.remove(), 1500); };
+    f.onload = () => setTimeout(go, 300); setTimeout(go, 700); // onload 미발생 브라우저 대비
+  }
+  function downloadDoc(filename, fullHtml) {
+    const blob = new Blob(["﻿" + fullHtml], { type: "application/msword" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a"); a.href = url; a.download = filename;
+    document.body.appendChild(a); a.click(); a.remove();
+    setTimeout(() => URL.revokeObjectURL(url), 2000);
+  }
+  function safeFileName(s) { return (s || "문서").replace(/[\\/:*?"<>|]+/g, "").replace(/\s+/g, "_").slice(0, 80); }
+  document.getElementById("packet-print").addEventListener("click", () => {
+    const title = document.getElementById("packet-title").textContent || "주간회의 자료";
+    printHtml(buildStandaloneHtml(title, '<h1>' + esc(title) + '</h1>' + document.getElementById("packet-doc").innerHTML));
+  });
+  document.getElementById("packet-download").addEventListener("click", () => {
+    const title = document.getElementById("packet-title").textContent || "주간회의 자료";
+    downloadDoc(safeFileName(title) + ".doc", buildStandaloneHtml(title, '<h1>' + esc(title) + '</h1>' + document.getElementById("packet-doc").innerHTML));
+  });
   document.getElementById("packet-save").addEventListener("click", savePacket);
   document.getElementById("packet-edit-cancel").addEventListener("click", closePacketModal);
   document.getElementById("packet-doc-close").addEventListener("click", closePacketModal);
@@ -2828,6 +2893,14 @@
     for (let r = 0; r < rows; r++) { html += "<tr>"; for (let k = 0; k < cols; k++) html += "<td>&nbsp;</td>"; html += "</tr>"; }
     return html + "</tbody></table><p><br></p>";
   }
+  // 표 행·열 편집 — 커서가 놓인 칸 기준으로 행/열을 더하거나 뺀다
+  function tblRowAdd(cell) { const tr = cell.parentElement, ntr = document.createElement("tr");
+    for (let i = 0; i < tr.children.length; i++) { const c = document.createElement(tr.children[i].tagName === "TH" ? "th" : "td"); c.innerHTML = "&nbsp;"; ntr.appendChild(c); } tr.after(ntr); }
+  function tblRowDel(cell) { const tr = cell.parentElement, tb = tr.closest("table"); if (tb.querySelectorAll("tr").length <= 1) { tb.remove(); return; } tr.remove(); }
+  function tblColAdd(cell) { const idx = [...cell.parentElement.children].indexOf(cell), tb = cell.closest("table");
+    tb.querySelectorAll("tr").forEach(tr => { const ref = tr.children[idx], c = document.createElement(ref && ref.tagName === "TH" ? "th" : "td"); c.innerHTML = "&nbsp;"; if (ref) ref.after(c); else tr.appendChild(c); }); }
+  function tblColDel(cell) { const idx = [...cell.parentElement.children].indexOf(cell), tb = cell.closest("table"), rows = [...tb.querySelectorAll("tr")];
+    if (!rows.length || rows[0].children.length <= 1) { tb.remove(); return; } rows.forEach(tr => { if (tr.children[idx]) tr.children[idx].remove(); }); }
   // 한글(HWP)·워드에서 붙여넣은 HTML을 편집기에 맞게 정리 — 불필요한 서식·고정폭 제거, 안전한 스타일만 유지
   const PASTE_STYLE_KEEP = ["font-weight","font-style","text-decoration","text-decoration-line","text-align","color","background-color","font-size","font-family"];
   function cleanPastedHtml(html) {
@@ -2876,6 +2949,10 @@
     + '<button type="button" data-cmd="justify" title="양쪽 정렬">▦</button><span class="pk-sep"></span>'
     + '<button type="button" data-cmd="hr" title="구분선">──</button>'
     + '<button type="button" data-cmd="table" title="표 삽입">▦ 표</button>'
+    + '<button type="button" data-cmd="row-add" title="아래에 행 추가">행＋</button>'
+    + '<button type="button" data-cmd="row-del" title="현재 행 삭제">행－</button>'
+    + '<button type="button" data-cmd="col-add" title="오른쪽에 열 추가">열＋</button>'
+    + '<button type="button" data-cmd="col-del" title="현재 열 삭제">열－</button><span class="pk-sep"></span>'
     + '<button type="button" data-cmd="image" title="그림 삽입">🖼 그림</button>'
     + '<button type="button" data-cmd="clear" title="서식 지우기">✕ 서식</button>';
   const EXEC_MAP = { bold:"bold", italic:"italic", underline:"underline", strike:"strikeThrough",
@@ -2888,9 +2965,18 @@
     let active = editorEls[0], savedRange = null;
     const saveSel = () => { const s = window.getSelection(); if (s && s.rangeCount && active && active.contains(s.anchorNode)) savedRange = s.getRangeAt(0).cloneRange(); };
     const restoreSel = () => { active.focus(); if (savedRange) { const s = window.getSelection(); s.removeAllRanges(); s.addRange(savedRange); } };
+    const cellFromSel = () => { const s = window.getSelection();
+      let node = (s && s.rangeCount && active && active.contains(s.anchorNode)) ? s.anchorNode : (savedRange ? savedRange.startContainer : null);
+      if (node && node.nodeType === 3) node = node.parentElement;
+      return node && node.closest ? node.closest("td,th") : null; };
     editorEls.forEach(ed => {
       ed.addEventListener("focus", () => { active = ed; });
       ["keyup", "mouseup", "input"].forEach(ev => ed.addEventListener(ev, saveSel));
+      // 글자·쪽수 표시 (A4 기준 대략치)
+      const cnt = document.createElement("div"); cnt.className = "pk-count"; ed.insertAdjacentElement("afterend", cnt);
+      const updCount = () => { const chars = (ed.innerText || "").replace(/\s/g, "").length;
+        cnt.textContent = "글자 " + chars.toLocaleString() + "자 · 약 " + Math.max(1, Math.ceil(chars / 1500)) + "쪽"; };
+      ed.addEventListener("input", updCount); ed.addEventListener("blur", updCount); ed._updCount = updCount; updCount();
       ed.addEventListener("paste", e => {
         const cd = e.clipboardData; if (!cd) return;
         for (const it of (cd.items || [])) { if (it.type && it.type.indexOf("image") === 0) { e.preventDefault(); insertImageInto(active, it.getAsFile()); return; } }
@@ -2909,6 +2995,13 @@
       else if (c === "h") exec("formatBlock", "H4");
       else if (c === "p") exec("formatBlock", "P");
       else if (c === "table") { const h = buildTableHtml(); if (h) { active.focus(); exec("insertHTML", h); } }
+      else if (c === "row-add" || c === "row-del" || c === "col-add" || c === "col-del") {
+        const cell = cellFromSel();
+        if (!cell) { alert("표 안에 커서를 두고 눌러 주세요."); return; }
+        if (c === "row-add") tblRowAdd(cell); else if (c === "row-del") tblRowDel(cell);
+        else if (c === "col-add") tblColAdd(cell); else tblColDel(cell);
+        active.dispatchEvent(new Event("input"));
+      }
       else if (c === "image") document.getElementById(imgInputId).click();
     });
     bar.querySelector(".rt-font").addEventListener("change", e => { restoreSel(); document.execCommand("fontName", false, e.target.value); });
@@ -3245,6 +3338,28 @@
     const ex = staffNotesCache.find(n => n.member_email === email && n.week_start === week);
     document.getElementById('memo-last').innerHTML = ex ? richToHtml(ex.last_week) : "";
     document.getElementById('memo-this').innerHTML = ex ? richToHtml(ex.this_week) : "";
+    ['memo-last', 'memo-this'].forEach(id => { const e = document.getElementById(id); if (e._updCount) e._updCount(); });
+  }
+  // 연구관 개인 인쇄·파일 저장 — 통합 또는 지난주실적/이번주계획 개별
+  function memoExportDoc(scope) {
+    const lastRaw = sanitizePacketHtml(document.getElementById('memo-last').innerHTML);
+    const thisRaw = sanitizePacketHtml(document.getElementById('memo-this').innerHTML);
+    const isEmpty = h => !h.replace(/<br\s*\/?>|<p>|<\/p>|&nbsp;|\s/gi, "").length;
+    const none = '<p style="color:#8A97A5;">(작성된 내용이 없습니다)</p>';
+    const secLast = '<h2>지난주 실적</h2>' + (isEmpty(lastRaw) ? none : lastRaw);
+    const secThis = '<h2>이번주 계획</h2>' + (isEmpty(thisRaw) ? none : thisRaw);
+    const email = memoModal.dataset.email;
+    const m = MEMBERS.find(x => (x.email || "").toLowerCase() === (email || "").toLowerCase());
+    const who = m ? m.name : "연구단";
+    const week = document.getElementById('memo-week').value;
+    const range = week ? fmtWeekRange(week) : "";
+    const scopeLabel = scope === 'last' ? '지난주 실적' : scope === 'this' ? '이번주 계획' : '주간 업무 기록';
+    const title = who + ' ' + scopeLabel + (range ? ' (' + range + ')' : '');
+    let body = '<h1>' + esc(who) + ' ' + esc(scopeLabel) + '</h1>'
+      + '<div class="doc-meta">관악구 AI혁신정책연구단'
+      + (m && m.role ? ' · ' + esc(m.role) : '') + (range ? ' · ' + esc(range) + ' 주간' : '') + '</div>';
+    body += scope === 'last' ? secLast : scope === 'this' ? secThis : (secLast + secThis);
+    return { title: title, html: buildStandaloneHtml(title, body) };
   }
   function openMemoModal(key, week) {
     const email = MEMBER_EMAILS[key];
@@ -3277,6 +3392,13 @@
     if (error) { memoError.textContent = "저장하지 못했습니다. (" + error.message + ")"; memoError.classList.add('show'); return; }
     memoModal.classList.remove('open');
     await renderAboutBoards();
+  });
+  document.getElementById('memo-print').addEventListener('click', () => {
+    printHtml(memoExportDoc(document.getElementById('memo-export-scope').value).html);
+  });
+  document.getElementById('memo-download').addEventListener('click', () => {
+    const r = memoExportDoc(document.getElementById('memo-export-scope').value);
+    downloadDoc(safeFileName(r.title) + ".doc", r.html);
   });
   makeRichEditor("memo-toolbar", "memo-img-input", [document.getElementById("memo-last"), document.getElementById("memo-this")]);
 
