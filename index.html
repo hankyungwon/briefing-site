@@ -2529,6 +2529,14 @@
     drawCalendar();
   }
 
+  // 같은 날 일정 정렬 — 이른 시간이 위, 시간 미입력(종일)은 아래, 동시간이면 종료시간·입력순
+  function evTimeCmp(x, y) {
+    const tx = x.start_time || "99:99", ty = y.start_time || "99:99";
+    if (tx !== ty) return tx < ty ? -1 : 1;
+    const ex = x.end_time || "99:99", ey = y.end_time || "99:99";
+    if (ex !== ey) return ex < ey ? -1 : 1;
+    return (x.id || 0) - (y.id || 0);
+  }
   function drawCalendar() {
     let html = calToolbar() + todayStrip();
     if (calView.mode === "month") html += monthView();
@@ -2561,7 +2569,7 @@
 
   function todayStrip() {
     const today = stripTime(new Date());
-    const todays = calEvents.filter(ev => evCovers(ev, today));
+    const todays = calEvents.filter(ev => evCovers(ev, today)).sort(evTimeCmp);
     let inner;
     if (todays.length === 0) inner = '<span class="ts-none">오늘 등록된 일정이 없습니다.</span>';
     else inner = todays.map(ev => {
@@ -2581,7 +2589,7 @@
     const cur = new Date(gridStart);
     for (let i = 0; i < 42; i++) {
       const day = new Date(cur), isOther = day.getMonth() !== a.getMonth(), isToday = sameDay(day, today), dow = day.getDay();
-      const dayEvents = calEvents.filter(ev => evCovers(ev, day));
+      const dayEvents = calEvents.filter(ev => evCovers(ev, day)).sort(evTimeCmp);
       let evHtml = "";
       for (const ev of dayEvents.slice(0, 3)) {
         const t = evType(ev.type), s = evStart(ev), e = evEnd(ev);
@@ -2615,7 +2623,7 @@
     for (let i = 0; i < 7; i++) {
       const day = new Date(ws); day.setDate(ws.getDate()+i);
       const isToday = sameDay(day, today);
-      const dayEvents = calEvents.filter(ev => evCovers(ev, day));
+      const dayEvents = calEvents.filter(ev => evCovers(ev, day)).sort(evTimeCmp);
       let body = dayEvents.map(ev => {
         const t = evType(ev.type);
         return '<div class="wev" style="background:' + t.color + ';color:' + textOn(t.color) + '" data-ev="' + ev.id + '">'
@@ -2631,8 +2639,7 @@
 
   function dayView() {
     const day = stripTime(calView.anchor);
-    const dayEvents = calEvents.filter(ev => evCovers(ev, day))
-      .sort((x,y) => (x.start_time||"zz") < (y.start_time||"zz") ? -1 : 1);
+    const dayEvents = calEvents.filter(ev => evCovers(ev, day)).sort(evTimeCmp);
     if (!dayEvents.length) return '<p class="empty-note">이 날 등록된 일정이 없습니다.</p>';
     const rows = dayEvents.map(ev => {
       const t = evType(ev.type), mine = ev.author_id === currentUser.id;
