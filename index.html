@@ -787,6 +787,13 @@
   .char-grid button{width:38px;height:38px;display:flex;align-items:center;justify-content:center;font-size:19px;border:1px solid transparent;
     border-radius:7px;background:none;cursor:pointer;color:var(--ink);line-height:1;}
   .char-grid button:hover{background:#EAF3FB;border-color:var(--gwanak);}
+  .char-recent-wrap{display:flex;align-items:center;gap:9px;margin:0 0 10px;padding:8px 10px;background:#FBFAF3;border:1px solid #EAE6D6;border-radius:9px;}
+  .char-rlabel{font-size:11.5px;font-weight:800;letter-spacing:.02em;color:var(--gold);white-space:nowrap;}
+  .char-recent{display:flex;flex-wrap:wrap;gap:3px;flex:1;min-height:32px;align-items:center;}
+  .char-recent button{width:32px;height:32px;display:flex;align-items:center;justify-content:center;font-size:17px;border:1px solid var(--line);
+    border-radius:6px;background:#fff;cursor:pointer;color:var(--ink);line-height:1;}
+  .char-recent button:hover{background:#EAF3FB;border-color:var(--gwanak);}
+  .char-empty{font-size:12px;color:var(--muted);}
   @media print {
     .packet-body{font-size:11.5px;line-height:1.4;}
     .packet-body h3{font-size:15px;} .packet-body h4{font-size:13px;}
@@ -1250,6 +1257,7 @@
   <div class="modal" role="dialog" aria-modal="true" aria-labelledby="char-title" style="max-width:660px;">
     <h3 id="char-title">문자표</h3>
     <p class="modal-sub">넣고 싶은 문자를 누르면 커서 자리에 입력됩니다. 창이 열려 있어 여러 개를 이어서 넣을 수 있습니다.</p>
+    <div class="char-recent-wrap"><span class="char-rlabel">최근 사용</span><div class="char-recent" id="char-recent"></div></div>
     <div class="char-tabs" id="char-tabs"></div>
     <div class="char-grid" id="char-grid"></div>
     <button type="button" class="auth-btn" id="char-close" style="margin-top:12px;">닫기</button>
@@ -3098,46 +3106,54 @@
     + '<button type="button" data-cmd="undo" title="실행 취소">↶</button>'
     + '<button type="button" data-cmd="redo" title="다시 실행">↷</button></span>'
     + '<span class="pk-grp">'
-    + '<select class="rt-font" title="서체 — 목록이 실제 글꼴 모양으로 보입니다">'
-    +   '<optgroup label="본문·한글">'
+    + '<select class="rt-font" title="서체 — 자주 쓰는 순서로 정렬, 목록이 실제 글꼴 모양으로 보입니다">'
+    +   '<optgroup label="고딕 계열">'
     +     '<option value="\'Noto Sans KR\',sans-serif" style="font-family:\'Noto Sans KR\',sans-serif">고딕(본문)</option>'
-    +     '<option value="\'Noto Serif KR\',serif" style="font-family:\'Noto Serif KR\',serif">명조</option>'
-    +     '<option value="\'Malgun Gothic\',sans-serif" style="font-family:\'Malgun Gothic\',sans-serif">맑은 고딕</option>'
-    +     '<option value="\'Nanum Gothic\',\'NanumGothic\',sans-serif" style="font-family:\'Nanum Gothic\',sans-serif">나눔고딕</option>'
-    +     '<option value="\'Nanum Myeongjo\',\'NanumMyeongjo\',serif" style="font-family:\'Nanum Myeongjo\',serif">나눔명조</option>'
-    +     '<option value="\'함초롬바탕\',\'HCR Batang\',\'HCR Batang ExtB\',serif">함초롬바탕</option>'
+    +     '<option value="\'Malgun Gothic\',\'맑은 고딕\',sans-serif" style="font-family:\'Malgun Gothic\',sans-serif">맑은 고딕</option>'
+    +     '<option value="Dotum,\'돋움\',sans-serif" style="font-family:Dotum,sans-serif">돋움</option>'
+    +     '<option value="Gulim,\'굴림\',sans-serif" style="font-family:Gulim,sans-serif">굴림</option>'
+    +     '<option value="\'HY중고딕\',\'HYGothic-Medium\',\'중고딕\',sans-serif">중고딕</option>'
+    +     '<option value="\'HY견고딕\',\'HYGothic-Extra\',sans-serif">HY견고딕</option>'
     +     '<option value="\'함초롬돋움\',\'HCR Dotum\',sans-serif">함초롬돋움</option>'
-    +     '<option value="\'KoPubWorld Batang\',\'KoPub Batang\',serif">KoPub 바탕</option>'
-    +     '<option value="\'KoPubWorld Dotum\',\'KoPub Dotum\',sans-serif">KoPub 돋움</option>'
+    +     '<option value="\'Nanum Gothic\',\'나눔고딕\',sans-serif" style="font-family:\'Nanum Gothic\',sans-serif">나눔고딕</option>'
     +     '<option value="\'NanumBarunGothic\',\'나눔바른고딕\',sans-serif">나눔바른고딕</option>'
-    +     '<option value="\'HGSoodvariedeS\',\'HY견고딕\',\'HYGothic-Extra\',sans-serif">HY견고딕</option>'
-    +     '<option value="\'Gowun Batang\',serif" style="font-family:\'Gowun Batang\',serif">고운바탕</option>'
+    +     '<option value="\'NanumSquare\',\'나눔스퀘어\',sans-serif">나눔스퀘어</option>'
+    +     '<option value="\'KoPubWorld Dotum\',\'KoPub Dotum\',sans-serif">KoPub 돋움</option>'
     +     '<option value="\'Gowun Dodum\',sans-serif" style="font-family:\'Gowun Dodum\',sans-serif">고운돋움</option>'
-    +     '<option value="Gulim,sans-serif" style="font-family:Gulim,sans-serif">굴림</option>'
-    +     '<option value="Dotum,sans-serif" style="font-family:Dotum,sans-serif">돋움</option>'
-    +     '<option value="Batang,serif" style="font-family:Batang,serif">바탕</option>'
-    +     '<option value="Gungsuh,serif" style="font-family:Gungsuh,serif">궁서</option>'
+    +     '<option value="\'Pretendard\',\'Pretendard Variable\',sans-serif">프리텐다드</option>'
+    +   '</optgroup>'
+    +   '<optgroup label="명조·바탕 계열">'
+    +     '<option value="\'Noto Serif KR\',serif" style="font-family:\'Noto Serif KR\',serif">명조(본문)</option>'
+    +     '<option value="Batang,\'바탕\',serif" style="font-family:Batang,serif">바탕</option>'
+    +     '<option value="\'HY신명조\',\'HYSinMyeongJo-Medium\',\'신명조\',serif">신명조</option>'
+    +     '<option value="Gungsuh,\'궁서\',serif" style="font-family:Gungsuh,serif">궁서</option>'
+    +     '<option value="\'함초롬바탕\',\'HCR Batang\',serif">함초롬바탕</option>'
+    +     '<option value="\'Nanum Myeongjo\',\'나눔명조\',serif" style="font-family:\'Nanum Myeongjo\',serif">나눔명조</option>'
+    +     '<option value="\'휴먼명조\',\'HumanMyeongjo\',serif">휴먼명조</option>'
+    +     '<option value="\'KoPubWorld Batang\',\'KoPub Batang\',serif">KoPub 바탕</option>'
+    +     '<option value="\'Gowun Batang\',serif" style="font-family:\'Gowun Batang\',serif">고운바탕</option>'
     +   '</optgroup>'
     +   '<optgroup label="제목·장식">'
+    +     '<option value="\'HY헤드라인M\',\'HYHeadLine-Medium\',sans-serif">HY헤드라인M</option>'
     +     '<option value="\'Black Han Sans\',sans-serif" style="font-family:\'Black Han Sans\',sans-serif">검은고딕(굵은제목)</option>'
     +     '<option value="\'Do Hyeon\',sans-serif" style="font-family:\'Do Hyeon\',sans-serif">도현(제목)</option>'
     +     '<option value="Jua,sans-serif" style="font-family:Jua,sans-serif">주아(둥근제목)</option>'
+    +     '<option value="\'Gothic A1\',sans-serif" style="font-family:\'Gothic A1\',sans-serif;font-weight:800">고딕A1(볼드)</option>'
     +     '<option value="\'Song Myung\',serif" style="font-family:\'Song Myung\',serif">송명(명조제목)</option>'
     +     '<option value="Hahmlet,serif" style="font-family:Hahmlet,serif">함렛(명조제목)</option>'
-    +     '<option value="\'Seoul Namsan\',\'서울남산체\',\'SeoulNamsan\',sans-serif">서울남산체</option>'
-    +     '<option value="\'Seoul Hangang\',\'서울한강체\',\'SeoulHangang\',serif">서울한강체</option>'
+    +     '<option value="\'Seoul Namsan\',\'서울남산체\',sans-serif">서울남산체</option>'
+    +     '<option value="\'Seoul Hangang\',\'서울한강체\',serif">서울한강체</option>'
     +     '<option value="Gugi,cursive" style="font-family:Gugi,cursive">구기(장식제목)</option>'
-    +     '<option value="\'Gothic A1\',sans-serif" style="font-family:\'Gothic A1\',sans-serif;font-weight:800">고딕A1(볼드)</option>'
     +     '<option value="Gaegu,cursive" style="font-family:Gaegu,cursive">개구쟁이(손글씨)</option>'
     +     '<option value="\'Nanum Brush Script\',cursive" style="font-family:\'Nanum Brush Script\',cursive">나눔손글씨(붓)</option>'
     +   '</optgroup>'
     +   '<optgroup label="영문">'
     +     '<option value="Arial,sans-serif" style="font-family:Arial">Arial</option>'
-    +     '<option value="\'Times New Roman\',serif" style="font-family:\'Times New Roman\'">Times New Roman</option>'
     +     '<option value="Calibri,sans-serif" style="font-family:Calibri">Calibri</option>'
     +     '<option value="Verdana,sans-serif" style="font-family:Verdana">Verdana</option>'
-    +     '<option value="Georgia,serif" style="font-family:Georgia">Georgia</option>'
     +     '<option value="Tahoma,sans-serif" style="font-family:Tahoma">Tahoma</option>'
+    +     '<option value="\'Times New Roman\',serif" style="font-family:\'Times New Roman\'">Times New Roman</option>'
+    +     '<option value="Georgia,serif" style="font-family:Georgia">Georgia</option>'
     +     '<option value="\'Courier New\',monospace" style="font-family:\'Courier New\'">Courier New</option>'
     +   '</optgroup>'
     + '</select></span>'
@@ -3286,20 +3302,34 @@
     document.addEventListener("mouseup", end); document.addEventListener("touchend", end);
   })();
   function closeCrop() { document.getElementById("crop-modal").classList.remove("open"); cropTarget = null; if (imgSel) positionImgBox(); }
-  // ── 문자표 — 분류별 기호 격자에서 클릭해 커서 자리에 입력 ──
+  // ── 문자표 — 분류별 기호 격자에서 클릭해 커서 자리에 입력 (최근 사용 문자 별도 표시) ──
   const CHAR_CATS = {
-    "문장부호": "…‥·•※¶§˝〃°′″‰¡¿～〜―–—‐⁂＊＇＂｀´˚˘ˇ¨",
-    "괄호": "（）〔〕［］｛｝〈〉《》「」『』【】〖〗〘〙«»‹›",
-    "화살표": "←→↑↓↔↕↖↗↘↙⇐⇒⇑⇓⇔⇕➔➜➙➤▶◀▲▼➡⬅⬆⬇↩↪↺↻",
-    "수학·기호": "＋－×÷±∓＝≠≈≒≡＜＞≤≥≪≫∞∴∵∈∉∋⊂⊃⊆⊇∩∪∧∨¬∀∃√∛∫∬∑∏∂∇∝∠⊥∥",
-    "단위": "㎜㎝㎞㎟㎠㎢㎣㎤㎥㎦㎏㎎㎍㎈㎉ℓ㎖㎗㎘℃℉％‰№㏊㎐㎑㎒㎓㎔㎾㎿Å㎂㎃㎄㏈",
-    "원문자·번호": "①②③④⑤⑥⑦⑧⑨⑩⑪⑫⑬⑭⑮⑯⑰⑱⑲⑳❶❷❸❹❺ⓐⓑⓒⓓⓔ㉠㉡㉢㉣㉤㈀㈁㈂㈎㈏㈐",
+    "자주쓰기": "·•‧◦○●◎◉▪▫■□‣–—─※☞☜✓✔✕☑☒☐▶◀▲▼△▽「」『』【】〔〕（）→←↔⇒±×÷≒≤≥℃％№㎡㎥㎏㎝㎞₩…～",
+    "문장부호": "…‥·•※¶§˝〃°′″‰¡¿～〜―–—‐⁂＊＇＂｀´˚˘ˇ¨。、·",
+    "괄호": "（）〔〕［］｛｝〈〉《》「」『』【】〖〗〘〙〚〛«»‹›｟｠",
+    "화살표": "←→↑↓↔↕↖↗↘↙⇐⇒⇑⇓⇔⇕⇦⇨⇧⇩➔➜➙➤▶◀▲▼➡⬅⬆⬇↩↪↺↻⤴⤵",
+    "수학·기호": "＋－×÷±∓＝≠≈≒≡＜＞≤≥≪≫∞∴∵∈∉∋⊂⊃⊆⊇∩∪∧∨¬∀∃√∛∫∬∑∏∂∇∝∠⊿⊥∥⌒㏂㏘",
+    "단위": "㎜㎝㎞㎟㎠㎢㎣㎤㎥㎦㎏㎎㎍㎈㎉ℓ㎖㎗㎘℃℉％‰№㏊㎐㎑㎒㎓㎔㎾㎿Å㎂㎃㎄㏈㎧㎨",
+    "원문자·번호": "①②③④⑤⑥⑦⑧⑨⑩⑪⑫⑬⑭⑮⑯⑰⑱⑲⑳❶❷❸❹❺⑴⑵⑶⑷⑸ⓐⓑⓒⓓⓔ㉠㉡㉢㉣㉤㈀㈁㈂㈎㈏㈐⒜⒝⒞",
     "로마숫자": "ⅠⅡⅢⅣⅤⅥⅦⅧⅨⅩⅪⅫⅰⅱⅲⅳⅴⅵⅶⅷⅸⅹ",
-    "도형·별": "○●◎◇◆□■△▲▽▼◁◀▷▶☆★♠♣♥♦♤♧♡◈▣▤▥▦▧▨▩◐◑✓✔✕✖☑☒✦✧❖✿❀◉",
+    "도형·별": "○●◦◎◇◆□■▢▣△▲▽▼◁◀▷▶☆★♠♣♥♦♤♧♡◈▤▥▦▧▨▩◐◑◒◓✓✔✕✖☑☒☐✦✧❖✿❀◉◍",
     "통화": "₩＄€¥£¢￡￥₤₧₨₪₫฿₴₦₡₱₲₵",
     "그리스": "αβγδεζηθικλμνξοπρστυφχψωΑΒΓΔΕΖΗΘΙΚΛΜΝΞΟΠΡΣΤΥΦΧΨΩ",
-    "기타기호": "☎☏✆✉✈⚑⚐❤♨♻⚠☞☜☝☟♪♩♫♬☀☁☂☃❄⌚⏰✎✂℡㈜✽❋❁"
+    "기타기호": "☎☏✆✉✈⚑⚐❤♨♻⚠☞☜☝☟♪♩♫♬☀☁☂☃❄⌚⏰✎✂✁℡㈜✽❋❁㉾㉿"
   };
+  let recentChars = [];
+  try { recentChars = JSON.parse(localStorage.getItem("pk-recent-chars") || "[]"); } catch (e) { recentChars = []; }
+  function renderRecent() {
+    const el = document.getElementById("char-recent");
+    el.innerHTML = recentChars.length
+      ? recentChars.map(ch => '<button type="button" data-ch="' + ch + '">' + ch + '</button>').join("")
+      : '<span class="char-empty">아직 없음 — 아래에서 문자를 누르면 여기에 모입니다.</span>';
+  }
+  function pushRecent(ch) {
+    recentChars = [ch, ...recentChars.filter(c => c !== ch)].slice(0, 14);
+    try { localStorage.setItem("pk-recent-chars", JSON.stringify(recentChars)); } catch (e) {}
+    renderRecent();
+  }
   function renderCharCat(name) {
     document.getElementById("char-grid").innerHTML = [...CHAR_CATS[name]].map(ch => '<button type="button" data-ch="' + ch + '">' + ch + '</button>').join("");
     document.querySelectorAll("#char-tabs button").forEach(b => b.classList.toggle("on", b.dataset.cat === name));
@@ -3307,6 +3337,7 @@
   function openCharModal() {
     const tabs = document.getElementById("char-tabs");
     if (!tabs.dataset.built) { tabs.innerHTML = Object.keys(CHAR_CATS).map(k => '<button type="button" data-cat="' + k + '">' + k + '</button>').join(""); tabs.dataset.built = "1"; renderCharCat(Object.keys(CHAR_CATS)[0]); }
+    renderRecent();
     document.getElementById("char-modal").classList.add("open");
   }
   function insertChar(ch) {
@@ -3316,9 +3347,11 @@
     document.execCommand("insertText", false, ch);
     const s = window.getSelection(); if (s.rangeCount) insertRange = s.getRangeAt(0).cloneRange();
     insertEditor.dispatchEvent(new Event("input"));
+    pushRecent(ch);
   }
   document.getElementById("char-tabs").addEventListener("click", e => { const b = e.target.closest("button[data-cat]"); if (b) renderCharCat(b.dataset.cat); });
   document.getElementById("char-grid").addEventListener("click", e => { const b = e.target.closest("button[data-ch]"); if (b) insertChar(b.dataset.ch); });
+  document.getElementById("char-recent").addEventListener("click", e => { const b = e.target.closest("button[data-ch]"); if (b) insertChar(b.dataset.ch); });
   document.getElementById("char-close").addEventListener("click", () => document.getElementById("char-modal").classList.remove("open"));
   document.getElementById("char-modal").addEventListener("click", e => { if (e.target.id === "char-modal") document.getElementById("char-modal").classList.remove("open"); });
   document.getElementById("crop-cancel").addEventListener("click", closeCrop);
