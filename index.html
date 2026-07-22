@@ -671,16 +671,22 @@
   .pk-toolbar button{appearance:none;border:1px solid transparent;background:none;cursor:pointer;font-family:inherit;
     font-size:13.5px;color:var(--slate);padding:5px 9px;border-radius:6px;line-height:1.1;min-width:32px;}
   .pk-toolbar button:hover{background:#fff;border-color:var(--line);color:var(--gwanak-deep);}
+  .pk-toolbar select{font-family:inherit;font-size:12.5px;border:1px solid var(--line);border-radius:6px;padding:3px 4px;
+    background:#fff;color:var(--slate);cursor:pointer;height:28px;}
+  .pk-toolbar .rt-color{display:inline-flex;align-items:center;gap:1px;font-size:13.5px;color:var(--slate);cursor:pointer;
+    padding:3px 6px;border:1px solid transparent;border-radius:6px;line-height:1.1;}
+  .pk-toolbar .rt-color:hover{background:#fff;border-color:var(--line);}
+  .pk-toolbar .rt-color input{width:22px;height:16px;border:none;background:none;padding:0;cursor:pointer;}
   .pk-sep{width:1px;height:18px;background:var(--line);margin:0 4px;}
-  /* 편집기 — A4 편집용지 느낌(넓고 길게, 종이처럼) */
-  .pk-editor{width:min(760px,100%);margin:14px auto;min-height:min(1000px,58vh);border:1px solid var(--line);border-radius:3px;
-    padding:30px 34px;font-size:14px;line-height:1.8;color:var(--ink);background:#fff;word-break:keep-all;
-    box-shadow:0 2px 14px rgba(14,95,168,.10);}
+  /* 편집기 — A4 편집용지(210mm) + 한글 표준 여백 느낌. HWP 붙여넣기가 자연스럽게 흐르도록 폭 설계 */
+  .pk-editor{width:min(794px,100%);margin:16px auto;min-height:min(1040px,60vh);border:1px solid #D7DEE6;border-radius:2px;
+    padding:76px 94px;font-size:14px;line-height:1.75;color:var(--ink);background:#fff;word-break:keep-all;
+    box-shadow:0 3px 18px rgba(14,95,168,.12);}
   .pk-editor:focus{outline:2px solid var(--gwanak);outline-offset:1px;}
   .pk-editor h4{font-size:15px;font-weight:800;color:var(--gwanak-deep);margin:14px 0 5px;}
   .pk-editor img{max-width:100%;height:auto;}
-  .pk-editor-sm{min-height:min(560px,40vh);}
-  @media(max-width:640px){ .pk-editor{padding:16px 16px;min-height:44vh;margin:10px auto;} }
+  .pk-editor-sm{min-height:min(620px,44vh);}
+  @media(max-width:640px){ .pk-editor{padding:22px 18px;min-height:44vh;margin:10px auto;} }
   @media print {
     .packet-body{font-size:11.5px;line-height:1.4;}
     .packet-body h3{font-size:15px;} .packet-body h4{font-size:13px;}
@@ -1034,19 +1040,7 @@
         <label for="memo-week">해당 주 (월요일 기준)</label>
         <input id="memo-week" type="date" required>
       </div>
-      <div class="pk-toolbar" id="memo-toolbar">
-        <button type="button" data-cmd="bold" title="굵게"><b>B</b></button>
-        <button type="button" data-cmd="italic" title="기울임"><i>I</i></button>
-        <button type="button" data-cmd="underline" title="밑줄"><u>U</u></button>
-        <button type="button" data-cmd="hilite" title="형광펜">🖍</button>
-        <span class="pk-sep"></span>
-        <button type="button" data-cmd="ul" title="글머리 목록">• 목록</button>
-        <button type="button" data-cmd="ol" title="번호 목록">1. 목록</button>
-        <button type="button" data-cmd="hr" title="구분선">──</button>
-        <span class="pk-sep"></span>
-        <button type="button" data-cmd="table" title="표 삽입">▦ 표</button>
-        <button type="button" data-cmd="image" title="그림 삽입">🖼 그림</button>
-      </div>
+      <div class="pk-toolbar" id="memo-toolbar"></div>
       <div class="field" style="margin-top:8px;">
         <label>지난주 실적</label>
         <div id="memo-last" class="pk-editor pk-editor-sm" contenteditable="true" data-ph="지난 한 주 동안 처리한 업무를 정리하세요."></div>
@@ -1126,25 +1120,8 @@
         <div class="field" style="flex:1;"><label for="packet-edit-date">날짜</label>
           <input id="packet-edit-date" type="date"></div>
       </div>
-      <div class="field"><label>내용 <span style="font-weight:400;color:var(--muted);">— 굵게·제목·목록·표·그림 등으로 자유롭게 정리하세요. 그림은 붙여넣기(스크린샷)도 됩니다.</span></label>
-        <div class="pk-toolbar" id="packet-toolbar">
-          <button type="button" data-cmd="bold" title="굵게"><b>B</b></button>
-          <button type="button" data-cmd="italic" title="기울임"><i>I</i></button>
-          <button type="button" data-cmd="underline" title="밑줄"><u>U</u></button>
-          <button type="button" data-cmd="hilite" title="형광펜">🖍</button>
-          <span class="pk-sep"></span>
-          <button type="button" data-cmd="h" title="제목">제목</button>
-          <button type="button" data-cmd="p" title="본문">본문</button>
-          <button type="button" data-cmd="ul" title="글머리 목록">• 목록</button>
-          <button type="button" data-cmd="ol" title="번호 목록">1. 목록</button>
-          <span class="pk-sep"></span>
-          <button type="button" data-cmd="left" title="왼쪽 정렬">⯇</button>
-          <button type="button" data-cmd="center" title="가운데 정렬">≡</button>
-          <button type="button" data-cmd="hr" title="구분선">──</button>
-          <span class="pk-sep"></span>
-          <button type="button" data-cmd="table" title="표 삽입">▦ 표</button>
-          <button type="button" data-cmd="image" title="그림 삽입">🖼 그림</button>
-        </div>
+      <div class="field"><label>내용 <span style="font-weight:400;color:var(--muted);">— 한글(HWP)·워드에서 복사해 붙여넣어도 정리되어 들어옵니다. 그림은 붙여넣기(스크린샷)도 됩니다.</span></label>
+        <div class="pk-toolbar" id="packet-toolbar"></div>
         <div id="packet-edit-body" class="pk-editor" contenteditable="true"></div>
         <input type="file" id="packet-img-input" accept="image/*" multiple hidden>
       </div>
@@ -2851,33 +2828,94 @@
     for (let r = 0; r < rows; r++) { html += "<tr>"; for (let k = 0; k < cols; k++) html += "<td>&nbsp;</td>"; html += "</tr>"; }
     return html + "</tbody></table><p><br></p>";
   }
+  // 한글(HWP)·워드에서 붙여넣은 HTML을 편집기에 맞게 정리 — 불필요한 서식·고정폭 제거, 안전한 스타일만 유지
+  const PASTE_STYLE_KEEP = ["font-weight","font-style","text-decoration","text-decoration-line","text-align","color","background-color","font-size","font-family"];
+  function cleanPastedHtml(html) {
+    const doc = new DOMParser().parseFromString(html, "text/html");
+    doc.querySelectorAll("script,style,meta,link,title").forEach(n => n.remove());
+    doc.querySelectorAll("*").forEach(el => {
+      const tag = el.tagName;
+      if (/[:.]/.test(tag)) { el.replaceWith(...el.childNodes); return; } // o:p 등 네임스페이스 태그 벗기기
+      ["class", "id", "lang", "align", "valign", "border", "cellspacing", "cellpadding", "bgcolor"].forEach(a => el.removeAttribute(a));
+      [...el.attributes].forEach(a => { if (a.name.toLowerCase().startsWith("on")) el.removeAttribute(a.name); });
+      if (/^(TABLE|TD|TH|TR|COL|COLGROUP)$/.test(tag)) { el.removeAttribute("width"); el.removeAttribute("height"); el.removeAttribute("style"); }
+      const st = el.getAttribute("style");
+      if (st) {
+        const kept = st.split(";").map(s => s.trim()).filter(Boolean).filter(rule => PASTE_STYLE_KEEP.includes(rule.split(":")[0].trim().toLowerCase()));
+        if (kept.length) el.setAttribute("style", kept.join("; ")); else el.removeAttribute("style");
+      }
+    });
+    doc.querySelectorAll("img").forEach(im => {
+      const s = (im.getAttribute("src") || "");
+      if (!/^data:image\//i.test(s) && !/^https:\/\//i.test(s)) im.remove();
+      else { im.removeAttribute("width"); im.removeAttribute("height"); im.setAttribute("style", "max-width:100%;height:auto"); }
+    });
+    return doc.body.innerHTML;
+  }
+  // 공용 툴바(HTML) — 워드프로세서 수준 기본 기능
+  const RICH_TOOLBAR_HTML =
+    '<button type="button" data-cmd="undo" title="실행 취소">↶</button>'
+    + '<button type="button" data-cmd="redo" title="다시 실행">↷</button><span class="pk-sep"></span>'
+    + '<select class="rt-font" title="서체"><option value="\'Noto Sans KR\',sans-serif">고딕</option><option value="\'Noto Serif KR\',serif">명조</option><option value="\'Gowun Batang\',serif">고운바탕</option></select>'
+    + '<select class="rt-size" title="글자 크기"><option value="2">작게</option><option value="3" selected>보통</option><option value="5">크게</option><option value="6">더 크게</option></select><span class="pk-sep"></span>'
+    + '<button type="button" data-cmd="bold" title="굵게"><b>B</b></button>'
+    + '<button type="button" data-cmd="italic" title="기울임"><i>I</i></button>'
+    + '<button type="button" data-cmd="underline" title="밑줄"><u>U</u></button>'
+    + '<button type="button" data-cmd="strike" title="취소선"><s>S</s></button>'
+    + '<label class="rt-color" title="글자색">가<input type="color" class="rt-fore" value="#1C2B3A"></label>'
+    + '<button type="button" data-cmd="hilite" title="형광펜">🖍</button><span class="pk-sep"></span>'
+    + '<button type="button" data-cmd="h" title="제목">제목</button>'
+    + '<button type="button" data-cmd="p" title="본문">본문</button>'
+    + '<button type="button" data-cmd="ul" title="글머리 목록">• 목록</button>'
+    + '<button type="button" data-cmd="ol" title="번호 목록">1. 목록</button>'
+    + '<button type="button" data-cmd="outdent" title="내어쓰기">⇤</button>'
+    + '<button type="button" data-cmd="indent" title="들여쓰기">⇥</button><span class="pk-sep"></span>'
+    + '<button type="button" data-cmd="left" title="왼쪽 정렬">◧</button>'
+    + '<button type="button" data-cmd="center" title="가운데 정렬">▤</button>'
+    + '<button type="button" data-cmd="right" title="오른쪽 정렬">◨</button>'
+    + '<button type="button" data-cmd="justify" title="양쪽 정렬">▦</button><span class="pk-sep"></span>'
+    + '<button type="button" data-cmd="hr" title="구분선">──</button>'
+    + '<button type="button" data-cmd="table" title="표 삽입">▦ 표</button>'
+    + '<button type="button" data-cmd="image" title="그림 삽입">🖼 그림</button>'
+    + '<button type="button" data-cmd="clear" title="서식 지우기">✕ 서식</button>';
+  const EXEC_MAP = { bold:"bold", italic:"italic", underline:"underline", strike:"strikeThrough",
+    ul:"insertUnorderedList", ol:"insertOrderedList", indent:"indent", outdent:"outdent",
+    left:"justifyLeft", center:"justifyCenter", right:"justifyRight", justify:"justifyFull",
+    hr:"insertHorizontalRule", undo:"undo", redo:"redo", clear:"removeFormat" };
   function makeRichEditor(toolbarId, imgInputId, editorEls) {
-    let active = editorEls[0];
+    const bar = document.getElementById(toolbarId);
+    bar.innerHTML = RICH_TOOLBAR_HTML;
+    let active = editorEls[0], savedRange = null;
+    const saveSel = () => { const s = window.getSelection(); if (s && s.rangeCount && active && active.contains(s.anchorNode)) savedRange = s.getRangeAt(0).cloneRange(); };
+    const restoreSel = () => { active.focus(); if (savedRange) { const s = window.getSelection(); s.removeAllRanges(); s.addRange(savedRange); } };
     editorEls.forEach(ed => {
       ed.addEventListener("focus", () => { active = ed; });
+      ["keyup", "mouseup", "input"].forEach(ev => ed.addEventListener(ev, saveSel));
       ed.addEventListener("paste", e => {
-        const items = (e.clipboardData || {}).items || [];
-        for (const it of items) { if (it.type && it.type.indexOf("image") === 0) { e.preventDefault(); insertImageInto(active, it.getAsFile()); return; } }
+        const cd = e.clipboardData; if (!cd) return;
+        for (const it of (cd.items || [])) { if (it.type && it.type.indexOf("image") === 0) { e.preventDefault(); insertImageInto(active, it.getAsFile()); return; } }
+        const html = cd.getData("text/html");
+        if (html) { e.preventDefault(); active.focus(); document.execCommand("insertHTML", false, cleanPastedHtml(html)); }
       });
     });
-    const bar = document.getElementById(toolbarId);
-    bar.addEventListener("mousedown", e => { if (e.target.closest("button")) e.preventDefault(); }); // 선택 유지
+    try { document.execCommand("styleWithCSS", false, true); } catch (e) {}
+    bar.addEventListener("mousedown", e => { if (e.target.closest("button")) e.preventDefault(); }); // 버튼 클릭 시 선택 유지
     bar.addEventListener("click", e => {
       const b = e.target.closest("button[data-cmd]"); if (!b) return;
       const c = b.dataset.cmd; active.focus();
       const exec = (cmd, val) => document.execCommand(cmd, false, val || null);
-      if (c === "bold" || c === "italic" || c === "underline") exec(c);
+      if (EXEC_MAP[c]) exec(EXEC_MAP[c]);
       else if (c === "hilite") exec("hiliteColor", "#FFE86B");
       else if (c === "h") exec("formatBlock", "H4");
       else if (c === "p") exec("formatBlock", "P");
-      else if (c === "ul") exec("insertUnorderedList");
-      else if (c === "ol") exec("insertOrderedList");
-      else if (c === "left") exec("justifyLeft");
-      else if (c === "center") exec("justifyCenter");
-      else if (c === "hr") exec("insertHorizontalRule");
       else if (c === "table") { const h = buildTableHtml(); if (h) { active.focus(); exec("insertHTML", h); } }
       else if (c === "image") document.getElementById(imgInputId).click();
     });
+    bar.querySelector(".rt-font").addEventListener("change", e => { restoreSel(); document.execCommand("fontName", false, e.target.value); });
+    bar.querySelector(".rt-size").addEventListener("change", e => { restoreSel(); document.execCommand("fontSize", false, e.target.value); });
+    const fore = bar.querySelector(".rt-fore");
+    fore.addEventListener("mousedown", saveSel);
+    fore.addEventListener("input", () => { restoreSel(); document.execCommand("foreColor", false, fore.value); });
     document.getElementById(imgInputId).addEventListener("change", e => {
       [...(e.target.files || [])].forEach(f => insertImageInto(active, f)); e.target.value = "";
     });
