@@ -678,6 +678,26 @@
   .pk-toolbar .rt-color:hover{background:#fff;border-color:var(--line);}
   .pk-toolbar .rt-color input{width:22px;height:16px;border:none;background:none;padding:0;cursor:pointer;}
   .pk-sep{width:1px;height:18px;background:var(--line);margin:0 4px;}
+  /* 글자색 버튼 + 색상 팔레트 (한글·워드식) */
+  .rt-forewrap{position:relative;display:inline-flex;}
+  .pk-toolbar .rt-fore{display:inline-flex;flex-direction:column;align-items:center;gap:2px;border:1px solid transparent;background:none;
+    cursor:pointer;font-size:13.5px;color:var(--slate);padding:3px 7px;border-radius:6px;line-height:1;min-width:auto;}
+  .pk-toolbar .rt-fore:hover{background:#fff;border-color:var(--line);color:var(--gwanak-deep);}
+  .rt-fore-bar{width:17px;height:4px;border-radius:1px;background:#1C2B3A;}
+  .rt-palette{position:absolute;top:calc(100% + 6px);left:0;z-index:30;background:#fff;border:1px solid var(--line);border-radius:10px;
+    box-shadow:0 8px 24px rgba(14,95,168,.22);padding:9px;}
+  .rt-palette[hidden]{display:none;}
+  .rt-swrow{display:flex;gap:3px;margin-bottom:3px;}
+  .rt-swgap{height:6px;}
+  .rt-sw{width:17px;height:17px;border:1px solid rgba(0,0,0,.16);border-radius:3px;cursor:pointer;padding:0;min-width:auto;}
+  .rt-sw:hover{outline:2px solid var(--gwanak);outline-offset:1px;}
+  .rt-palfoot{margin-top:5px;border-top:1px solid var(--line);padding-top:6px;}
+  .rt-swreset{width:auto;height:auto;font-family:inherit;font-size:12px;color:var(--slate);background:#fff;border:1px solid var(--line);
+    border-radius:6px;padding:4px 10px;cursor:pointer;}
+  .rt-swreset:hover{border-color:var(--gwanak);color:var(--gwanak-deep);}
+  /* 글자 크기 숫자 증감 */
+  .rt-sizenum{width:44px;font-family:inherit;font-size:12.5px;border:1px solid var(--line);border-radius:6px;padding:3px 3px;
+    text-align:center;background:#fff;color:var(--slate);height:28px;}
   /* 편집기 — A4 편집용지(210mm) + 한글 표준 여백 느낌. HWP 붙여넣기가 자연스럽게 흐르도록 폭 설계 */
   .pk-editor{width:min(794px,100%);margin:16px auto;min-height:min(1040px,60vh);border:1px solid #D7DEE6;border-radius:2px;
     padding:76px 94px;font-size:14px;line-height:1.75;color:var(--ink);background:#fff;word-break:keep-all;
@@ -2994,14 +3014,40 @@
     + '<button type="button" data-cmd="undo" title="실행 취소">↶</button>'
     + '<button type="button" data-cmd="redo" title="다시 실행">↷</button></span>'
     + '<span class="pk-grp">'
-    + '<select class="rt-font" title="서체"><option value="\'Noto Sans KR\',sans-serif">고딕</option><option value="\'Noto Serif KR\',serif">명조</option><option value="\'Gowun Batang\',serif">고운바탕</option></select>'
-    + '<select class="rt-size" title="글자 크기"><option value="2">작게</option><option value="3" selected>보통</option><option value="5">크게</option><option value="6">더 크게</option></select></span>'
+    + '<select class="rt-font" title="서체">'
+    +   '<optgroup label="한글 글꼴">'
+    +     '<option value="\'Noto Sans KR\',sans-serif">고딕(본문)</option>'
+    +     '<option value="\'Noto Serif KR\',serif">명조</option>'
+    +     '<option value="\'Gowun Batang\',serif">고운바탕</option>'
+    +     '<option value="\'Malgun Gothic\',\'맑은 고딕\',sans-serif">맑은 고딕</option>'
+    +     '<option value="\'NanumGothic\',\'나눔고딕\',sans-serif">나눔고딕</option>'
+    +     '<option value="\'NanumMyeongjo\',\'나눔명조\',serif">나눔명조</option>'
+    +     '<option value="Gulim,\'굴림\',sans-serif">굴림</option>'
+    +     '<option value="Dotum,\'돋움\',sans-serif">돋움</option>'
+    +     '<option value="Batang,\'바탕\',serif">바탕</option>'
+    +     '<option value="Gungsuh,\'궁서\',serif">궁서</option>'
+    +   '</optgroup>'
+    +   '<optgroup label="영문 글꼴">'
+    +     '<option value="Arial,sans-serif">Arial</option>'
+    +     '<option value="\'Times New Roman\',serif">Times New Roman</option>'
+    +     '<option value="Calibri,sans-serif">Calibri</option>'
+    +     '<option value="Verdana,sans-serif">Verdana</option>'
+    +     '<option value="Georgia,serif">Georgia</option>'
+    +     '<option value="Tahoma,sans-serif">Tahoma</option>'
+    +     '<option value="\'Courier New\',monospace">Courier New</option>'
+    +   '</optgroup>'
+    + '</select></span>'
+    + '<span class="pk-grp">'
+    + '<select class="rt-size" title="글자 크기 단계"><option value="2">작게</option><option value="3" selected>보통</option><option value="5">크게</option><option value="6">더 크게</option></select>'
+    + '<button type="button" data-cmd="size-dn" title="글자 작게(−1)">－</button>'
+    + '<input class="rt-sizenum" type="number" min="6" max="96" value="11" title="글자 크기(pt) — 직접 입력하거나 ±로 조절">'
+    + '<button type="button" data-cmd="size-up" title="글자 크게(+1)">＋</button></span>'
     + '<span class="pk-grp">'
     + '<button type="button" data-cmd="bold" title="굵게"><b>B</b></button>'
     + '<button type="button" data-cmd="italic" title="기울임"><i>I</i></button>'
     + '<button type="button" data-cmd="underline" title="밑줄"><u>U</u></button>'
     + '<button type="button" data-cmd="strike" title="취소선"><s>S</s></button>'
-    + '<label class="rt-color" title="글자색">가<input type="color" class="rt-fore" value="#1C2B3A"></label>'
+    + '<span class="rt-forewrap"><button type="button" class="rt-fore" title="글자색"><span>가</span><span class="rt-fore-bar"></span></button><span class="rt-palette" hidden></span></span>'
     + '<button type="button" data-cmd="hilite" title="형광펜">🖍</button></span>'
     + '<span class="pk-grp">'
     + '<button type="button" data-cmd="h" title="제목">제목</button>'
@@ -3118,6 +3164,21 @@
     menu.addEventListener("click", e => { const b = e.target.closest("button[data-fmt]"); if (!b) return; close(); onPick(b.dataset.fmt); });
     document.addEventListener("click", close);
   }
+  // ── 색상 팔레트 (한글·워드식 표준색 + 검정 그라데이션) ──
+  function hx2rgb(h) { h = h.replace("#", ""); return [parseInt(h.slice(0, 2), 16), parseInt(h.slice(2, 4), 16), parseInt(h.slice(4, 6), 16)]; }
+  function rgb2hx(a) { return "#" + a.map(v => Math.max(0, Math.min(255, Math.round(v))).toString(16).padStart(2, "0")).join(""); }
+  function mixHex(hex, tgt, p) { const a = hx2rgb(hex), b = hx2rgb(tgt); return rgb2hx(a.map((v, i) => v + (b[i] - v) * p)); }
+  const PALETTE_BASES = ["#C00000", "#FF0000", "#FFC000", "#FFFF00", "#92D050", "#00B050", "#00B0F0", "#0070C0", "#002060", "#7030A0"];
+  function buildPaletteHtml() {
+    const sw = c => '<button type="button" class="rt-sw" data-color="' + c + '" style="background:' + c + '" title="' + c + '"></button>';
+    let grays = ""; for (let i = 0; i < 10; i++) grays += sw(mixHex("#000000", "#FFFFFF", i / 9)); // 검정→흰색 그라데이션
+    let rows = "";
+    [0.6, 0.3, 0, -0.25, -0.5].forEach(l => { // 밝게 2단계 · 기본 · 어둡게 2단계
+      let r = ""; PALETTE_BASES.forEach(b => r += sw(l >= 0 ? mixHex(b, "#FFFFFF", l) : mixHex(b, "#000000", -l))); rows += '<div class="rt-swrow">' + r + '</div>';
+    });
+    return '<div class="rt-swrow rt-swgray">' + grays + '</div><div class="rt-swgap"></div>' + rows
+      + '<div class="rt-palfoot"><button type="button" class="rt-swreset" data-color="#1C2B3A">기본색(검정)</button></div>';
+  }
   function makeRichEditor(toolbarId, imgInputId, editorEls) {
     const bar = document.getElementById(toolbarId);
     bar.innerHTML = RICH_TOOLBAR_HTML;
@@ -3153,6 +3214,7 @@
       const exec = (cmd, val) => document.execCommand(cmd, false, val || null);
       if (EXEC_MAP[c]) exec(EXEC_MAP[c]);
       else if (c === "hilite") exec("hiliteColor", "#FFE86B");
+      else if (c === "size-up" || c === "size-dn") { const inp = bar.querySelector(".rt-sizenum"); let v = (parseInt(inp.value, 10) || 11) + (c === "size-up" ? 1 : -1); v = Math.max(6, Math.min(96, v)); inp.value = v; bar._applyFontSizePt(v); }
       else if (c === "h") exec("formatBlock", "H4");
       else if (c === "p") exec("formatBlock", "P");
       else if (c === "table") { const h = buildTableHtml(); if (h) { active.focus(); exec("insertHTML", h); } }
@@ -3167,9 +3229,25 @@
     });
     bar.querySelector(".rt-font").addEventListener("change", e => { restoreSel(); document.execCommand("fontName", false, e.target.value); });
     bar.querySelector(".rt-size").addEventListener("change", e => { restoreSel(); document.execCommand("fontSize", false, e.target.value); });
-    const fore = bar.querySelector(".rt-fore");
-    fore.addEventListener("mousedown", saveSel);
-    fore.addEventListener("input", () => { restoreSel(); document.execCommand("foreColor", false, fore.value); });
+    // 글자 크기 pt 직접 지정 — execCommand fontSize(7)로 감싼 뒤 pt로 치환(임의 크기 지원)
+    const sizeNum = bar.querySelector(".rt-sizenum");
+    const applyFontSizePt = pt => {
+      pt = Math.max(6, Math.min(96, parseInt(pt, 10) || 11));
+      restoreSel(); active.focus();
+      document.execCommand("styleWithCSS", false, false);
+      document.execCommand("fontSize", false, "7");
+      document.execCommand("styleWithCSS", false, true);
+      active.querySelectorAll('font[size="7"]').forEach(f => { f.removeAttribute("size"); f.style.fontSize = pt + "pt"; });
+    };
+    sizeNum.addEventListener("mousedown", saveSel);
+    sizeNum.addEventListener("change", e => applyFontSizePt(e.target.value));
+    bar._applyFontSizePt = applyFontSizePt;
+    // 글자색 팔레트 — 표준색 격자에서 클릭 선택
+    const foreBtn = bar.querySelector(".rt-fore"), palette = bar.querySelector(".rt-palette"), foreBar = bar.querySelector(".rt-fore-bar");
+    palette.innerHTML = buildPaletteHtml();
+    foreBtn.addEventListener("click", e => { e.stopPropagation(); const open = palette.hidden; document.querySelectorAll(".rt-palette").forEach(p => p.hidden = true); palette.hidden = !open; });
+    palette.addEventListener("click", e => { const s = e.target.closest("[data-color]"); if (!s) return; active.focus(); document.execCommand("foreColor", false, s.dataset.color); foreBar.style.background = s.dataset.color; palette.hidden = true; });
+    document.addEventListener("click", () => { palette.hidden = true; });
     document.getElementById(imgInputId).addEventListener("change", e => {
       [...(e.target.files || [])].forEach(f => insertImageInto(active, f)); e.target.value = "";
     });
