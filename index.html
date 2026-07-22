@@ -691,6 +691,14 @@
   .wb-sec:last-child{margin-bottom:0;}
   .wb-sec .wl{display:block;font-size:11.5px;font-weight:800;letter-spacing:.03em;color:var(--gold);margin-bottom:4px;}
   .wb-sec .wt{font-size:13.5px;color:var(--ink);line-height:1.65;white-space:pre-wrap;word-break:keep-all;}
+  /* 서식(HTML)이 들어간 주간기록 표시 — 목록·표·이미지 정돈 */
+  .wt.rich{white-space:normal;}
+  .wt.rich p{margin:3px 0;} .wt.rich ul,.wt.rich ol{margin:3px 0 3px 2px;padding-left:20px;} .wt.rich li{margin:1px 0;}
+  .wt.rich img{max-width:100%;height:auto;border-radius:4px;margin:3px 0;} .wt.rich hr{border:none;border-top:1px solid var(--line);margin:6px 0;}
+  .wt.rich table{border-collapse:collapse;width:100%;margin:5px 0;} .wt.rich td,.wt.rich th{border:1px solid #B9C6D6;padding:4px 6px;font-size:12.5px;}
+  /* 편집기 안 빈 영역 안내문(placeholder) */
+  .pk-editor:empty::before{content:attr(data-ph);color:var(--muted);}
+  .pk-editor-sm{min-height:110px;max-height:26vh;}
   .wb-empty{font-size:13px;color:var(--muted);padding:4px 0;word-break:keep-all;}
   .wb-hist{margin-top:10px;}
   .wb-hist summary{font-size:12px;color:var(--muted);cursor:pointer;font-weight:600;list-style:revert;}
@@ -1023,14 +1031,28 @@
         <label for="memo-week">해당 주 (월요일 기준)</label>
         <input id="memo-week" type="date" required>
       </div>
-      <div class="field">
-        <label for="memo-last">지난주 실적</label>
-        <textarea id="memo-last" maxlength="1500" placeholder="지난 한 주 동안 처리한 업무를 간단히 정리하세요."></textarea>
+      <div class="pk-toolbar" id="memo-toolbar">
+        <button type="button" data-cmd="bold" title="굵게"><b>B</b></button>
+        <button type="button" data-cmd="italic" title="기울임"><i>I</i></button>
+        <button type="button" data-cmd="underline" title="밑줄"><u>U</u></button>
+        <button type="button" data-cmd="hilite" title="형광펜">🖍</button>
+        <span class="pk-sep"></span>
+        <button type="button" data-cmd="ul" title="글머리 목록">• 목록</button>
+        <button type="button" data-cmd="ol" title="번호 목록">1. 목록</button>
+        <button type="button" data-cmd="hr" title="구분선">──</button>
+        <span class="pk-sep"></span>
+        <button type="button" data-cmd="table" title="표 삽입">▦ 표</button>
+        <button type="button" data-cmd="image" title="그림 삽입">🖼 그림</button>
+      </div>
+      <div class="field" style="margin-top:8px;">
+        <label>지난주 실적</label>
+        <div id="memo-last" class="pk-editor pk-editor-sm" contenteditable="true" data-ph="지난 한 주 동안 처리한 업무를 정리하세요."></div>
       </div>
       <div class="field">
-        <label for="memo-this">이번주 계획</label>
-        <textarea id="memo-this" maxlength="1500" placeholder="이번 주에 추진할 업무를 적으세요."></textarea>
+        <label>이번주 계획</label>
+        <div id="memo-this" class="pk-editor pk-editor-sm" contenteditable="true" data-ph="이번 주에 추진할 업무를 적으세요."></div>
       </div>
+      <input type="file" id="memo-img-input" accept="image/*" multiple hidden>
       <button type="submit" class="btn-primary" id="memo-submit">저장</button>
       <button type="button" class="auth-btn" id="memo-cancel" style="margin-left:8px;">닫기</button>
       <p class="form-error" id="memo-error" role="alert"></p>
@@ -2696,8 +2718,8 @@
     MEMBERS.forEach((m, i) => {
       const n = latestByEmail[m.email];
       h += '<h4>[' + (i + 1) + '] ' + esc(m.name) + ' · ' + esc(m.role) + '  (' + (n ? fmtWeekRange(n.week_start) : "미작성") + ')</h4>';
-      h += '<p><b>지난주 실적</b><br>' + (n && n.last_week ? NL2BR(n.last_week) : "—") + '</p>';
-      h += '<p><b>이번주 계획</b><br>' + (n && n.this_week ? NL2BR(n.this_week) : "—") + '</p>';
+      h += '<div><b>지난주 실적</b>' + (n && n.last_week ? '<div>' + richToHtml(n.last_week) + '</div>' : ' —') + '</div>';
+      h += '<div><b>이번주 계획</b>' + (n && n.this_week ? '<div>' + richToHtml(n.this_week) + '</div>' : ' —') + '</div>';
     });
     return h;
   }
@@ -2795,36 +2817,7 @@
   document.getElementById("packet-doc-close").addEventListener("click", closePacketModal);
   packetModal.addEventListener("click", e => { if (e.target.id === "packet-modal") closePacketModal(); });
 
-  // 주간회의 자료 편집기 — 가벼운 서식(굵게·제목·목록·정렬·표·그림)
-  const pkEditor = document.getElementById("packet-edit-body");
-  function pkExec(cmd, val) { pkEditor.focus(); document.execCommand(cmd, false, val || null); }
-  document.getElementById("packet-toolbar").addEventListener("click", e => {
-    const b = e.target.closest("button[data-cmd]"); if (!b) return;
-    const c = b.dataset.cmd;
-    if (c === "bold" || c === "italic" || c === "underline") pkExec(c);
-    else if (c === "hilite") pkExec("hiliteColor", "#FFE86B");
-    else if (c === "h") pkExec("formatBlock", "H4");
-    else if (c === "p") pkExec("formatBlock", "P");
-    else if (c === "ul") pkExec("insertUnorderedList");
-    else if (c === "ol") pkExec("insertOrderedList");
-    else if (c === "left") pkExec("justifyLeft");
-    else if (c === "center") pkExec("justifyCenter");
-    else if (c === "hr") pkExec("insertHorizontalRule");
-    else if (c === "table") insertPacketTable();
-    else if (c === "image") document.getElementById("packet-img-input").click();
-  });
-  function insertPacketTable() {
-    const spec = prompt("표 크기를 '행x열'로 입력하세요 (예: 3x4)", "3x3");
-    if (!spec) return;
-    const mm = spec.match(/(\d+)\s*[x×*]\s*(\d+)/);
-    if (!mm) { alert("형식이 올바르지 않습니다. 예: 3x4"); return; }
-    const rows = Math.min(20, Math.max(1, +mm[1])), cols = Math.min(12, Math.max(1, +mm[2]));
-    let html = '<table class="pk-table"><tbody>';
-    for (let r = 0; r < rows; r++) { html += "<tr>"; for (let k = 0; k < cols; k++) html += "<td>&nbsp;</td>"; html += "</tr>"; }
-    html += "</tbody></table><p><br></p>";
-    pkEditor.focus(); document.execCommand("insertHTML", false, html);
-  }
-  // 그림 삽입 — 기기 선택 또는 붙여넣기(스크린샷), 자동 축소 후 문서에 내장(data URI)
+  // ── 가벼운 서식 편집기(재사용) — 굵게·제목·목록·정렬·표·그림. 여러 편집영역이 한 툴바를 공유 ──
   function fileToScaledDataUrl(file, maxW, cb) {
     const img = new Image();
     img.onload = () => {
@@ -2837,21 +2830,58 @@
     img.onerror = () => cb(null);
     const fr = new FileReader(); fr.onload = () => { img.src = fr.result; }; fr.readAsDataURL(file);
   }
-  function insertPacketImage(file) {
+  function insertImageInto(ed, file) {
     if (!file || !/^image\//.test(file.type)) return;
     fileToScaledDataUrl(file, 1200, url => {
       if (!url) { alert("이미지를 불러오지 못했습니다."); return; }
-      pkEditor.focus();
+      ed.focus();
       document.execCommand("insertHTML", false, '<img src="' + url + '" style="max-width:100%;"><p><br></p>');
     });
   }
-  document.getElementById("packet-img-input").addEventListener("change", e => {
-    [...(e.target.files || [])].forEach(insertPacketImage); e.target.value = "";
-  });
-  pkEditor.addEventListener("paste", e => {
-    const items = (e.clipboardData || {}).items || [];
-    for (const it of items) { if (it.type && it.type.indexOf("image") === 0) { e.preventDefault(); insertPacketImage(it.getAsFile()); return; } }
-  });
+  function buildTableHtml() {
+    const spec = prompt("표 크기를 '행x열'로 입력하세요 (예: 3x4)", "3x3");
+    if (!spec) return null;
+    const mm = spec.match(/(\d+)\s*[x×*]\s*(\d+)/);
+    if (!mm) { alert("형식이 올바르지 않습니다. 예: 3x4"); return null; }
+    const rows = Math.min(20, Math.max(1, +mm[1])), cols = Math.min(12, Math.max(1, +mm[2]));
+    let html = '<table class="pk-table"><tbody>';
+    for (let r = 0; r < rows; r++) { html += "<tr>"; for (let k = 0; k < cols; k++) html += "<td>&nbsp;</td>"; html += "</tr>"; }
+    return html + "</tbody></table><p><br></p>";
+  }
+  function makeRichEditor(toolbarId, imgInputId, editorEls) {
+    let active = editorEls[0];
+    editorEls.forEach(ed => {
+      ed.addEventListener("focus", () => { active = ed; });
+      ed.addEventListener("paste", e => {
+        const items = (e.clipboardData || {}).items || [];
+        for (const it of items) { if (it.type && it.type.indexOf("image") === 0) { e.preventDefault(); insertImageInto(active, it.getAsFile()); return; } }
+      });
+    });
+    const bar = document.getElementById(toolbarId);
+    bar.addEventListener("mousedown", e => { if (e.target.closest("button")) e.preventDefault(); }); // 선택 유지
+    bar.addEventListener("click", e => {
+      const b = e.target.closest("button[data-cmd]"); if (!b) return;
+      const c = b.dataset.cmd; active.focus();
+      const exec = (cmd, val) => document.execCommand(cmd, false, val || null);
+      if (c === "bold" || c === "italic" || c === "underline") exec(c);
+      else if (c === "hilite") exec("hiliteColor", "#FFE86B");
+      else if (c === "h") exec("formatBlock", "H4");
+      else if (c === "p") exec("formatBlock", "P");
+      else if (c === "ul") exec("insertUnorderedList");
+      else if (c === "ol") exec("insertOrderedList");
+      else if (c === "left") exec("justifyLeft");
+      else if (c === "center") exec("justifyCenter");
+      else if (c === "hr") exec("insertHorizontalRule");
+      else if (c === "table") { const h = buildTableHtml(); if (h) { active.focus(); exec("insertHTML", h); } }
+      else if (c === "image") document.getElementById(imgInputId).click();
+    });
+    document.getElementById(imgInputId).addEventListener("change", e => {
+      [...(e.target.files || [])].forEach(f => insertImageInto(active, f)); e.target.value = "";
+    });
+  }
+  // 저장된 값이 서식(HTML)이면 정화해 사용하고, 예전 순수 텍스트면 줄바꿈만 반영
+  function richToHtml(val) { return !val ? "" : (/<[a-z][\s\S]*>/i.test(val) ? sanitizePacketHtml(val) : NL2BR(val)); }
+  makeRichEditor("packet-toolbar", "packet-img-input", [document.getElementById("packet-edit-body")]);
 
   function toggleBoardForm(open) {
     const wrap = document.getElementById("fp-form-wrap"), btn = document.getElementById("fp-write-toggle");
@@ -3061,8 +3091,8 @@
     if (canDel) acts += '<button type="button" class="wb-mini danger" data-staff-del="' + n.id + '"' + (!isOwner ? ' title="관리자 삭제"' : '') + '>삭제</button>';
     return '<div class="wb-note">'
       + (acts ? '<div class="wb-actions">' + acts + '</div>' : '')
-      + '<div class="wb-sec"><span class="wl">지난주 실적</span><div class="wt">' + (n.last_week ? linkify(n.last_week) : "—") + '</div></div>'
-      + '<div class="wb-sec"><span class="wl">이번주 계획</span><div class="wt">' + (n.this_week ? linkify(n.this_week) : "—") + '</div></div>'
+      + '<div class="wb-sec"><span class="wl">지난주 실적</span><div class="wt rich">' + (n.last_week ? richToHtml(n.last_week) : "—") + '</div></div>'
+      + '<div class="wb-sec"><span class="wl">이번주 계획</span><div class="wt rich">' + (n.this_week ? richToHtml(n.this_week) : "—") + '</div></div>'
       + '</div>';
   }
   function fmtMeetingWhen(m) { return fmtMDW(m.meeting_date) + (m.meeting_time ? " " + m.meeting_time.slice(0, 5) : ""); }
@@ -3172,8 +3202,8 @@
   function prefillMemo() {
     const email = memoModal.dataset.email, week = document.getElementById('memo-week').value;
     const ex = staffNotesCache.find(n => n.member_email === email && n.week_start === week);
-    document.getElementById('memo-last').value = ex ? (ex.last_week || "") : "";
-    document.getElementById('memo-this').value = ex ? (ex.this_week || "") : "";
+    document.getElementById('memo-last').innerHTML = ex ? richToHtml(ex.last_week) : "";
+    document.getElementById('memo-this').innerHTML = ex ? richToHtml(ex.this_week) : "";
   }
   function openMemoModal(key, week) {
     const email = MEMBER_EMAILS[key];
@@ -3193,10 +3223,13 @@
     const email = memoModal.dataset.email, week = document.getElementById('memo-week').value;
     if (!email || !week) return;
     const btn = document.getElementById('memo-submit'); btn.disabled = true;
+    const cleanLast = sanitizePacketHtml(document.getElementById('memo-last').innerHTML);
+    const cleanThis = sanitizePacketHtml(document.getElementById('memo-this').innerHTML);
+    const isEmpty = h => !h.replace(/<br\s*\/?>|<p>|<\/p>|&nbsp;|\s/gi, "").length;
     const { error } = await sb.from('staff_notes').upsert({
       member_email: email, week_start: week,
-      last_week: document.getElementById('memo-last').value.trim() || null,
-      this_week: document.getElementById('memo-this').value.trim() || null,
+      last_week: isEmpty(cleanLast) ? null : cleanLast,
+      this_week: isEmpty(cleanThis) ? null : cleanThis,
       updated_at: new Date().toISOString()
     }, { onConflict: 'member_email,week_start' });
     btn.disabled = false;
@@ -3204,6 +3237,7 @@
     memoModal.classList.remove('open');
     await renderAboutBoards();
   });
+  makeRichEditor("memo-toolbar", "memo-img-input", [document.getElementById("memo-last"), document.getElementById("memo-this")]);
 
   // 회의 기록 모달 (관리자 전용) — 회의마다 새 항목 추가, 기존 항목은 id로 수정·삭제
   const meetingModal = document.getElementById('meeting-modal');
