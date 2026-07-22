@@ -777,6 +777,16 @@
   #crop-img{display:block;max-width:100%;max-height:58vh;}
   #crop-box{position:absolute;border:2px solid var(--gwanak);box-shadow:0 0 0 9999px rgba(0,0,0,.4);cursor:move;box-sizing:border-box;}
   #crop-handle{position:absolute;right:-9px;bottom:-9px;width:18px;height:18px;background:var(--gwanak);border:2px solid #fff;border-radius:50%;cursor:se-resize;}
+  /* 문자표 */
+  .char-tabs{display:flex;flex-wrap:wrap;gap:5px;margin:4px 0 10px;}
+  .char-tabs button{appearance:none;border:1px solid var(--line);background:#F4F8FC;cursor:pointer;font-family:inherit;font-size:12.5px;
+    color:var(--slate);padding:5px 11px;border-radius:15px;}
+  .char-tabs button:hover{border-color:var(--gwanak);color:var(--gwanak-deep);}
+  .char-tabs button.on{background:var(--gwanak);color:#fff;border-color:var(--gwanak);}
+  .char-grid{display:flex;flex-wrap:wrap;gap:4px;max-height:46vh;overflow-y:auto;padding:6px;border:1px solid var(--line);border-radius:10px;background:#fff;}
+  .char-grid button{width:38px;height:38px;display:flex;align-items:center;justify-content:center;font-size:19px;border:1px solid transparent;
+    border-radius:7px;background:none;cursor:pointer;color:var(--ink);line-height:1;}
+  .char-grid button:hover{background:#EAF3FB;border-color:var(--gwanak);}
   @media print {
     .packet-body{font-size:11.5px;line-height:1.4;}
     .packet-body h3{font-size:15px;} .packet-body h4{font-size:13px;}
@@ -1232,6 +1242,17 @@
     </div>
     <button type="button" class="btn-primary" id="crop-apply">적용</button>
     <button type="button" class="auth-btn" id="crop-cancel" style="margin-left:8px;">취소</button>
+  </div>
+</div>
+
+<!-- 문자표 (특수문자·기호 입력) -->
+<div class="modal-backdrop" id="char-modal">
+  <div class="modal" role="dialog" aria-modal="true" aria-labelledby="char-title" style="max-width:660px;">
+    <h3 id="char-title">문자표</h3>
+    <p class="modal-sub">넣고 싶은 문자를 누르면 커서 자리에 입력됩니다. 창이 열려 있어 여러 개를 이어서 넣을 수 있습니다.</p>
+    <div class="char-tabs" id="char-tabs"></div>
+    <div class="char-grid" id="char-grid"></div>
+    <button type="button" class="auth-btn" id="char-close" style="margin-top:12px;">닫기</button>
   </div>
 </div>
 
@@ -2946,7 +2967,7 @@
   function ensureEditorFonts() {
     if (editorFontsLoaded) return; editorFontsLoaded = true;
     const l = document.createElement("link"); l.rel = "stylesheet";
-    l.href = "https://fonts.googleapis.com/css2?family=Gowun+Dodum&family=Nanum+Gothic:wght@400;700;800&family=Nanum+Myeongjo:wght@400;700;800&family=Black+Han+Sans&family=Do+Hyeon&family=Jua&family=Song+Myung&family=Gaegu&display=swap";
+    l.href = "https://fonts.googleapis.com/css2?family=Gowun+Dodum&family=Nanum+Gothic:wght@400;700;800&family=Nanum+Myeongjo:wght@400;700;800&family=Black+Han+Sans&family=Do+Hyeon&family=Jua&family=Song+Myung&family=Hahmlet:wght@400;600;800&family=Gugi&family=Gaegu&display=swap";
     document.head.appendChild(l);
   }
   // ── 인쇄·파일 저장 공용 유틸 — 브랜드 서식이 담긴 독립 문서를 만들어 인쇄(PDF)하거나 한글·워드용 파일로 내려받는다 ──
@@ -2954,7 +2975,7 @@
     return '<!DOCTYPE html><html lang="ko"><head><meta charset="utf-8">'
       + '<meta name="viewport" content="width=device-width, initial-scale=1">'
       + '<title>' + esc(title) + '</title>'
-      + '<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;500;700;800&family=Noto+Serif+KR:wght@600;700;800&family=Gowun+Batang:wght@400;700&family=Gowun+Dodum&family=Nanum+Gothic:wght@400;700;800&family=Nanum+Myeongjo:wght@400;700;800&family=Black+Han+Sans&family=Do+Hyeon&family=Jua&family=Song+Myung&family=Gothic+A1:wght@500;700;800&family=Gaegu&family=Nanum+Brush+Script&display=swap">'
+      + '<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;500;700;800&family=Noto+Serif+KR:wght@600;700;800&family=Gowun+Batang:wght@400;700&family=Gowun+Dodum&family=Nanum+Gothic:wght@400;700;800&family=Nanum+Myeongjo:wght@400;700;800&family=Black+Han+Sans&family=Do+Hyeon&family=Jua&family=Song+Myung&family=Hahmlet:wght@400;600;800&family=Gugi&family=Gothic+A1:wght@500;700;800&family=Gaegu&family=Nanum+Brush+Script&display=swap">'
       + '<style>'
       // 편집 화면과 같은 px 기준 서식 — 인쇄 미리보기가 화면과 동일하게(WYSIWYG)
       + '@page{size:A4;margin:16mm 16mm;}'
@@ -3084,6 +3105,12 @@
     +     '<option value="\'Malgun Gothic\',sans-serif" style="font-family:\'Malgun Gothic\',sans-serif">맑은 고딕</option>'
     +     '<option value="\'Nanum Gothic\',\'NanumGothic\',sans-serif" style="font-family:\'Nanum Gothic\',sans-serif">나눔고딕</option>'
     +     '<option value="\'Nanum Myeongjo\',\'NanumMyeongjo\',serif" style="font-family:\'Nanum Myeongjo\',serif">나눔명조</option>'
+    +     '<option value="\'함초롬바탕\',\'HCR Batang\',\'HCR Batang ExtB\',serif">함초롬바탕</option>'
+    +     '<option value="\'함초롬돋움\',\'HCR Dotum\',sans-serif">함초롬돋움</option>'
+    +     '<option value="\'KoPubWorld Batang\',\'KoPub Batang\',serif">KoPub 바탕</option>'
+    +     '<option value="\'KoPubWorld Dotum\',\'KoPub Dotum\',sans-serif">KoPub 돋움</option>'
+    +     '<option value="\'NanumBarunGothic\',\'나눔바른고딕\',sans-serif">나눔바른고딕</option>'
+    +     '<option value="\'HGSoodvariedeS\',\'HY견고딕\',\'HYGothic-Extra\',sans-serif">HY견고딕</option>'
     +     '<option value="\'Gowun Batang\',serif" style="font-family:\'Gowun Batang\',serif">고운바탕</option>'
     +     '<option value="\'Gowun Dodum\',sans-serif" style="font-family:\'Gowun Dodum\',sans-serif">고운돋움</option>'
     +     '<option value="Gulim,sans-serif" style="font-family:Gulim,sans-serif">굴림</option>'
@@ -3096,6 +3123,10 @@
     +     '<option value="\'Do Hyeon\',sans-serif" style="font-family:\'Do Hyeon\',sans-serif">도현(제목)</option>'
     +     '<option value="Jua,sans-serif" style="font-family:Jua,sans-serif">주아(둥근제목)</option>'
     +     '<option value="\'Song Myung\',serif" style="font-family:\'Song Myung\',serif">송명(명조제목)</option>'
+    +     '<option value="Hahmlet,serif" style="font-family:Hahmlet,serif">함렛(명조제목)</option>'
+    +     '<option value="\'Seoul Namsan\',\'서울남산체\',\'SeoulNamsan\',sans-serif">서울남산체</option>'
+    +     '<option value="\'Seoul Hangang\',\'서울한강체\',\'SeoulHangang\',serif">서울한강체</option>'
+    +     '<option value="Gugi,cursive" style="font-family:Gugi,cursive">구기(장식제목)</option>'
     +     '<option value="\'Gothic A1\',sans-serif" style="font-family:\'Gothic A1\',sans-serif;font-weight:800">고딕A1(볼드)</option>'
     +     '<option value="Gaegu,cursive" style="font-family:Gaegu,cursive">개구쟁이(손글씨)</option>'
     +     '<option value="\'Nanum Brush Script\',cursive" style="font-family:\'Nanum Brush Script\',cursive">나눔손글씨(붓)</option>'
@@ -3146,11 +3177,14 @@
     + '<button type="button" data-cmd="col-del" title="현재 열 삭제">열－</button></span>'
     + '<span class="pk-grp">'
     + '<button type="button" data-cmd="image" title="그림 삽입">🖼 그림</button>'
+    + '<button type="button" data-cmd="char" title="문자표 — 특수문자·기호 입력">Ω 문자표</button>'
     + '<button type="button" data-cmd="clear" title="서식 지우기">✕ 서식</button></span>';
   const EXEC_MAP = { bold:"bold", italic:"italic", underline:"underline", strike:"strikeThrough",
     ul:"insertUnorderedList", ol:"insertOrderedList", indent:"indent", outdent:"outdent",
     left:"justifyLeft", center:"justifyCenter", right:"justifyRight", justify:"justifyFull",
     hr:"insertHorizontalRule", undo:"undo", redo:"redo", clear:"removeFormat" };
+  // 문자표가 문자를 넣을 대상 편집기·커서 위치 (편집기 상호작용 때마다 갱신)
+  let insertEditor = null, insertRange = null;
   // ── 편집기 안 그림 편집 — 클릭 선택 후 8방향 핸들로 크기 조절, 드래그로 위치 이동 ──
   let imgSel = null, imgSelEditor = null;
   const imgTools = document.getElementById("pk-img-tools");
@@ -3183,9 +3217,18 @@
     let h = null, sx, sy, sw, sh;
     const down = e => { if (!imgSel) return; h = e.currentTarget.dataset.h; const p = e.touches ? e.touches[0] : e; sx = p.clientX; sy = p.clientY; sw = imgSel.offsetWidth; sh = imgSel.offsetHeight; e.preventDefault(); e.stopPropagation(); };
     const move = e => { if (!h || !imgSel) return; const p = e.touches ? e.touches[0] : e, dx = p.clientX - sx, dy = p.clientY - sy;
-      let nw; if (h.includes("e")) nw = sw + dx; else if (h.includes("w")) nw = sw - dx; else nw = sw * ((sh + (h.includes("s") ? dy : -dy)) / sh);
-      nw = Math.max(28, Math.min(nw, imgSelEditor ? imgSelEditor.clientWidth : 1200));
-      imgSel.style.width = Math.round(nw) + "px"; imgSel.style.height = "auto"; positionImgBox(); e.preventDefault(); };
+      const maxW = imgSelEditor ? imgSelEditor.clientWidth : 1200, corner = h.length === 2;
+      if (corner) { // 모서리 4곳 — 가로세로 비율 고정
+        let nw = h.includes("e") ? sw + dx : sw - dx; nw = Math.max(28, Math.min(nw, maxW));
+        imgSel.style.width = Math.round(nw) + "px"; imgSel.style.height = Math.max(20, Math.round(nw * sh / sw)) + "px";
+      } else if (h === "e" || h === "w") { // 좌우 가장자리 — 가로만
+        let nw = h === "e" ? sw + dx : sw - dx; nw = Math.max(28, Math.min(nw, maxW));
+        imgSel.style.width = Math.round(nw) + "px"; imgSel.style.height = Math.round(sh) + "px";
+      } else { // 위아래 가장자리 — 세로만
+        let nh = Math.max(20, h === "s" ? sh + dy : sh - dy);
+        imgSel.style.height = Math.round(nh) + "px"; imgSel.style.width = Math.round(sw) + "px";
+      }
+      positionImgBox(); e.preventDefault(); };
     const up = () => { if (h && imgSelEditor) imgSelEditor.dispatchEvent(new Event("input")); h = null; };
     imgBox.querySelectorAll(".ib-h").forEach(el => { el.addEventListener("mousedown", down); el.addEventListener("touchstart", down, { passive: false }); });
     document.addEventListener("mousemove", move); document.addEventListener("touchmove", move, { passive: false });
@@ -3243,6 +3286,41 @@
     document.addEventListener("mouseup", end); document.addEventListener("touchend", end);
   })();
   function closeCrop() { document.getElementById("crop-modal").classList.remove("open"); cropTarget = null; if (imgSel) positionImgBox(); }
+  // ── 문자표 — 분류별 기호 격자에서 클릭해 커서 자리에 입력 ──
+  const CHAR_CATS = {
+    "문장부호": "…‥·•※¶§˝〃°′″‰¡¿～〜―–—‐⁂＊＇＂｀´˚˘ˇ¨",
+    "괄호": "（）〔〕［］｛｝〈〉《》「」『』【】〖〗〘〙«»‹›",
+    "화살표": "←→↑↓↔↕↖↗↘↙⇐⇒⇑⇓⇔⇕➔➜➙➤▶◀▲▼➡⬅⬆⬇↩↪↺↻",
+    "수학·기호": "＋－×÷±∓＝≠≈≒≡＜＞≤≥≪≫∞∴∵∈∉∋⊂⊃⊆⊇∩∪∧∨¬∀∃√∛∫∬∑∏∂∇∝∠⊥∥",
+    "단위": "㎜㎝㎞㎟㎠㎢㎣㎤㎥㎦㎏㎎㎍㎈㎉ℓ㎖㎗㎘℃℉％‰№㏊㎐㎑㎒㎓㎔㎾㎿Å㎂㎃㎄㏈",
+    "원문자·번호": "①②③④⑤⑥⑦⑧⑨⑩⑪⑫⑬⑭⑮⑯⑰⑱⑲⑳❶❷❸❹❺ⓐⓑⓒⓓⓔ㉠㉡㉢㉣㉤㈀㈁㈂㈎㈏㈐",
+    "로마숫자": "ⅠⅡⅢⅣⅤⅥⅦⅧⅨⅩⅪⅫⅰⅱⅲⅳⅴⅵⅶⅷⅸⅹ",
+    "도형·별": "○●◎◇◆□■△▲▽▼◁◀▷▶☆★♠♣♥♦♤♧♡◈▣▤▥▦▧▨▩◐◑✓✔✕✖☑☒✦✧❖✿❀◉",
+    "통화": "₩＄€¥£¢￡￥₤₧₨₪₫฿₴₦₡₱₲₵",
+    "그리스": "αβγδεζηθικλμνξοπρστυφχψωΑΒΓΔΕΖΗΘΙΚΛΜΝΞΟΠΡΣΤΥΦΧΨΩ",
+    "기타기호": "☎☏✆✉✈⚑⚐❤♨♻⚠☞☜☝☟♪♩♫♬☀☁☂☃❄⌚⏰✎✂℡㈜✽❋❁"
+  };
+  function renderCharCat(name) {
+    document.getElementById("char-grid").innerHTML = [...CHAR_CATS[name]].map(ch => '<button type="button" data-ch="' + ch + '">' + ch + '</button>').join("");
+    document.querySelectorAll("#char-tabs button").forEach(b => b.classList.toggle("on", b.dataset.cat === name));
+  }
+  function openCharModal() {
+    const tabs = document.getElementById("char-tabs");
+    if (!tabs.dataset.built) { tabs.innerHTML = Object.keys(CHAR_CATS).map(k => '<button type="button" data-cat="' + k + '">' + k + '</button>').join(""); tabs.dataset.built = "1"; renderCharCat(Object.keys(CHAR_CATS)[0]); }
+    document.getElementById("char-modal").classList.add("open");
+  }
+  function insertChar(ch) {
+    if (!insertEditor) return;
+    insertEditor.focus();
+    if (insertRange) { try { const s = window.getSelection(); s.removeAllRanges(); s.addRange(insertRange); } catch (e) {} }
+    document.execCommand("insertText", false, ch);
+    const s = window.getSelection(); if (s.rangeCount) insertRange = s.getRangeAt(0).cloneRange();
+    insertEditor.dispatchEvent(new Event("input"));
+  }
+  document.getElementById("char-tabs").addEventListener("click", e => { const b = e.target.closest("button[data-cat]"); if (b) renderCharCat(b.dataset.cat); });
+  document.getElementById("char-grid").addEventListener("click", e => { const b = e.target.closest("button[data-ch]"); if (b) insertChar(b.dataset.ch); });
+  document.getElementById("char-close").addEventListener("click", () => document.getElementById("char-modal").classList.remove("open"));
+  document.getElementById("char-modal").addEventListener("click", e => { if (e.target.id === "char-modal") document.getElementById("char-modal").classList.remove("open"); });
   document.getElementById("crop-cancel").addEventListener("click", closeCrop);
   document.getElementById("crop-modal").addEventListener("click", e => { if (e.target.id === "crop-modal") closeCrop(); });
   document.getElementById("crop-apply").addEventListener("click", () => {
@@ -3280,7 +3358,8 @@
     return '<div class="rt-swrow rt-swgray">' + grays + '</div><div class="rt-swgap"></div>' + rows
       + '<div class="rt-palfoot"><button type="button" class="rt-swreset" data-color="#1C2B3A">기본색(검정)</button></div>';
   }
-  const HILITE_COLORS = ["#FFF35C", "#FFE86B", "#C6F68D", "#9BE7C4", "#8CE0FF", "#9AC7FF", "#FFB3D1", "#FFC98A", "#E4C6FF", "#D9DEE3"];
+  const HILITE_COLORS = ["#FFF35C", "#FFE86B", "#FFD54A", "#FFC078", "#FFA8A8", "#FF8FA3", "#FFB3C6", "#F2A9E0",
+    "#C6F68D", "#94E88B", "#63E6BE", "#7DE0C0", "#8CE0FF", "#74C0FC", "#A7B8FF", "#D0BFFF", "#E4C6FF", "#DEE2E6"];
   function buildHilitePalette() {
     const sw = c => '<button type="button" class="rt-sw" data-color="' + c + '" style="background:' + c + '" title="' + c + '"></button>';
     return '<div class="rt-swrow">' + HILITE_COLORS.map(sw).join("") + '</div>'
@@ -3290,7 +3369,7 @@
     const bar = document.getElementById(toolbarId);
     bar.innerHTML = RICH_TOOLBAR_HTML;
     let active = editorEls[0], savedRange = null;
-    const saveSel = () => { const s = window.getSelection(); if (s && s.rangeCount && active && active.contains(s.anchorNode)) savedRange = s.getRangeAt(0).cloneRange(); };
+    const saveSel = () => { const s = window.getSelection(); if (s && s.rangeCount && active && active.contains(s.anchorNode)) { savedRange = s.getRangeAt(0).cloneRange(); insertEditor = active; insertRange = savedRange; } };
     const restoreSel = () => { active.focus(); if (savedRange) { const s = window.getSelection(); s.removeAllRanges(); s.addRange(savedRange); } };
     const cellFromSel = () => { const s = window.getSelection();
       let node = (s && s.rangeCount && active && active.contains(s.anchorNode)) ? s.anchorNode : (savedRange ? savedRange.startContainer : null);
@@ -3300,7 +3379,7 @@
     const tagList = (tag, cls) => { const s = window.getSelection(); let n = s && s.anchorNode; if (n && n.nodeType === 3) n = n.parentElement;
       const list = n && n.closest ? n.closest(tag) : null; if (list && !(list.parentElement && list.parentElement.closest(tag))) list.classList.add(cls); };
     editorEls.forEach(ed => {
-      ed.addEventListener("focus", () => { active = ed; });
+      ed.addEventListener("focus", () => { active = ed; insertEditor = ed; });
       ["keyup", "mouseup", "input"].forEach(ev => ed.addEventListener(ev, saveSel));
       ed.addEventListener("click", e => { if (e.target.tagName === "IMG") { e.stopPropagation(); selectEditorImage(e.target, ed); } else deselectEditorImage(); });
       ed.addEventListener("keydown", () => { if (imgSel) deselectEditorImage(); });
@@ -3335,6 +3414,7 @@
         active.dispatchEvent(new Event("input"));
       }
       else if (c === "image") document.getElementById(imgInputId).click();
+      else if (c === "char") { saveSel(); openCharModal(); }
     });
     bar.querySelector(".rt-font").addEventListener("change", e => { restoreSel(); document.execCommand("fontName", false, e.target.value); });
     bar.querySelector(".rt-size").addEventListener("change", e => { restoreSel(); document.execCommand("fontSize", false, e.target.value); });
