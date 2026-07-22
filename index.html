@@ -695,6 +695,34 @@
   .pk-export .pk-xlabel{font-size:12px;color:var(--slate);font-weight:700;margin-right:2px;}
   .pk-export select{font-family:inherit;font-size:12.5px;border:1px solid var(--line);border-radius:6px;padding:4px 6px;
     background:#fff;color:var(--slate);cursor:pointer;}
+  /* 파일 저장 형식 선택 드롭다운 */
+  .pk-savewrap{position:relative;display:inline-block;}
+  .pk-savemenu{position:absolute;left:0;top:calc(100% + 4px);z-index:20;min-width:160px;background:#fff;border:1px solid var(--line);
+    border-radius:9px;box-shadow:0 6px 22px rgba(14,95,168,.18);padding:5px;display:flex;flex-direction:column;gap:2px;}
+  .pk-savemenu[hidden]{display:none;}
+  .pk-savemenu button{appearance:none;border:1px solid transparent;background:none;text-align:left;cursor:pointer;font-family:inherit;
+    font-size:13px;color:var(--slate);padding:8px 10px;border-radius:6px;}
+  .pk-savemenu button:hover{background:#F4F8FC;color:var(--gwanak-deep);}
+  /* 툴바 버튼 그룹 — 관련 버튼끼리 묶어 줄바꿈 시 흩어지지 않게 */
+  .pk-grp{display:inline-flex;flex-wrap:nowrap;align-items:center;gap:2px;padding-right:6px;margin-right:2px;border-right:1px solid #DBE5F0;}
+  .pk-grp:last-child{border-right:none;margin-right:0;padding-right:0;}
+  /* 편집기 안 그림 선택 표시 + 플로팅 편집 도구 */
+  .pk-img-sel{outline:3px solid var(--gwanak);outline-offset:1px;cursor:pointer;}
+  #pk-img-tools{position:fixed;z-index:3000;display:flex;flex-wrap:wrap;align-items:center;gap:6px;background:#fff;border:1px solid var(--line);
+    border-radius:10px;box-shadow:0 6px 22px rgba(14,95,168,.22);padding:7px 10px;font-size:12.5px;color:var(--slate);}
+  #pk-img-tools[hidden]{display:none;}
+  #pk-img-tools .it-lab{font-weight:700;color:var(--gwanak-deep);}
+  #pk-img-tools input[type=range]{width:110px;accent-color:var(--gwanak);cursor:pointer;}
+  #pk-img-tools button{appearance:none;border:1px solid var(--line);background:#fff;cursor:pointer;font-family:inherit;font-size:12.5px;
+    color:var(--slate);padding:4px 9px;border-radius:6px;}
+  #pk-img-tools button:hover{background:#F4F8FC;border-color:var(--gwanak);color:var(--gwanak-deep);}
+  #pk-img-tools button.danger:hover{border-color:#C0392B;color:#C0392B;}
+  /* 그림 자르기 모달 */
+  #crop-modal{z-index:2000;}
+  #crop-stage{position:relative;user-select:none;touch-action:none;margin:10px auto;width:max-content;max-width:100%;}
+  #crop-img{display:block;max-width:100%;max-height:58vh;}
+  #crop-box{position:absolute;border:2px solid var(--gwanak);box-shadow:0 0 0 9999px rgba(0,0,0,.4);cursor:move;box-sizing:border-box;}
+  #crop-handle{position:absolute;right:-9px;bottom:-9px;width:18px;height:18px;background:var(--gwanak);border:2px solid #fff;border-radius:50%;cursor:se-resize;}
   @media print {
     .packet-body{font-size:11.5px;line-height:1.4;}
     .packet-body h3{font-size:15px;} .packet-body h4{font-size:13px;}
@@ -1065,8 +1093,14 @@
           <option value="last">지난주 실적만</option>
           <option value="this">이번주 계획만</option>
         </select>
-        <button type="button" class="wb-mini" id="memo-print">🖨 인쇄 / PDF</button>
-        <button type="button" class="wb-mini" id="memo-download">💾 파일 저장(한글·워드)</button>
+        <button type="button" class="wb-mini" id="memo-print">🖨 인쇄</button>
+        <span class="pk-savewrap">
+          <button type="button" class="wb-mini" id="memo-download" aria-haspopup="true" aria-expanded="false">💾 파일 저장 ▾</button>
+          <span class="pk-savemenu" id="memo-savemenu" hidden>
+            <button type="button" data-fmt="pdf">PDF로 저장 (.pdf)</button>
+            <button type="button" data-fmt="doc">한글·워드 문서 (.doc)</button>
+          </span>
+        </span>
       </div>
       <button type="submit" class="btn-primary" id="memo-submit">저장</button>
       <button type="button" class="auth-btn" id="memo-cancel" style="margin-left:8px;">닫기</button>
@@ -1115,6 +1149,30 @@
   </div>
 </div>
 
+<!-- 편집기 그림 선택 시 뜨는 플로팅 도구 (크기 조절·자르기·삭제) -->
+<div id="pk-img-tools" hidden>
+  <span class="it-lab">그림 크기</span>
+  <input type="range" id="pk-img-size" min="15" max="100" step="5" value="100" title="그림 크기">
+  <button type="button" data-imgact="reset">원본</button>
+  <button type="button" data-imgact="crop">✂ 자르기</button>
+  <button type="button" data-imgact="del" class="danger">삭제</button>
+  <button type="button" data-imgact="close">닫기</button>
+</div>
+
+<!-- 그림 자르기 모달 -->
+<div class="modal-backdrop" id="crop-modal">
+  <div class="modal" role="dialog" aria-modal="true" aria-labelledby="crop-title" style="max-width:700px;">
+    <h3 id="crop-title">그림 자르기</h3>
+    <p class="modal-sub">자를 영역을 드래그해 옮기고, 오른쪽 아래 모서리(●)를 끌어 크기를 맞춘 뒤 [적용]을 누르세요.</p>
+    <div id="crop-stage">
+      <img id="crop-img" alt="자를 그림">
+      <div id="crop-box"><div id="crop-handle"></div></div>
+    </div>
+    <button type="button" class="btn-primary" id="crop-apply">적용</button>
+    <button type="button" class="auth-btn" id="crop-cancel" style="margin-left:8px;">취소</button>
+  </div>
+</div>
+
 <div class="modal-backdrop" id="packet-modal">
   <div class="modal compile-modal" role="dialog" aria-modal="true" aria-labelledby="packet-title">
     <!-- 보기·인쇄 뷰 -->
@@ -1123,7 +1181,13 @@
         <h3 id="packet-title" style="font-size:16px;">주간회의 자료</h3>
         <div style="display:flex;gap:8px;">
           <button type="button" class="btn-primary" id="packet-print">🖨 인쇄</button>
-          <button type="button" class="auth-btn" id="packet-download">💾 파일 저장</button>
+          <span class="pk-savewrap">
+            <button type="button" class="auth-btn" id="packet-download" aria-haspopup="true" aria-expanded="false">💾 파일 저장 ▾</button>
+            <span class="pk-savemenu" id="packet-savemenu" hidden>
+              <button type="button" data-fmt="pdf">PDF로 저장 (.pdf)</button>
+              <button type="button" data-fmt="doc">한글·워드 문서 (.doc)</button>
+            </span>
+          </span>
           <button type="button" class="auth-btn" id="packet-doc-close">닫기</button>
         </div>
       </div>
@@ -2818,18 +2882,19 @@
     return '<!DOCTYPE html><html lang="ko"><head><meta charset="utf-8">'
       + '<meta name="viewport" content="width=device-width, initial-scale=1">'
       + '<title>' + esc(title) + '</title>'
-      + '<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;500;700;800&family=Noto+Serif+KR:wght@600;700;800&display=swap">'
+      + '<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;500;700;800&family=Noto+Serif+KR:wght@600;700;800&family=Gowun+Batang:wght@400;700&display=swap">'
       + '<style>'
-      + '@page{size:A4;margin:20mm 20mm;}'
+      // 편집 화면과 같은 px 기준 서식 — 인쇄 미리보기가 화면과 동일하게(WYSIWYG)
+      + '@page{size:A4;margin:16mm 16mm;}'
       + '*{box-sizing:border-box;}'
-      + 'body{font-family:"Noto Sans KR","맑은 고딕","Malgun Gothic",sans-serif;color:#1B2733;font-size:11pt;line-height:1.75;word-break:keep-all;margin:0;padding:24px;}'
-      + 'h1{font-family:"Noto Serif KR",serif;font-size:18pt;color:#0B4A86;margin:0 0 6pt;}'
-      + '.doc-meta{color:#5B6B7B;font-size:9.5pt;margin:0 0 16pt;border-bottom:2px solid #0E5FA8;padding-bottom:9pt;}'
-      + 'h2{font-size:12.5pt;color:#0B4A86;border-left:4px solid #FFE600;padding-left:9px;margin:18pt 0 7pt;}'
-      + 'h3{font-size:13pt;color:#0B4A86;margin:14pt 0 5pt;} h4{font-size:11.5pt;color:#0B4A86;margin:11pt 0 4pt;}'
-      + 'p{margin:4pt 0;} ul,ol{margin:4pt 0;padding-left:22px;} li{margin:2pt 0;}'
-      + 'table{border-collapse:collapse;width:100%;margin:7pt 0;} td,th{border:1px solid #99A7B5;padding:5pt 7pt;font-size:10.5pt;vertical-align:top;word-break:keep-all;}'
-      + 'img{max-width:100%;height:auto;} hr{border:none;border-top:1px solid #CBD5E0;margin:9pt 0;}'
+      + 'body{font-family:"Noto Sans KR","맑은 고딕","Malgun Gothic",sans-serif;color:#1C2B3A;font-size:14px;line-height:1.75;word-break:keep-all;margin:0;padding:16px;}'
+      + 'h1{font-family:"Noto Serif KR",serif;font-size:20px;color:#0B4A86;margin:0 0 6px;}'
+      + '.doc-meta{color:#5B6B7B;font-size:12px;margin:0 0 16px;border-bottom:2px solid #0E5FA8;padding-bottom:8px;}'
+      + 'h2{font-size:16px;color:#0B4A86;border-left:4px solid #FFE600;padding-left:8px;margin:18px 0 7px;}'
+      + 'h3{font-size:16px;font-weight:800;color:#0B4A86;margin:14px 0 5px;} h4{font-size:15px;font-weight:800;color:#0B4A86;margin:12px 0 4px;}'
+      + 'p{margin:5px 0;} ul,ol{margin:5px 0;padding-left:22px;} li{margin:2px 0;}'
+      + 'table{border-collapse:collapse;width:100%;margin:8px 0;} td,th{border:1px solid #B9C6D6;padding:5px 7px;font-size:13px;vertical-align:top;word-break:keep-all;}'
+      + 'img{max-width:100%;height:auto;} hr{border:none;border-top:1px solid #CBD5E0;margin:9px 0;}'
       + '</style></head><body>' + bodyHtml + '</body></html>';
   }
   function printHtml(fullHtml) {
@@ -2849,14 +2914,12 @@
     setTimeout(() => URL.revokeObjectURL(url), 2000);
   }
   function safeFileName(s) { return (s || "문서").replace(/[\\/:*?"<>|]+/g, "").replace(/\s+/g, "_").slice(0, 80); }
-  document.getElementById("packet-print").addEventListener("click", () => {
+  function packetDocHtml() {
     const title = document.getElementById("packet-title").textContent || "주간회의 자료";
-    printHtml(buildStandaloneHtml(title, '<h1>' + esc(title) + '</h1>' + document.getElementById("packet-doc").innerHTML));
-  });
-  document.getElementById("packet-download").addEventListener("click", () => {
-    const title = document.getElementById("packet-title").textContent || "주간회의 자료";
-    downloadDoc(safeFileName(title) + ".doc", buildStandaloneHtml(title, '<h1>' + esc(title) + '</h1>' + document.getElementById("packet-doc").innerHTML));
-  });
+    return { title: title, html: buildStandaloneHtml(title, '<h1>' + esc(title) + '</h1>' + document.getElementById("packet-doc").innerHTML) };
+  }
+  document.getElementById("packet-print").addEventListener("click", () => printHtml(packetDocHtml().html));
+  wireSaveMenu("packet-download", "packet-savemenu", fmt => { const r = packetDocHtml(); if (fmt === "pdf") printHtml(r.html); else downloadDoc(safeFileName(r.title) + ".doc", r.html); });
   document.getElementById("packet-save").addEventListener("click", savePacket);
   document.getElementById("packet-edit-cancel").addEventListener("click", closePacketModal);
   document.getElementById("packet-doc-close").addEventListener("click", closePacketModal);
@@ -2927,38 +2990,134 @@
   }
   // 공용 툴바(HTML) — 워드프로세서 수준 기본 기능
   const RICH_TOOLBAR_HTML =
-    '<button type="button" data-cmd="undo" title="실행 취소">↶</button>'
-    + '<button type="button" data-cmd="redo" title="다시 실행">↷</button><span class="pk-sep"></span>'
+    '<span class="pk-grp">'
+    + '<button type="button" data-cmd="undo" title="실행 취소">↶</button>'
+    + '<button type="button" data-cmd="redo" title="다시 실행">↷</button></span>'
+    + '<span class="pk-grp">'
     + '<select class="rt-font" title="서체"><option value="\'Noto Sans KR\',sans-serif">고딕</option><option value="\'Noto Serif KR\',serif">명조</option><option value="\'Gowun Batang\',serif">고운바탕</option></select>'
-    + '<select class="rt-size" title="글자 크기"><option value="2">작게</option><option value="3" selected>보통</option><option value="5">크게</option><option value="6">더 크게</option></select><span class="pk-sep"></span>'
+    + '<select class="rt-size" title="글자 크기"><option value="2">작게</option><option value="3" selected>보통</option><option value="5">크게</option><option value="6">더 크게</option></select></span>'
+    + '<span class="pk-grp">'
     + '<button type="button" data-cmd="bold" title="굵게"><b>B</b></button>'
     + '<button type="button" data-cmd="italic" title="기울임"><i>I</i></button>'
     + '<button type="button" data-cmd="underline" title="밑줄"><u>U</u></button>'
     + '<button type="button" data-cmd="strike" title="취소선"><s>S</s></button>'
     + '<label class="rt-color" title="글자색">가<input type="color" class="rt-fore" value="#1C2B3A"></label>'
-    + '<button type="button" data-cmd="hilite" title="형광펜">🖍</button><span class="pk-sep"></span>'
+    + '<button type="button" data-cmd="hilite" title="형광펜">🖍</button></span>'
+    + '<span class="pk-grp">'
     + '<button type="button" data-cmd="h" title="제목">제목</button>'
-    + '<button type="button" data-cmd="p" title="본문">본문</button>'
+    + '<button type="button" data-cmd="p" title="본문">본문</button></span>'
+    + '<span class="pk-grp">'
     + '<button type="button" data-cmd="ul" title="글머리 목록">• 목록</button>'
     + '<button type="button" data-cmd="ol" title="번호 목록">1. 목록</button>'
     + '<button type="button" data-cmd="outdent" title="내어쓰기">⇤</button>'
-    + '<button type="button" data-cmd="indent" title="들여쓰기">⇥</button><span class="pk-sep"></span>'
+    + '<button type="button" data-cmd="indent" title="들여쓰기">⇥</button></span>'
+    + '<span class="pk-grp">'
     + '<button type="button" data-cmd="left" title="왼쪽 정렬">◧</button>'
     + '<button type="button" data-cmd="center" title="가운데 정렬">▤</button>'
     + '<button type="button" data-cmd="right" title="오른쪽 정렬">◨</button>'
-    + '<button type="button" data-cmd="justify" title="양쪽 정렬">▦</button><span class="pk-sep"></span>'
+    + '<button type="button" data-cmd="justify" title="양쪽 정렬">▦</button></span>'
+    + '<span class="pk-grp">'
     + '<button type="button" data-cmd="hr" title="구분선">──</button>'
     + '<button type="button" data-cmd="table" title="표 삽입">▦ 표</button>'
     + '<button type="button" data-cmd="row-add" title="아래에 행 추가">행＋</button>'
     + '<button type="button" data-cmd="row-del" title="현재 행 삭제">행－</button>'
     + '<button type="button" data-cmd="col-add" title="오른쪽에 열 추가">열＋</button>'
-    + '<button type="button" data-cmd="col-del" title="현재 열 삭제">열－</button><span class="pk-sep"></span>'
+    + '<button type="button" data-cmd="col-del" title="현재 열 삭제">열－</button></span>'
+    + '<span class="pk-grp">'
     + '<button type="button" data-cmd="image" title="그림 삽입">🖼 그림</button>'
-    + '<button type="button" data-cmd="clear" title="서식 지우기">✕ 서식</button>';
+    + '<button type="button" data-cmd="clear" title="서식 지우기">✕ 서식</button></span>';
   const EXEC_MAP = { bold:"bold", italic:"italic", underline:"underline", strike:"strikeThrough",
     ul:"insertUnorderedList", ol:"insertOrderedList", indent:"indent", outdent:"outdent",
     left:"justifyLeft", center:"justifyCenter", right:"justifyRight", justify:"justifyFull",
     hr:"insertHorizontalRule", undo:"undo", redo:"redo", clear:"removeFormat" };
+  // ── 편집기 안 그림 편집 — 클릭해 선택 후 크기 조절·자르기·삭제 ──
+  let imgSel = null, imgSelEditor = null;
+  const imgTools = document.getElementById("pk-img-tools");
+  function positionImgTools() {
+    if (!imgSel) { imgTools.hidden = true; return; }
+    imgTools.hidden = false;
+    const r = imgSel.getBoundingClientRect();
+    let top = r.top - imgTools.offsetHeight - 8; if (top < 8) top = r.bottom + 8;
+    let left = Math.max(8, Math.min(r.left, window.innerWidth - imgTools.offsetWidth - 8));
+    imgTools.style.top = top + "px"; imgTools.style.left = left + "px";
+  }
+  function selectEditorImage(img, ed) {
+    deselectEditorImage(); imgSel = img; imgSelEditor = ed; img.classList.add("pk-img-sel");
+    const m = (img.style.width || "").match(/(\d+)%/); document.getElementById("pk-img-size").value = m ? m[1] : 100;
+    positionImgTools();
+  }
+  function deselectEditorImage() { if (imgSel) imgSel.classList.remove("pk-img-sel"); imgSel = null; imgSelEditor = null; imgTools.hidden = true; }
+  document.getElementById("pk-img-size").addEventListener("input", e => {
+    if (!imgSel) return; imgSel.style.width = e.target.value + "%"; imgSel.style.height = "auto";
+    positionImgTools(); if (imgSelEditor) imgSelEditor.dispatchEvent(new Event("input"));
+  });
+  imgTools.addEventListener("click", e => {
+    const b = e.target.closest("button[data-imgact]"); if (!b || !imgSel) return;
+    const a = b.dataset.imgact, ed = imgSelEditor;
+    if (a === "reset") { imgSel.style.width = ""; imgSel.style.height = ""; document.getElementById("pk-img-size").value = 100; }
+    else if (a === "del") { imgSel.remove(); deselectEditorImage(); if (ed) ed.dispatchEvent(new Event("input")); return; }
+    else if (a === "crop") { openCropModal(); return; }
+    else if (a === "close") { deselectEditorImage(); return; }
+    positionImgTools(); if (ed) ed.dispatchEvent(new Event("input"));
+  });
+  window.addEventListener("scroll", () => { if (imgSel) positionImgTools(); }, true);
+  window.addEventListener("resize", () => { if (imgSel) positionImgTools(); });
+  document.addEventListener("click", e => { if (imgSel && !e.target.closest("#pk-img-tools") && e.target.tagName !== "IMG") deselectEditorImage(); });
+  // 자르기 모달
+  let cropTarget = null;
+  function openCropModal() {
+    if (!imgSel) return; cropTarget = imgSel; imgTools.hidden = true;
+    const ci = document.getElementById("crop-img");
+    ci.onload = () => initCropBox();
+    ci.src = imgSel.currentSrc || imgSel.src;
+    document.getElementById("crop-modal").classList.add("open");
+  }
+  function initCropBox() {
+    const ci = document.getElementById("crop-img"), stage = document.getElementById("crop-stage"), box = document.getElementById("crop-box");
+    const w = ci.clientWidth, h = ci.clientHeight;
+    stage.style.width = w + "px"; stage.style.height = h + "px";
+    box.style.left = Math.round(w * 0.1) + "px"; box.style.top = Math.round(h * 0.1) + "px";
+    box.style.width = Math.round(w * 0.8) + "px"; box.style.height = Math.round(h * 0.8) + "px";
+  }
+  (function cropDrag() {
+    const box = document.getElementById("crop-box"), handle = document.getElementById("crop-handle"), stage = document.getElementById("crop-stage");
+    let mode = null, sx, sy, ox, oy, ow, oh;
+    const clamp = (v, lo, hi) => Math.max(lo, Math.min(hi, v));
+    const start = (e, m) => { mode = m; const p = e.touches ? e.touches[0] : e; sx = p.clientX; sy = p.clientY; ox = box.offsetLeft; oy = box.offsetTop; ow = box.offsetWidth; oh = box.offsetHeight; e.preventDefault(); e.stopPropagation(); };
+    const move = e => { if (!mode) return; const p = e.touches ? e.touches[0] : e; const dx = p.clientX - sx, dy = p.clientY - sy, W = stage.clientWidth, H = stage.clientHeight;
+      if (mode === "move") { box.style.left = clamp(ox + dx, 0, W - ow) + "px"; box.style.top = clamp(oy + dy, 0, H - oh) + "px"; }
+      else { box.style.width = clamp(ow + dx, 24, W - box.offsetLeft) + "px"; box.style.height = clamp(oh + dy, 24, H - box.offsetTop) + "px"; } };
+    const end = () => { mode = null; };
+    box.addEventListener("mousedown", e => { if (e.target === handle) return; start(e, "move"); });
+    handle.addEventListener("mousedown", e => start(e, "resize"));
+    box.addEventListener("touchstart", e => { if (e.target === handle) return; start(e, "move"); }, { passive: false });
+    handle.addEventListener("touchstart", e => start(e, "resize"), { passive: false });
+    document.addEventListener("mousemove", move); document.addEventListener("touchmove", move, { passive: false });
+    document.addEventListener("mouseup", end); document.addEventListener("touchend", end);
+  })();
+  function closeCrop() { document.getElementById("crop-modal").classList.remove("open"); cropTarget = null; if (imgSel) positionImgTools(); }
+  document.getElementById("crop-cancel").addEventListener("click", closeCrop);
+  document.getElementById("crop-modal").addEventListener("click", e => { if (e.target.id === "crop-modal") closeCrop(); });
+  document.getElementById("crop-apply").addEventListener("click", () => {
+    if (!cropTarget) return closeCrop();
+    const ci = document.getElementById("crop-img"), box = document.getElementById("crop-box");
+    const scaleX = ci.naturalWidth / ci.clientWidth, scaleY = ci.naturalHeight / ci.clientHeight;
+    const sw = Math.max(1, Math.round(box.offsetWidth * scaleX)), sh = Math.max(1, Math.round(box.offsetHeight * scaleY));
+    const cv = document.createElement("canvas"); cv.width = sw; cv.height = sh;
+    cv.getContext("2d").drawImage(ci, Math.round(box.offsetLeft * scaleX), Math.round(box.offsetTop * scaleY), sw, sh, 0, 0, sw, sh);
+    const ed = imgSelEditor;
+    cropTarget.src = cv.toDataURL("image/jpeg", 0.9);
+    closeCrop(); if (ed) ed.dispatchEvent(new Event("input")); positionImgTools();
+  });
+  // 파일 저장 형식 드롭다운 배선
+  function wireSaveMenu(btnId, menuId, onPick) {
+    const btn = document.getElementById(btnId), menu = document.getElementById(menuId);
+    const close = () => { menu.hidden = true; btn.setAttribute("aria-expanded", "false"); };
+    btn.addEventListener("click", e => { e.stopPropagation(); const open = menu.hidden;
+      document.querySelectorAll(".pk-savemenu").forEach(m => m.hidden = true); menu.hidden = !open; btn.setAttribute("aria-expanded", String(open)); });
+    menu.addEventListener("click", e => { const b = e.target.closest("button[data-fmt]"); if (!b) return; close(); onPick(b.dataset.fmt); });
+    document.addEventListener("click", close);
+  }
   function makeRichEditor(toolbarId, imgInputId, editorEls) {
     const bar = document.getElementById(toolbarId);
     bar.innerHTML = RICH_TOOLBAR_HTML;
@@ -2972,6 +3131,8 @@
     editorEls.forEach(ed => {
       ed.addEventListener("focus", () => { active = ed; });
       ["keyup", "mouseup", "input"].forEach(ev => ed.addEventListener(ev, saveSel));
+      ed.addEventListener("click", e => { if (e.target.tagName === "IMG") { e.stopPropagation(); selectEditorImage(e.target, ed); } else deselectEditorImage(); });
+      ed.addEventListener("keydown", () => { if (imgSel) deselectEditorImage(); });
       // 글자·쪽수 표시 (A4 기준 대략치)
       const cnt = document.createElement("div"); cnt.className = "pk-count"; ed.insertAdjacentElement("afterend", cnt);
       const updCount = () => { const chars = (ed.innerText || "").replace(/\s/g, "").length;
@@ -3396,9 +3557,9 @@
   document.getElementById('memo-print').addEventListener('click', () => {
     printHtml(memoExportDoc(document.getElementById('memo-export-scope').value).html);
   });
-  document.getElementById('memo-download').addEventListener('click', () => {
+  wireSaveMenu('memo-download', 'memo-savemenu', fmt => {
     const r = memoExportDoc(document.getElementById('memo-export-scope').value);
-    downloadDoc(safeFileName(r.title) + ".doc", r.html);
+    if (fmt === 'pdf') printHtml(r.html); else downloadDoc(safeFileName(r.title) + ".doc", r.html);
   });
   makeRichEditor("memo-toolbar", "memo-img-input", [document.getElementById("memo-last"), document.getElementById("memo-this")]);
 
