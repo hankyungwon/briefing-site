@@ -653,10 +653,33 @@
   .rsub[aria-selected="true"]{color:var(--gwanak-deep);font-weight:700;border-bottom-color:var(--gwanak);}
   .res-packet-note{font-size:12.5px;color:var(--muted);line-height:1.5;word-break:keep-all;flex:1;min-width:0;}
   .packet-doc{max-height:72vh;overflow-y:auto;padding:6px 4px;}
-  .packet-body{font-family:'Noto Sans KR',sans-serif;font-size:12px;line-height:1.4;color:var(--ink);
-    white-space:pre-wrap;word-break:keep-all;}
+  /* 취합 문서 본문(HTML 서식) — 표시·인쇄 공통 */
+  .packet-body{font-family:'Noto Sans KR',sans-serif;font-size:13px;line-height:1.5;color:var(--ink);word-break:keep-all;}
+  .packet-body h3{font-family:'Noto Serif KR',serif;font-size:17px;font-weight:700;color:var(--gwanak-deep);margin:2px 0 6px;}
+  .packet-body h4{font-family:'Noto Sans KR',sans-serif;font-size:14px;font-weight:800;color:var(--gwanak-deep);margin:14px 0 5px;}
+  .packet-body p{margin:4px 0;}
+  .packet-body ul,.packet-body ol{margin:4px 0 4px 4px;padding-left:20px;}
+  .packet-body li{margin:2px 0;}
+  .packet-body hr{border:none;border-top:1px solid var(--line);margin:9px 0;}
+  .packet-body img{max-width:100%;height:auto;border-radius:4px;margin:4px 0;}
+  .packet-body table,.pk-editor table,.pk-table{border-collapse:collapse;width:100%;margin:8px 0;}
+  .packet-body td,.packet-body th,.pk-editor td,.pk-editor th,.pk-table td,.pk-table th{
+    border:1px solid #B9C6D6;padding:5px 7px;font-size:12.5px;vertical-align:top;word-break:keep-all;}
+  /* 편집 툴바·편집기 */
+  .pk-toolbar{display:flex;flex-wrap:wrap;gap:3px;align-items:center;padding:6px;border:1px solid var(--line);
+    border-bottom:none;border-radius:8px 8px 0 0;background:#F4F8FC;}
+  .pk-toolbar button{appearance:none;border:1px solid transparent;background:none;cursor:pointer;font-family:inherit;
+    font-size:13px;color:var(--slate);padding:4px 8px;border-radius:6px;line-height:1.1;min-width:30px;}
+  .pk-toolbar button:hover{background:#fff;border-color:var(--line);color:var(--gwanak-deep);}
+  .pk-sep{width:1px;height:18px;background:var(--line);margin:0 3px;}
+  .pk-editor{min-height:300px;max-height:52vh;overflow-y:auto;border:1px solid var(--line);border-radius:0 0 8px 8px;
+    padding:12px 14px;font-size:13px;line-height:1.55;color:var(--ink);background:#fff;word-break:keep-all;}
+  .pk-editor:focus{outline:2px solid var(--gwanak);outline-offset:-1px;}
+  .pk-editor h4{font-size:14px;font-weight:800;color:var(--gwanak-deep);margin:12px 0 4px;}
+  .pk-editor img{max-width:100%;height:auto;}
   @media print {
-    .packet-body{font-size:11px;line-height:1.35;}
+    .packet-body{font-size:11.5px;line-height:1.4;}
+    .packet-body h3{font-size:15px;} .packet-body h4{font-size:13px;}
     body * { visibility: hidden; }
     #packet-modal.open #packet-doc-view:not([hidden]), #packet-modal.open #packet-doc-view:not([hidden]) * { visibility: visible; }
     #packet-modal.open { position: absolute; inset: 0; display: block; background: #fff; padding: 0; overflow: visible; }
@@ -1078,8 +1101,28 @@
         <div class="field" style="flex:1;"><label for="packet-edit-date">날짜</label>
           <input id="packet-edit-date" type="date"></div>
       </div>
-      <div class="field"><label for="packet-edit-content">내용</label>
-        <textarea id="packet-edit-content" style="min-height:320px;font-size:12.5px;line-height:1.45;"></textarea></div>
+      <div class="field"><label>내용 <span style="font-weight:400;color:var(--muted);">— 굵게·제목·목록·표·그림 등으로 자유롭게 정리하세요. 그림은 붙여넣기(스크린샷)도 됩니다.</span></label>
+        <div class="pk-toolbar" id="packet-toolbar">
+          <button type="button" data-cmd="bold" title="굵게"><b>B</b></button>
+          <button type="button" data-cmd="italic" title="기울임"><i>I</i></button>
+          <button type="button" data-cmd="underline" title="밑줄"><u>U</u></button>
+          <button type="button" data-cmd="hilite" title="형광펜">🖍</button>
+          <span class="pk-sep"></span>
+          <button type="button" data-cmd="h" title="제목">제목</button>
+          <button type="button" data-cmd="p" title="본문">본문</button>
+          <button type="button" data-cmd="ul" title="글머리 목록">• 목록</button>
+          <button type="button" data-cmd="ol" title="번호 목록">1. 목록</button>
+          <span class="pk-sep"></span>
+          <button type="button" data-cmd="left" title="왼쪽 정렬">⯇</button>
+          <button type="button" data-cmd="center" title="가운데 정렬">≡</button>
+          <button type="button" data-cmd="hr" title="구분선">──</button>
+          <span class="pk-sep"></span>
+          <button type="button" data-cmd="table" title="표 삽입">▦ 표</button>
+          <button type="button" data-cmd="image" title="그림 삽입">🖼 그림</button>
+        </div>
+        <div id="packet-edit-body" class="pk-editor" contenteditable="true"></div>
+        <input type="file" id="packet-img-input" accept="image/*" multiple hidden>
+      </div>
       <button type="button" class="btn-primary" id="packet-save">저장</button>
       <button type="button" class="auth-btn" id="packet-edit-cancel" style="margin-left:8px;">취소</button>
       <p class="form-error" id="packet-error" role="alert"></p>
@@ -2645,16 +2688,32 @@
     packetModal.classList.add("open");
   }
   function closePacketModal() { packetModal.classList.remove("open"); }
-  // 각 단원의 최신 주간기록을 하나의 텍스트 문서로 취합
+  // 각 단원의 최신 주간기록을 기본 서식(HTML)이 적용된 문서로 취합 — 이후 송프로가 자유롭게 편집
+  const NL2BR = s => esc(s).replace(/\n/g, "<br>");
   function buildPacketContent(latestByEmail, stamp) {
-    let t = "관악구 AI혁신정책연구단 · 주간회의 자료\n취합 " + stamp + "\n";
+    let h = '<h3 style="text-align:center;">관악구 AI혁신정책연구단 · 주간회의 자료</h3>';
+    h += '<p style="text-align:center;color:#667;font-size:12px;">취합 ' + esc(stamp) + '</p><hr>';
     MEMBERS.forEach((m, i) => {
       const n = latestByEmail[m.email];
-      t += "\n[" + (i + 1) + "] " + m.name + " · " + m.role + "  (" + (n ? fmtWeekRange(n.week_start) : "미작성") + ")\n";
-      t += "· 지난주 실적: " + (n && n.last_week ? n.last_week : "—") + "\n";
-      t += "· 이번주 계획: " + (n && n.this_week ? n.this_week : "—") + "\n";
+      h += '<h4>[' + (i + 1) + '] ' + esc(m.name) + ' · ' + esc(m.role) + '  (' + (n ? fmtWeekRange(n.week_start) : "미작성") + ')</h4>';
+      h += '<p><b>지난주 실적</b><br>' + (n && n.last_week ? NL2BR(n.last_week) : "—") + '</p>';
+      h += '<p><b>이번주 계획</b><br>' + (n && n.this_week ? NL2BR(n.this_week) : "—") + '</p>';
     });
-    return t;
+    return h;
+  }
+  // 저장·표시 전 안전 처리: 스크립트·이벤트 핸들러·위험 URL 제거 (내부 문서지만 방어)
+  function sanitizePacketHtml(html) {
+    const doc = new DOMParser().parseFromString("<div>" + (html || "") + "</div>", "text/html");
+    doc.querySelectorAll("script,style,iframe,object,embed,link,meta").forEach(n => n.remove());
+    doc.querySelectorAll("*").forEach(el => {
+      [...el.attributes].forEach(a => {
+        const name = a.name.toLowerCase(), val = (a.value || "").trim();
+        if (name.startsWith("on")) el.removeAttribute(a.name);
+        else if ((name === "href" || name === "src") && /^\s*javascript:/i.test(val)) el.removeAttribute(a.name);
+        else if (name === "src" && el.tagName === "IMG" && !/^data:image\//i.test(val) && !/^https:\/\//i.test(val)) el.removeAttribute(a.name);
+      });
+    });
+    return doc.body.firstChild ? doc.body.firstChild.innerHTML : "";
   }
   async function loadPackets() {
     const list = document.getElementById("res-packet-list");
@@ -2696,7 +2755,7 @@
   function showPacketDoc(id) {
     const p = packetCache.find(x => String(x.id) === String(id));
     if (!p) return;
-    document.getElementById("packet-doc").innerHTML = '<div class="packet-body">' + esc(p.content || "") + '</div>';
+    document.getElementById("packet-doc").innerHTML = '<div class="packet-body">' + sanitizePacketHtml(p.content || "") + '</div>';
     packetView("doc");
   }
   function showPacketEdit(id) {
@@ -2707,7 +2766,7 @@
     document.getElementById("packet-edit-id").value = p.id;
     document.getElementById("packet-edit-name").value = p.title || "";
     document.getElementById("packet-edit-date").value = p.packet_date;
-    document.getElementById("packet-edit-content").value = p.content || "";
+    document.getElementById("packet-edit-body").innerHTML = sanitizePacketHtml(p.content || "");
     packetView("edit");
   }
   async function savePacket() {
@@ -2717,7 +2776,7 @@
     const { error } = await sb.from("meeting_packets").update({
       title: document.getElementById("packet-edit-name").value.trim() || null,
       packet_date: document.getElementById("packet-edit-date").value,
-      content: document.getElementById("packet-edit-content").value,
+      content: sanitizePacketHtml(document.getElementById("packet-edit-body").innerHTML),
       updated_at: new Date().toISOString()
     }).eq("id", Number(id));
     btn.disabled = false;
@@ -2735,6 +2794,64 @@
   document.getElementById("packet-edit-cancel").addEventListener("click", closePacketModal);
   document.getElementById("packet-doc-close").addEventListener("click", closePacketModal);
   packetModal.addEventListener("click", e => { if (e.target.id === "packet-modal") closePacketModal(); });
+
+  // 주간회의 자료 편집기 — 가벼운 서식(굵게·제목·목록·정렬·표·그림)
+  const pkEditor = document.getElementById("packet-edit-body");
+  function pkExec(cmd, val) { pkEditor.focus(); document.execCommand(cmd, false, val || null); }
+  document.getElementById("packet-toolbar").addEventListener("click", e => {
+    const b = e.target.closest("button[data-cmd]"); if (!b) return;
+    const c = b.dataset.cmd;
+    if (c === "bold" || c === "italic" || c === "underline") pkExec(c);
+    else if (c === "hilite") pkExec("hiliteColor", "#FFE86B");
+    else if (c === "h") pkExec("formatBlock", "H4");
+    else if (c === "p") pkExec("formatBlock", "P");
+    else if (c === "ul") pkExec("insertUnorderedList");
+    else if (c === "ol") pkExec("insertOrderedList");
+    else if (c === "left") pkExec("justifyLeft");
+    else if (c === "center") pkExec("justifyCenter");
+    else if (c === "hr") pkExec("insertHorizontalRule");
+    else if (c === "table") insertPacketTable();
+    else if (c === "image") document.getElementById("packet-img-input").click();
+  });
+  function insertPacketTable() {
+    const spec = prompt("표 크기를 '행x열'로 입력하세요 (예: 3x4)", "3x3");
+    if (!spec) return;
+    const mm = spec.match(/(\d+)\s*[x×*]\s*(\d+)/);
+    if (!mm) { alert("형식이 올바르지 않습니다. 예: 3x4"); return; }
+    const rows = Math.min(20, Math.max(1, +mm[1])), cols = Math.min(12, Math.max(1, +mm[2]));
+    let html = '<table class="pk-table"><tbody>';
+    for (let r = 0; r < rows; r++) { html += "<tr>"; for (let k = 0; k < cols; k++) html += "<td>&nbsp;</td>"; html += "</tr>"; }
+    html += "</tbody></table><p><br></p>";
+    pkEditor.focus(); document.execCommand("insertHTML", false, html);
+  }
+  // 그림 삽입 — 기기 선택 또는 붙여넣기(스크린샷), 자동 축소 후 문서에 내장(data URI)
+  function fileToScaledDataUrl(file, maxW, cb) {
+    const img = new Image();
+    img.onload = () => {
+      const scale = Math.min(1, maxW / img.width);
+      const w = Math.round(img.width * scale), h = Math.round(img.height * scale);
+      const cv = document.createElement("canvas"); cv.width = w; cv.height = h;
+      cv.getContext("2d").drawImage(img, 0, 0, w, h);
+      cb(cv.toDataURL("image/jpeg", 0.82));
+    };
+    img.onerror = () => cb(null);
+    const fr = new FileReader(); fr.onload = () => { img.src = fr.result; }; fr.readAsDataURL(file);
+  }
+  function insertPacketImage(file) {
+    if (!file || !/^image\//.test(file.type)) return;
+    fileToScaledDataUrl(file, 1200, url => {
+      if (!url) { alert("이미지를 불러오지 못했습니다."); return; }
+      pkEditor.focus();
+      document.execCommand("insertHTML", false, '<img src="' + url + '" style="max-width:100%;"><p><br></p>');
+    });
+  }
+  document.getElementById("packet-img-input").addEventListener("change", e => {
+    [...(e.target.files || [])].forEach(insertPacketImage); e.target.value = "";
+  });
+  pkEditor.addEventListener("paste", e => {
+    const items = (e.clipboardData || {}).items || [];
+    for (const it of items) { if (it.type && it.type.indexOf("image") === 0) { e.preventDefault(); insertPacketImage(it.getAsFile()); return; } }
+  });
 
   function toggleBoardForm(open) {
     const wrap = document.getElementById("fp-form-wrap"), btn = document.getElementById("fp-write-toggle");
