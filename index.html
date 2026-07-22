@@ -620,7 +620,7 @@
     box-shadow:0 1px 3px rgba(11,74,134,.2);}
   .compile-btn:hover{background:var(--gwanak) !important;}
   /* 취합 문서 */
-  .compile-modal{max-width:780px;}
+  .compile-modal{max-width:900px;margin:4vh auto 40px;}
   .compile-bar{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:14px;}
   .compile-doc{max-height:72vh;overflow-y:auto;padding:4px 2px;}
   .cd-head{text-align:center;border-bottom:2px solid var(--gwanak-deep);padding-bottom:12px;margin-bottom:16px;}
@@ -665,18 +665,22 @@
   .packet-body table,.pk-editor table,.pk-table{border-collapse:collapse;width:100%;margin:8px 0;}
   .packet-body td,.packet-body th,.pk-editor td,.pk-editor th,.pk-table td,.pk-table th{
     border:1px solid #B9C6D6;padding:5px 7px;font-size:12.5px;vertical-align:top;word-break:keep-all;}
-  /* 편집 툴바·편집기 */
-  .pk-toolbar{display:flex;flex-wrap:wrap;gap:3px;align-items:center;padding:6px;border:1px solid var(--line);
-    border-bottom:none;border-radius:8px 8px 0 0;background:#F4F8FC;}
+  /* 편집 툴바 — 문서 위에 고정되는 도구막대 */
+  .pk-toolbar{display:flex;flex-wrap:wrap;gap:3px;align-items:center;padding:7px 8px;border:1px solid var(--line);
+    border-radius:9px;background:#F4F8FC;position:sticky;top:0;z-index:3;}
   .pk-toolbar button{appearance:none;border:1px solid transparent;background:none;cursor:pointer;font-family:inherit;
-    font-size:13px;color:var(--slate);padding:4px 8px;border-radius:6px;line-height:1.1;min-width:30px;}
+    font-size:13.5px;color:var(--slate);padding:5px 9px;border-radius:6px;line-height:1.1;min-width:32px;}
   .pk-toolbar button:hover{background:#fff;border-color:var(--line);color:var(--gwanak-deep);}
-  .pk-sep{width:1px;height:18px;background:var(--line);margin:0 3px;}
-  .pk-editor{min-height:300px;max-height:52vh;overflow-y:auto;border:1px solid var(--line);border-radius:0 0 8px 8px;
-    padding:12px 14px;font-size:13px;line-height:1.55;color:var(--ink);background:#fff;word-break:keep-all;}
-  .pk-editor:focus{outline:2px solid var(--gwanak);outline-offset:-1px;}
-  .pk-editor h4{font-size:14px;font-weight:800;color:var(--gwanak-deep);margin:12px 0 4px;}
+  .pk-sep{width:1px;height:18px;background:var(--line);margin:0 4px;}
+  /* 편집기 — A4 편집용지 느낌(넓고 길게, 종이처럼) */
+  .pk-editor{width:min(760px,100%);margin:14px auto;min-height:min(1000px,58vh);border:1px solid var(--line);border-radius:3px;
+    padding:30px 34px;font-size:14px;line-height:1.8;color:var(--ink);background:#fff;word-break:keep-all;
+    box-shadow:0 2px 14px rgba(14,95,168,.10);}
+  .pk-editor:focus{outline:2px solid var(--gwanak);outline-offset:1px;}
+  .pk-editor h4{font-size:15px;font-weight:800;color:var(--gwanak-deep);margin:14px 0 5px;}
   .pk-editor img{max-width:100%;height:auto;}
+  .pk-editor-sm{min-height:min(560px,40vh);}
+  @media(max-width:640px){ .pk-editor{padding:16px 16px;min-height:44vh;margin:10px auto;} }
   @media print {
     .packet-body{font-size:11.5px;line-height:1.4;}
     .packet-body h3{font-size:15px;} .packet-body h4{font-size:13px;}
@@ -698,7 +702,6 @@
   .wt.rich table{border-collapse:collapse;width:100%;margin:5px 0;} .wt.rich td,.wt.rich th{border:1px solid #B9C6D6;padding:4px 6px;font-size:12.5px;}
   /* 편집기 안 빈 영역 안내문(placeholder) */
   .pk-editor:empty::before{content:attr(data-ph);color:var(--muted);}
-  .pk-editor-sm{min-height:110px;max-height:26vh;}
   .wb-empty{font-size:13px;color:var(--muted);padding:4px 0;word-break:keep-all;}
   .wb-hist{margin-top:10px;}
   .wb-hist summary{font-size:12px;color:var(--muted);cursor:pointer;font-weight:600;list-style:revert;}
@@ -1023,7 +1026,7 @@
 </div>
 
 <div class="modal-backdrop" id="memo-modal">
-  <div class="modal" role="dialog" aria-modal="true" aria-labelledby="memo-title">
+  <div class="modal compile-modal" role="dialog" aria-modal="true" aria-labelledby="memo-title">
     <h3 id="memo-title">주간 업무 기록</h3>
     <p class="modal-sub" id="memo-sub"></p>
     <form id="memo-form">
