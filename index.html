@@ -2648,10 +2648,12 @@
         + '<span>' + fmtRange(ev) + '</span>'
         + (ev.location ? '<span>· ' + esc(ev.location) + '</span>' : '')
         + '<span>· ' + esc(ev.author_name) + '</span>'
-        + (mine ? '<span style="margin-left:auto;display:flex;gap:6px;"><button class="mini-btn" data-edit-ev="' + ev.id + '">수정</button>'
-          + '<button class="mini-btn danger" data-del-ev="' + ev.id + '">삭제</button></span>'
-          : (isAdminUser ? '<span style="margin-left:auto;"><button class="mini-btn danger" data-del-ev="' + ev.id + '" title="관리자 삭제">🛡 삭제</button></span>' : ''))
-        + '</div>'
+        + '<span style="margin-left:auto;display:flex;gap:6px;">'
+        + '<button class="mini-btn" data-ics-ev="' + ev.id + '" title="이 일정을 내 스마트폰 캘린더에 추가">📅 내 캘린더에</button>'
+        + (mine ? '<button class="mini-btn" data-edit-ev="' + ev.id + '">수정</button>'
+          + '<button class="mini-btn danger" data-del-ev="' + ev.id + '">삭제</button>'
+          : (isAdminUser ? '<button class="mini-btn danger" data-del-ev="' + ev.id + '" title="관리자 삭제">🛡 삭제</button>' : ''))
+        + '</span></div>'
         + (ev.memo ? '<div class="dmemo">' + linkify(ev.memo) + '</div>' : '') + '</div>';
     }).join("");
     return '<div class="cal-day-list">' + rows + '</div>';
@@ -2676,6 +2678,47 @@
       const ev = calEvents.find(x => String(x.id) === b.dataset.editEv);
       if (ev) openEventModal(ev);
     }));
+    calRoot.querySelectorAll("[data-ics-ev]").forEach(b => b.addEventListener("click", () => {
+      const ev = calEvents.find(x => String(x.id) === b.dataset.icsEv);
+      if (ev) downloadEventIcs(ev);
+    }));
+  }
+
+  // ── 일정 1건을 표준 일정 파일(.ics)로 내려받기 — 스마트폰에서 열면 캘린더 앱에 추가됨 ──
+  function icsEsc(s) { return (s || "").replace(/\\/g, "\\\\").replace(/;/g, "\\;").replace(/,/g, "\\,").replace(/\r?\n/g, "\\n"); }
+  function buildEventIcs(ev) {
+    const d8 = s => s.replace(/-/g, "");
+    const hm = t => { const m = (t || "").match(/^(\d{2}):(\d{2})/); return m ? m[1] + m[2] + "00" : null; };
+    const plus1h = s => String(Math.min(23, parseInt(s.slice(0, 2), 10) + 1)).padStart(2, "0") + s.slice(2);
+    const endDate = ev.end_date || ev.start_date;
+    const lines = ["BEGIN:VCALENDAR", "VERSION:2.0", "PRODID:-//hanpro.io//gwanak-ai-briefing//KO", "METHOD:PUBLISH",
+      "BEGIN:VTIMEZONE", "TZID:Asia/Seoul", "BEGIN:STANDARD", "DTSTART:19700101T000000",
+      "TZOFFSETFROM:+0900", "TZOFFSETTO:+0900", "TZNAME:KST", "END:STANDARD", "END:VTIMEZONE",
+      "BEGIN:VEVENT", "UID:ev-" + ev.id + "@hanpro.io",
+      "DTSTAMP:" + new Date().toISOString().replace(/[-:]/g, "").replace(/\.\d{3}/, "")];
+    const sHM = hm(ev.start_time);
+    if (sHM) {
+      let eHM = hm(ev.end_time);
+      if (!eHM || (endDate === ev.start_date && eHM <= sHM)) eHM = plus1h(sHM); // 종료 누락·역전 보정
+      lines.push("DTSTART;TZID=Asia/Seoul:" + d8(ev.start_date) + "T" + sHM);
+      lines.push("DTEND;TZID=Asia/Seoul:" + d8(endDate) + "T" + eHM);
+    } else {
+      const e = new Date(endDate + "T00:00:00"); e.setDate(e.getDate() + 1); // DATE 형식은 종료일 비포함
+      lines.push("DTSTART;VALUE=DATE:" + d8(ev.start_date));
+      lines.push("DTEND;VALUE=DATE:" + ymd(e).replace(/-/g, ""));
+    }
+    lines.push("SUMMARY:" + icsEsc("[" + evType(ev.type).label + "] " + ev.title));
+    if (ev.location) lines.push("LOCATION:" + icsEsc(ev.location));
+    lines.push("DESCRIPTION:" + icsEsc("등록: " + (ev.author_name || "") + (ev.memo ? "\n" + ev.memo : "")));
+    lines.push("END:VEVENT", "END:VCALENDAR");
+    return lines.join("\r\n") + "\r\n";
+  }
+  function downloadEventIcs(ev) {
+    const blob = new Blob([buildEventIcs(ev)], { type: "text/calendar;charset=utf-8" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a"); a.href = url; a.download = "일정-" + ev.start_date + ".ics";
+    document.body.appendChild(a); a.click(); a.remove();
+    setTimeout(() => URL.revokeObjectURL(url), 2000);
   }
 
   function navCal(dir) {
