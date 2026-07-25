@@ -49,19 +49,32 @@ const H = require("./helper");
   });
   c.ok(JSON.stringify(week) === JSON.stringify(EXPECT), "주간 뷰: 시간순");
 
-  // 「내 캘린더에」 버튼 — .ics 파일 생성 내용 검증
+  // 「내 캘린더에」 버튼 — 구글 캘린더 추가 화면 URL 검증 (다운로드 없이 바로 열림)
   await page.click('.cal-views button[data-view="day"]'); await page.waitForTimeout(300);
   c.ok(await page.evaluate(() => document.querySelectorAll("[data-ics-ev]").length) === 4, "일간 뷰에 📅 내 캘린더에 버튼");
-  const fs = require("fs");
-  const dl = await Promise.all([page.waitForEvent("download"), page.click('[data-ics-ev="2"]')]).then(a => a[0]);
-  const ics = fs.readFileSync(await dl.path(), "utf8");
-  c.ok(/BEGIN:VCALENDAR[\s\S]*END:VCALENDAR/.test(ics), "ICS 구조 유효");
-  c.ok(/DTSTART;TZID=Asia\/Seoul:\d{8}T090000/.test(ics) && /DTEND;TZID=Asia\/Seoul:\d{8}T100000/.test(ics), "ICS 시간 09:00~10:00");
-  c.ok(/SUMMARY:\[회의\] 아침회의/.test(ics), "ICS 제목·유형");
-  // 종일 일정 → DATE 형식 + 종료 +1일
-  const dl2 = await Promise.all([page.waitForEvent("download"), page.click('[data-ics-ev="3"]')]).then(a => a[0]);
-  const ics2 = fs.readFileSync(await dl2.path(), "utf8");
-  c.ok(/DTSTART;VALUE=DATE:\d{8}/.test(ics2) && /DTEND;VALUE=DATE:\d{8}/.test(ics2), "종일 일정 DATE 형식");
+  await page.evaluate(() => { window.__opened = null; window.open = u => { window.__opened = u; return null; }; });
+  await page.click('[data-ics-ev="2"]'); await page.waitForTimeout(100);
+  const u1 = new URL(await page.evaluate(() => window.__opened));
+  c.ok(u1.hostname === "calendar.google.com" && u1.searchParams.get("action") === "TEMPLATE", "구글 캘린더 추가 화면 열림");
+  c.ok(/T090000\/\d{8}T100000$/.test(u1.searchParams.get("dates")) && u1.searchParams.get("ctz") === "Asia/Seoul", "시간 09:00~10:00 + 서울 시간대");
+  c.ok(u1.searchParams.get("text") === "[회의] 아침회의", "제목·유형 전달");
+  // 종일 일정 → 날짜만(종료 +1일)
+  await page.click('[data-ics-ev="3"]'); await page.waitForTimeout(100);
+  const u2 = new URL(await page.evaluate(() => window.__opened));
+  c.ok(/^\d{8}\/\d{8}$/.test(u2.searchParams.get("dates")), "종일 일정은 날짜 형식");
+
+  // 시각 역전 입력 차단 — 같은 날 14:00~11:00 저장 시도 → 오류 표시, 저장 안 됨
+  let posted = false;
+  await page.route("**/rest/v1/events**", r => { if (r.request().method() === "POST") posted = true; r.fulfill({ status: 200, contentType: "application/json", body: "[]" }); });
+  await page.click(".cal-add"); await page.waitForTimeout(200);
+  await page.fill("#event-name", "역전 시험");
+  await page.fill("#event-stime", "14:00");
+  await page.fill("#event-etime", "11:00");
+  await page.click("#event-submit"); await page.waitForTimeout(300);
+  const err = await page.evaluate(() => ({ shown: document.getElementById("event-error").classList.contains("show"), text: document.getElementById("event-error").textContent, kept: document.getElementById("event-name").value }));
+  c.ok(err.shown && /빠르|확인/.test(err.text), "종료<시작 시각 저장 차단 + 안내");
+  c.ok(!posted, "차단 시 서버 저장 요청 없음");
+  c.ok(err.kept === "역전 시험", "입력 내용 유실 없음");
 
   server.close();
   await c.finish(browser);
