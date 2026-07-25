@@ -49,6 +49,20 @@ const H = require("./helper");
   });
   c.ok(JSON.stringify(week) === JSON.stringify(EXPECT), "주간 뷰: 시간순");
 
+  // 「내 캘린더에」 버튼 — .ics 파일 생성 내용 검증
+  await page.click('.cal-views button[data-view="day"]'); await page.waitForTimeout(300);
+  c.ok(await page.evaluate(() => document.querySelectorAll("[data-ics-ev]").length) === 4, "일간 뷰에 📅 내 캘린더에 버튼");
+  const fs = require("fs");
+  const dl = await Promise.all([page.waitForEvent("download"), page.click('[data-ics-ev="2"]')]).then(a => a[0]);
+  const ics = fs.readFileSync(await dl.path(), "utf8");
+  c.ok(/BEGIN:VCALENDAR[\s\S]*END:VCALENDAR/.test(ics), "ICS 구조 유효");
+  c.ok(/DTSTART;TZID=Asia\/Seoul:\d{8}T090000/.test(ics) && /DTEND;TZID=Asia\/Seoul:\d{8}T100000/.test(ics), "ICS 시간 09:00~10:00");
+  c.ok(/SUMMARY:\[회의\] 아침회의/.test(ics), "ICS 제목·유형");
+  // 종일 일정 → DATE 형식 + 종료 +1일
+  const dl2 = await Promise.all([page.waitForEvent("download"), page.click('[data-ics-ev="3"]')]).then(a => a[0]);
+  const ics2 = fs.readFileSync(await dl2.path(), "utf8");
+  c.ok(/DTSTART;VALUE=DATE:\d{8}/.test(ics2) && /DTEND;VALUE=DATE:\d{8}/.test(ics2), "종일 일정 DATE 형식");
+
   server.close();
   await c.finish(browser);
 })().catch(e => { console.error("FAIL", e.message, e.stack); process.exit(1); });
