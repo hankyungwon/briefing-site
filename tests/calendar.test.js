@@ -49,10 +49,26 @@ const H = require("./helper");
   });
   c.ok(JSON.stringify(week) === JSON.stringify(EXPECT), "주간 뷰: 시간순");
 
-  // 「내 캘린더에」 버튼·구글 캘린더 연동은 제거됨 — 흔적이 남지 않았는지 확인
+  // 구글 캘린더 연동 제거 — 버튼도, 연동 흔적도 남아 있지 않아야 합니다.
   await page.click('.cal-views button[data-view="day"]'); await page.waitForTimeout(300);
-  c.ok(await page.evaluate(() => document.querySelectorAll("[data-ics-ev]").length) === 0, "일간 뷰에 📅 내 캘린더에 버튼 없음");
-  c.ok(await page.evaluate(() => !/내 캘린더에|calendar\.google\.com/.test(document.documentElement.innerHTML)), "구글 캘린더 연동 흔적 없음");
+  const 연동 = await page.evaluate(() => ({
+    버튼: document.querySelectorAll("[data-ics-ev]").length,
+    문구: [...document.querySelectorAll(".cal-devt")].some(e => e.textContent.includes("내 캘린더에")),
+    함수: typeof window.gcalAddUrl + "/" + typeof window.openCalendarAdd,
+    링크: [...document.querySelectorAll("a[href]")].some(a => a.href.includes("calendar.google.com")),
+  }));
+  c.ok(연동.버튼 === 0, "일간 뷰에 캘린더 추가 버튼 없음");
+  c.ok(연동.문구 === false, "「내 캘린더에」 문구 없음");
+  c.ok(연동.함수 === "undefined/undefined", "gcalAddUrl·openCalendarAdd 없음");
+  c.ok(연동.링크 === false, "calendar.google.com 링크 없음");
+  // 과잉 삭제 방지 — 일정 카드와 그 정보(유형·시간·등록자)는 그대로여야 합니다.
+  const 카드 = await page.evaluate(() => ({
+    수: document.querySelectorAll(".cal-devt").length,
+    유형: document.querySelectorAll(".cal-devt .type-tag").length,
+    첫칸: (document.querySelector(".cal-devt .dmeta") || {}).textContent || "",
+  }));
+  c.ok(카드.수 === 4 && 카드.유형 === 4, "일정 카드 4건 + 유형 태그 유지");
+  c.ok(/09:00~10:00/.test(카드.첫칸) && /이프로/.test(카드.첫칸), "시간·등록자 표시 유지");
 
   // 시각 역전 입력 차단 — 같은 날 14:00~11:00 저장 시도 → 오류 표시, 저장 안 됨
   let posted = false;
