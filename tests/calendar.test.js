@@ -15,7 +15,7 @@ const H = require("./helper");
     { id: 1, type: "meeting", title: "오후회의", start_date: T, end_date: null, start_time: "14:00", end_time: "15:00", author_name: "이프로", author_id: "x", location: null },
     { id: 2, type: "meeting", title: "아침회의", start_date: T, end_date: null, start_time: "09:00", end_time: "10:00", author_name: "이프로", author_id: "x", location: null },
     { id: 3, type: "etc", title: "종일행사", start_date: T, end_date: null, start_time: null, end_time: null, author_name: "이프로", author_id: "x", location: null },
-    { id: 4, type: "meal", title: "점심약속", start_date: T, end_date: null, start_time: "11:30", end_time: "12:30", author_name: "이프로", author_id: "x", location: null }
+    { id: 4, type: "meal", title: "점심약속", start_date: T, end_date: null, start_time: "11:30", end_time: "12:30", author_name: "이프로", author_id: "two", location: null }
   ];
   const EXPECT = ["아침회의", "점심약속", "오후회의", "종일행사"];
 
@@ -49,19 +49,21 @@ const H = require("./helper");
   });
   c.ok(JSON.stringify(week) === JSON.stringify(EXPECT), "주간 뷰: 시간순");
 
-  // 「내 캘린더에」 버튼 — 구글 캘린더 추가 화면 URL 검증 (다운로드 없이 바로 열림)
+  // 캘린더 연동 해제 — 「내 캘린더에」 버튼이 없어야 하고, 남은 일정 목록·본인 일정 버튼은 정상
   await page.click('.cal-views button[data-view="day"]'); await page.waitForTimeout(300);
-  c.ok(await page.evaluate(() => document.querySelectorAll("[data-ics-ev]").length) === 4, "일간 뷰에 📅 내 캘린더에 버튼");
-  await page.evaluate(() => { window.__opened = null; window.open = u => { window.__opened = u; return null; }; });
-  await page.click('[data-ics-ev="2"]'); await page.waitForTimeout(100);
-  const u1 = new URL(await page.evaluate(() => window.__opened));
-  c.ok(u1.hostname === "calendar.google.com" && u1.searchParams.get("action") === "TEMPLATE", "구글 캘린더 추가 화면 열림");
-  c.ok(/T090000\/\d{8}T100000$/.test(u1.searchParams.get("dates")) && u1.searchParams.get("ctz") === "Asia/Seoul", "시간 09:00~10:00 + 서울 시간대");
-  c.ok(u1.searchParams.get("text") === "[회의] 아침회의", "제목·유형 전달");
-  // 종일 일정 → 날짜만(종료 +1일)
-  await page.click('[data-ics-ev="3"]'); await page.waitForTimeout(100);
-  const u2 = new URL(await page.evaluate(() => window.__opened));
-  c.ok(/^\d{8}\/\d{8}$/.test(u2.searchParams.get("dates")), "종일 일정은 날짜 형식");
+  const dv = await page.evaluate(() => ({
+    ics: document.querySelectorAll("[data-ics-ev]").length,
+    rows: document.querySelectorAll(".cal-devt").length,
+    gcal: /calendar\.google\.com/.test(document.documentElement.innerHTML),
+    mineEdit: document.querySelectorAll('[data-edit-ev="4"]').length,
+    mineDel: document.querySelectorAll('[data-del-ev="4"]').length,
+    otherActs: document.querySelectorAll('[data-edit-ev="2"],[data-del-ev="2"]').length
+  }));
+  c.ok(dv.ics === 0, "「내 캘린더에」 버튼 제거됨");
+  c.ok(!dv.gcal, "구글 캘린더 연동 코드 흔적 없음");
+  c.ok(dv.rows === 4, "일간 뷰 일정 목록 정상 렌더");
+  c.ok(dv.mineEdit === 1 && dv.mineDel === 1, "본인 일정은 수정·삭제 버튼 유지");
+  c.ok(dv.otherActs === 0, "타인 일정은 버튼 없음");
 
   // 시각 역전 입력 차단 — 같은 날 14:00~11:00 저장 시도 → 오류 표시, 저장 안 됨
   let posted = false;
