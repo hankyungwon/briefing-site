@@ -246,7 +246,7 @@
   .cal-day .dnum.sat{color:var(--gwanak);}
   .cal-day .dnum.hol{color:#C0392B;}
   .cal-day.today .dnum.hol{color:#fff;}
-  .cal-holname{display:block;font-size:9.5px;color:#C0392B;font-weight:600;line-height:1.25;margin-top:1px;
+  .cal-holname{display:block;font-size:11px;color:#C0392B;font-weight:500;line-height:1.25;margin-top:1px;
     white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:100%;}
   .cal-ev{margin-top:3px;font-size:11.5px;color:#fff;border-radius:5px;padding:2px 6px;
     white-space:nowrap;overflow:hidden;text-overflow:ellipsis;line-height:1.55;cursor:pointer;}
@@ -281,6 +281,7 @@
       display:flex;flex-direction:column;justify-content:center;gap:0;}
     .cal-wcol .wc-body{flex:1;min-width:0;justify-content:center;}
     .cal-day{min-height:70px;padding:4px 2px 5px;}
+    .cal-holname{font-size:10px;}
     /* 좁은 셀에서도 일정 제목 앞 글자가 보이게 — max-width·overflow로 셀 밖 넘침은 차단 */
     .cal-ev{font-size:9.5px;line-height:1.6;padding:1px 3px;margin-top:2px;border-radius:3px;
       max-width:100%;overflow:hidden;white-space:nowrap;}
@@ -2649,7 +2650,6 @@
         + (ev.location ? '<span>· ' + esc(ev.location) + '</span>' : '')
         + '<span>· ' + esc(ev.author_name) + '</span>'
         + '<span style="margin-left:auto;display:flex;gap:6px;">'
-        + '<button class="mini-btn" data-ics-ev="' + ev.id + '" title="이 일정을 내 스마트폰 캘린더에 추가">📅 내 캘린더에</button>'
         + (mine ? '<button class="mini-btn" data-edit-ev="' + ev.id + '">수정</button>'
           + '<button class="mini-btn danger" data-del-ev="' + ev.id + '">삭제</button>'
           : (isAdminUser ? '<button class="mini-btn danger" data-del-ev="' + ev.id + '" title="관리자 삭제">🛡 삭제</button>' : ''))
@@ -2678,38 +2678,7 @@
       const ev = calEvents.find(x => String(x.id) === b.dataset.editEv);
       if (ev) openEventModal(ev);
     }));
-    calRoot.querySelectorAll("[data-ics-ev]").forEach(b => b.addEventListener("click", () => {
-      const ev = calEvents.find(x => String(x.id) === b.dataset.icsEv);
-      if (ev) openCalendarAdd(ev);
-    }));
   }
-
-  // ── 일정 1건을 구글 캘린더 '일정 추가' 화면으로 열기 — 폰에서는 캘린더 앱이 바로 열려 저장만 누르면 됨 ──
-  function gcalAddUrl(ev) {
-    const d8 = s => s.replace(/-/g, "");
-    const hm = t => { const m = (t || "").match(/^(\d{2}):(\d{2})/); return m ? m[1] + m[2] + "00" : null; };
-    const plus1h = s => String(Math.min(23, parseInt(s.slice(0, 2), 10) + 1)).padStart(2, "0") + s.slice(2);
-    const endDate = ev.end_date || ev.start_date;
-    let dates;
-    const sHM = hm(ev.start_time);
-    if (sHM) {
-      let eHM = hm(ev.end_time);
-      if (!eHM || (endDate === ev.start_date && eHM <= sHM)) eHM = plus1h(sHM); // 종료 누락·역전 보정
-      dates = d8(ev.start_date) + "T" + sHM + "/" + d8(endDate) + "T" + eHM;
-    } else {
-      const e = new Date(endDate + "T00:00:00"); e.setDate(e.getDate() + 1); // 종일 일정은 종료일 비포함이라 +1일
-      dates = d8(ev.start_date) + "/" + ymd(e).replace(/-/g, "");
-    }
-    const p = new URLSearchParams({
-      action: "TEMPLATE",
-      text: "[" + evType(ev.type).label + "] " + ev.title,
-      dates: dates, ctz: "Asia/Seoul",
-      details: "등록: " + (ev.author_name || "") + (ev.memo ? "\n" + ev.memo : "") + "\n(관악구 AI혁신정책연구단 지식 플랫폼)"
-    });
-    if (ev.location) p.set("location", ev.location);
-    return "https://calendar.google.com/calendar/render?" + p.toString();
-  }
-  function openCalendarAdd(ev) { window.open(gcalAddUrl(ev), "_blank", "noopener"); }
 
   function navCal(dir) {
     const a = calView.anchor;
