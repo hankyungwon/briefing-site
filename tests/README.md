@@ -12,6 +12,7 @@ Supabase는 목(mock)으로 대체하므로 **실제 DB를 건드리지 않으�
 | `calendar.test.js` | 일정공유 — 같은 날 여러 일정의 시간순 정렬(월·주·일·오늘 현황), 구글 캘린더 연동 제거 확인, 시각 역전 입력 차단 |
 | `shot-holiday.js` | (검사 아님) 월간 달력 공휴일 이름을 모바일 390px·PC 1280px 로 찍어 `/tmp/hol-390.png`·`/tmp/hol-pc.png` 로 저장 |
 | `workflow.test.js` | 팀 워크플로 — 주간기록 서식 저장·표시, 송프로 취합본에 서식 반영 |
+| `layout.test.js` | 레이아웃 — 320~1400px 전 구간에서 배지·라벨이 두 줄로 갈라지지 않는지, 가로 스크롤이 생기지 않는지, 전역 `word-break:keep-all`이 살아 있는지 |
 | `helper.js` | 공용: 정적 서버·브라우저·가짜 로그인·Supabase 목 라우팅 |
 | `vendor/supabase.js` | supabase-js UMD 사본 (CDN 요청을 이 파일로 대체) |
 
@@ -26,9 +27,10 @@ node tests/editor.test.js
 node tests/export.test.js
 node tests/calendar.test.js
 node tests/workflow.test.js
+node tests/layout.test.js
 
 # 전부 실행
-for t in editor export calendar workflow; do node tests/$t.test.js || break; done
+for t in editor export calendar workflow layout; do node tests/$t.test.js || break; done
 ```
 
 - Chromium 경로가 다르면: `PW_CHROMIUM=/path/to/chromium node tests/editor.test.js`
@@ -39,3 +41,7 @@ for t in editor export calendar workflow; do node tests/$t.test.js || break; don
 - **화면(index.html)을 고친 PR은 이 테스트를 통과한 뒤 올린다.**
 - 새 기능을 추가하면 해당 검사도 함께 추가한다.
 - 실제 Supabase 대신 목을 쓰므로, DB 정책(RLS)·스키마 변경은 이 테스트로 잡히지 않는다 — DB 변경은 별도로 검증할 것.
+- **이 환경에는 Noto 한글 서체가 없어** 테스트는 대체 서체(폭이 좁음)로 렌더된다. 실제 사용자는 Noto가 로드돼
+  글자가 더 넓으므로, 로컬에서 멀쩡해도 실제 화면에서 깨질 수 있다(「최신」 배지 사고). 그래서 `layout.test.js`는
+  서체를 흉내 내는 대신 **폭을 실제보다 좁혀** 최악 조건으로 검사한다. 한 줄 유지가 필요한 요소를 새로 만들면
+  `white-space:nowrap`을 반드시 붙이고, 그 선택자를 `layout.test.js`의 `ONELINE` 목록에 추가할 것.
