@@ -28,7 +28,15 @@
   *{margin:0;padding:0;box-sizing:border-box;}
   html{scroll-behavior:smooth;scrollbar-gutter:stable;}
   body{background:var(--bg);color:var(--ink);font-family:'Noto Sans KR',sans-serif;line-height:1.7;font-size:16px;
-    -webkit-text-size-adjust:100%;text-size-adjust:100%;}
+    -webkit-text-size-adjust:100%;text-size-adjust:100%;
+    /* 한글은 어절 중간에서 끊지 않는다(프로젝트 원칙). 요소마다 손으로 바르면 새 요소에서 빠뜨리게 되므로 전역 기본값으로 둔다.
+       overflow-wrap은 안전장치 — 긴 URL처럼 끊을 데가 없는 문자열만 상자 밖으로 넘치지 않게 강제로 끊는다.
+       anywhere가 아니라 break-word를 쓰는 이유: anywhere는 flex/grid 항목의 최소 폭 계산까지 바꿔 칸을 무너뜨린다. */
+    word-break:keep-all;overflow-wrap:break-word;}
+  /* 한 줄로 유지돼야 하는 짧은 라벨(배지·태그·칩·버튼)은 서체·브라우저가 무엇이든 절대 갈라지지 않게 못 박는다.
+     서체 폭이 넓어지면 담긴 상자가 눌리면서 '최'/'신'처럼 두 줄로 쪼개지는 사고가 실제로 있었다. */
+  .kind-tag,.type-tag,.pin-badge,.att-badge,.mlog-badge,.edition-chip,.ev-pill,.cat-label,.cd-label,
+  .auth-btn,.link-btn,.btn-primary,.wi-btn,.cal-btn,.mini-btn,.bc-btn,.compile-btn{white-space:nowrap;}
   .serif{font-family:'Noto Serif KR',serif;}
   .header-band{position:relative;overflow:hidden;color:#fff;
     background:linear-gradient(135deg,var(--gwanak-deep) 0%,var(--gwanak) 55%,var(--sky) 100%);}
@@ -56,7 +64,9 @@
   .masthead-text .tagline strong{color:#FFE600;font-weight:700;}
   nav{
     /* 바 폭을 본문 카드(920 - 좌우 24px 여백 = 872)와 정확히 일치시켜 상·하단 폭을 통일 */
-    max-width:872px;margin:0 auto;display:flex;gap:4px;padding:0 24px;
+    /* flex-wrap:wrap은 필수 — 탭 6개+로그인의 실폭이 876px이라, 없으면 641~876px(아이패드 세로 768·에어 820 등)
+       구간에서 화면 밖으로 넘쳐 문서 전체에 가로 스크롤이 생긴다. 폭이 넉넉하면 어차피 한 줄로 붙는다. */
+    max-width:872px;margin:0 auto;display:flex;flex-wrap:wrap;gap:4px;padding:0 24px;
     border-bottom:1px solid var(--line);background:var(--card);
     position:sticky;top:0;z-index:10;box-shadow:0 1px 4px rgba(14,95,168,.06);
   }
@@ -400,12 +410,16 @@
     border-top:3px solid var(--gwanak);
   }
   .arch-card:hover{transform:translateY(-3px);border-color:var(--gwanak);box-shadow:0 8px 20px rgba(14,95,168,.12);}
-  .arch-head{display:flex;align-items:baseline;gap:6px;flex-wrap:nowrap;margin-bottom:2px;min-width:0;}
+  /* 서체 폭에 따라 자리가 모자라면 날짜가 아랫줄로 내려가게 — 호수·배지를 눌러 쪼개지 않는다 */
+  .arch-head{display:flex;align-items:baseline;gap:6px;flex-wrap:wrap;margin-bottom:2px;min-width:0;}
   .arch-head .ad{margin-left:auto;flex:none;}
-  .arch-card .an{font-family:'Noto Serif KR',serif;font-size:18px;font-weight:700;color:var(--gwanak-deep);}
+  .arch-card .an{font-family:'Noto Serif KR',serif;font-size:18px;font-weight:700;color:var(--gwanak-deep);
+    white-space:nowrap;}
   .arch-card .ad{font-size:12px;color:var(--muted);font-weight:600;}
   /* '최신'은 hot issue 느낌의 따뜻·강렬한 색(주황빨강), '종합/연휴'는 골드로 구분 */
+  /* inline-block + nowrap: 없으면 폭이 좁을 때 '최'/'신'이 두 줄로 갈라진다(.edition-chip과 동일 처리) */
   .arch-card.latest .an::after{content:"최신";font-family:'Noto Sans KR',sans-serif;font-size:11.5px;font-weight:600;
+    display:inline-block;white-space:nowrap;line-height:1.5;
     letter-spacing:.06em;color:#fff;background:#E8542B;border-radius:5px;padding:2px 8px;margin-left:7px;vertical-align:2px;
     box-shadow:0 1px 4px rgba(232,84,43,.35);}
   .arch-card.latest{border-top-color:#E8542B;}
