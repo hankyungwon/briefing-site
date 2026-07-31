@@ -35,8 +35,8 @@
     word-break:keep-all;overflow-wrap:break-word;}
   /* 한 줄로 유지돼야 하는 짧은 라벨(배지·태그·칩·버튼)은 서체·브라우저가 무엇이든 절대 갈라지지 않게 못 박는다.
      서체 폭이 넓어지면 담긴 상자가 눌리면서 '최'/'신'처럼 두 줄로 쪼개지는 사고가 실제로 있었다. */
-  .kind-tag,.type-tag,.pin-badge,.att-badge,.mlog-badge,.edition-chip,.ev-pill,.cat-label,.cd-label,
-  .auth-btn,.link-btn,.btn-primary,.wi-btn,.cal-btn,.mini-btn,.bc-btn,.compile-btn{white-space:nowrap;}
+  .kind-tag,.type-tag,.pin-badge,.att-badge,.mlog-badge,.edition-chip,.ev-pill,
+  .auth-btn,.link-btn,.btn-primary,.wi-btn,.cal-btn,.mini-btn,.bc-btn{white-space:nowrap;}
   .serif{font-family:'Noto Serif KR',serif;}
   .header-band{position:relative;overflow:hidden;color:#fff;
     background:linear-gradient(135deg,var(--gwanak-deep) 0%,var(--gwanak) 55%,var(--sky) 100%);}
@@ -202,12 +202,6 @@
     margin:18px 0 10px;padding-bottom:6px;border-bottom:1px solid var(--line);}
   .post-meta{margin-top:12px;display:flex;gap:12px;flex-wrap:wrap;align-items:baseline;font-size:13px;color:var(--muted);}
   .post-meta .author{font-weight:700;color:var(--slate);}
-  .post-del{
-    appearance:none;cursor:pointer;background:none;border:1px solid var(--line);
-    border-radius:5px;color:#A33;font-size:12.5px;padding:2px 10px;margin-left:auto;
-    font-family:'Noto Sans KR',sans-serif;
-  }
-  .post-del:hover{border-color:#A33;background:#FBEFEE;}
   .checkbox-row{display:flex;align-items:center;gap:8px;margin-bottom:14px;font-size:14px;color:var(--slate);cursor:pointer;}
   .checkbox-row input{width:16px;height:16px;accent-color:var(--gwanak);cursor:pointer;}
   /* ── 연구단일정 ── */
@@ -450,13 +444,6 @@
   .issue-no{font-family:'Noto Serif KR',serif;font-weight:700;font-size:22px;color:var(--gwanak-deep);}
   .issue-date{color:var(--muted);font-size:14.5px;}
   .cat{margin-bottom:40px;}
-  .cat-label{
-    display:inline-block;font-size:13px;font-weight:700;letter-spacing:.12em;
-    color:#fff;padding:3px 12px;border-radius:3px;margin-bottom:14px;
-  }
-  .cat.gov .cat-label{background:var(--gwanak-deep);}
-  .cat.seoul .cat-label{background:var(--sky);}
-  .cat.world .cat-label{background:var(--slate);}
   /* ── 오늘의 브리핑: 2단 카드 레이아웃 ── */
   .brief-head{
     display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1.05fr);gap:22px;align-items:stretch;
@@ -572,10 +559,6 @@
   .archive-list .no{font-family:'Noto Serif KR',serif;font-weight:600;}
   .archive-list .date{color:var(--muted);font-size:14px;}
   .archive-hint{margin-top:20px;color:var(--muted);font-size:14.5px;}
-  .about-lede{
-    font-family:'Noto Serif KR',serif;font-size:clamp(19px,3vw,23px);line-height:1.75;
-    margin-bottom:18px;max-width:660px;color:var(--gwanak-deep);
-  }
   .about-body{color:#3B4756;margin-bottom:36px;font-size:15.5px;word-break:keep-all;line-height:1.85;}
   .team-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(380px,1fr));gap:14px;margin-bottom:36px;}
   @media(max-width:520px){.team-grid{grid-template-columns:1fr;}}
@@ -632,29 +615,9 @@
   /* 연구단마당 업무 안내 배너 */
   .work-info{background:#FFF7DC;border:1px solid #F0E4B8;border-radius:10px;padding:11px 14px;margin-bottom:20px;
     font-size:13.5px;color:#6B5A18;line-height:1.6;word-break:keep-all;}
-  /* 주간회의 자료 취합 버튼 (송프로 카드) */
-  .compile-btn{display:block;width:100%;margin-top:12px;background:var(--gwanak-deep);color:#fff !important;border-color:var(--gwanak-deep) !important;
-    box-shadow:0 1px 3px rgba(11,74,134,.2);}
-  .compile-btn:hover{background:var(--gwanak) !important;}
   /* 취합 문서 */
   .compile-modal{max-width:900px;margin:4vh auto 40px;}
   .compile-bar{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:14px;}
-  .compile-doc{max-height:72vh;overflow-y:auto;padding:4px 2px;}
-  .cd-head{text-align:center;border-bottom:2px solid var(--gwanak-deep);padding-bottom:12px;margin-bottom:16px;}
-  .cd-title{font-family:'Noto Serif KR',serif;font-size:20px;font-weight:700;color:var(--gwanak-deep);word-break:keep-all;}
-  .cd-when{font-size:12.5px;color:var(--muted);margin-top:5px;}
-  .cd-member{border:1px solid var(--line);border-radius:10px;padding:12px 14px;margin-bottom:12px;break-inside:avoid;}
-  .cd-mhead{display:flex;align-items:baseline;gap:8px;flex-wrap:wrap;margin-bottom:9px;padding-bottom:8px;border-bottom:1px dashed var(--line);}
-  .cd-mno{background:var(--gwanak);color:#fff;font-size:11px;font-weight:800;border-radius:50%;width:18px;height:18px;
-    display:inline-flex;align-items:center;justify-content:center;flex:none;}
-  .cd-mname{font-family:'Noto Serif KR',serif;font-size:16px;font-weight:700;color:var(--ink);}
-  .cd-mrole{font-size:12.5px;color:var(--sky);font-weight:700;}
-  .cd-mweek{margin-left:auto;font-size:12px;color:var(--muted);font-weight:600;}
-  .cd-mweek.none{color:#C0392B;}
-  .cd-row{display:flex;gap:10px;margin-bottom:7px;}
-  .cd-row:last-child{margin-bottom:0;}
-  .cd-label{flex:none;width:66px;font-size:12px;font-weight:800;color:var(--gold);padding-top:2px;}
-  .cd-text{flex:1;min-width:0;font-size:13.5px;color:var(--ink);line-height:1.6;white-space:pre-wrap;word-break:keep-all;}
   /* 주간회의 자료실 — 목록·문서(작은 글씨·좁은 줄간격) */
   .pk-row{display:flex;align-items:center;gap:10px;justify-content:space-between;border:1px solid var(--line);
     border-radius:9px;padding:9px 12px;margin-bottom:8px;}
@@ -690,11 +653,6 @@
   .pk-toolbar button:hover{background:#fff;border-color:var(--line);color:var(--gwanak-deep);}
   .pk-toolbar select{font-family:inherit;font-size:12.5px;border:1px solid var(--line);border-radius:6px;padding:3px 4px;
     background:#fff;color:var(--slate);cursor:pointer;height:28px;}
-  .pk-toolbar .rt-color{display:inline-flex;align-items:center;gap:1px;font-size:13.5px;color:var(--slate);cursor:pointer;
-    padding:3px 6px;border:1px solid transparent;border-radius:6px;line-height:1.1;}
-  .pk-toolbar .rt-color:hover{background:#fff;border-color:var(--line);}
-  .pk-toolbar .rt-color input{width:22px;height:16px;border:none;background:none;padding:0;cursor:pointer;}
-  .pk-sep{width:1px;height:18px;background:var(--line);margin:0 4px;}
   /* 글자색 버튼 + 색상 팔레트 (한글·워드식) */
   .rt-forewrap{position:relative;display:inline-flex;}
   .pk-toolbar .rt-fore{display:inline-flex;flex-direction:column;align-items:center;gap:2px;border:1px solid transparent;background:none;
@@ -838,16 +796,6 @@
   .wb-hist .wb-note{margin-top:7px;background:#FBFAF3;border-color:#EAE6D6;}
   .wb-meeting .wb-note{background:#FFF3E2;border-color:#F3DCB6;}
   .wb-meeting .wb-sec .wl{color:#C4761A;}
-  .contact{
-    background:var(--card);border:1px solid var(--line);border-radius:10px;
-    padding:20px 22px;max-width:660px;box-shadow:0 1px 3px rgba(14,95,168,.05);
-  }
-  .contact h5{
-    font-family:'Noto Serif KR',serif;font-size:16px;font-weight:600;
-    color:var(--gwanak-deep);margin-bottom:10px;padding-bottom:8px;border-bottom:1px solid var(--line);
-  }
-  .contact p{font-size:15px;color:#3B4756;}
-  .contact .tel{font-weight:700;color:var(--gwanak);}
   footer{border-top:1px solid var(--line);background:var(--card);}
   .footer-inner{max-width:920px;margin:0 auto;padding:22px 24px;font-size:13px;color:var(--muted);line-height:1.7;
     display:flex;align-items:center;gap:20px;}
