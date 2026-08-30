@@ -102,6 +102,27 @@ const WIDTHS = [1400, 1280, 1024, 900, 820, 768, 640, 540, 430, 412, 390, 375, 3
   }
   c.ok(squeezed.length === 0, "카드 폭 140px까지 좁혀도 호수·배지가 한 줄 유지" + (squeezed.length ? " — " + squeezed.slice(0, 3).join(" / ") : ""));
 
+  // 지난브리핑 카드 머리(호수+배지+날짜)는 한 줄을 지켜야 한다.
+  // 두 줄로 밀리면 카드마다 날짜 위치와 키워드 시작 높이가 어긋나 목록이 들쭉날쭉해진다.
+  // 실제 Noto 서체는 이 환경의 대체 서체보다 넓으므로, 자간을 벌려 그 상황을 흉내 낸 뒤 검사한다.
+  await page.evaluate(() => { const s = document.getElementById("__squeeze"); if (s) s.textContent = ""; });
+  await page.setViewportSize({ width: 1280, height: 1000 }); await page.waitForTimeout(150);
+  const wide = [];
+  for (const ls of [0, 0.4, 0.8]) {
+    await page.evaluate(v => {
+      let s = document.getElementById("__wide");
+      if (!s) { s = document.createElement("style"); s.id = "__wide"; document.head.appendChild(s); }
+      s.textContent = ".arch-card .an,.arch-card .ad,.edition-chip{letter-spacing:" + v + "px !important;}"
+                    + ".arch-card.latest .an::after{letter-spacing:" + v + "px !important;}";
+    }, ls);
+    await page.waitForTimeout(120);
+    const bad = await page.evaluate(() => [...document.querySelectorAll(".arch-head")]
+      .filter(h => h.getBoundingClientRect().height > 34)
+      .map(h => h.textContent.trim().slice(0, 14)));
+    if (bad.length) wide.push("자간+" + ls + "px: " + bad[0]);
+  }
+  c.ok(wide.length === 0, "지난브리핑: 서체가 넓어져도 호수·배지·날짜가 한 줄" + (wide.length ? " — " + wide.join(" / ") : ""));
+
   // 전역 원칙이 실제로 적용됐는지 — 요소마다 손으로 바르지 않아도 상속되어야 한다
   const base = await page.evaluate(() => {
     const p = document.querySelector("#archive .arch-kw .k .kt") || document.body;
