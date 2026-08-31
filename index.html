@@ -654,10 +654,10 @@
   .mb-empty{font-size:13.5px;color:var(--muted);}
   /* 단원 주간기록 — 처음부터 동일한 높이로 고정, 내용이 길면 스크롤 */
   .wb-scroll{height:320px;overflow-y:auto;}
-  /* 취합본 종류 배지(주간/수시) */
-  .pk-kind{font-size:10.5px;font-weight:800;color:#fff;border-radius:5px;padding:1px 6px;flex:none;white-space:nowrap;}
-  .pk-kind.k-week{background:var(--gwanak);}
-  .pk-kind.k-adhoc{background:var(--sky);}
+  /* 취합본 종류 배지 — 주간=진한 파랑(흰 글자) / 수시=연한 파랑(진한 글자) */
+  .pk-kind{font-size:11px;font-weight:800;border-radius:5px;padding:1.5px 7px;flex:none;white-space:nowrap;}
+  .pk-kind.k-week{background:var(--gwanak);color:#fff;}
+  .pk-kind.k-adhoc{background:#D3E4F5;color:var(--gwanak-deep);}
   /* 취합 문서 */
   .compile-modal{max-width:900px;margin:4vh auto 40px;}
   .compile-bar{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:14px;}
@@ -671,15 +671,26 @@
   .pk-date{font-size:12px;font-weight:800;color:var(--gwanak);flex:none;}
   .pk-title{font-size:13.5px;color:var(--ink);font-weight:600;word-break:keep-all;}
   .pk-by{font-size:11.5px;color:var(--muted);flex:none;white-space:nowrap;}
-  .pk-latest{font-size:10.5px;font-weight:800;color:#fff;background:var(--gwanak);border-radius:5px;
-    padding:1px 6px;flex:none;white-space:nowrap;letter-spacing:-.2px;}
   .pk-acts{display:flex;gap:6px;flex:none;}
+  /* 취합 버튼(주간/수시) — 작고 가벼운 아웃라인, 좌측 색으로 종류 구분 */
+  .pk-genbtn{appearance:none;cursor:pointer;flex:none;display:inline-flex;align-items:center;gap:5px;
+    font-family:inherit;font-size:12.5px;font-weight:700;line-height:1;padding:6px 11px;border-radius:8px;
+    background:#fff;color:var(--gwanak-deep);border:1px solid var(--line);white-space:nowrap;transition:background .15s,border-color .15s;}
+  .pk-genbtn:hover{background:#F1F6FC;border-color:var(--gwanak);}
+  .pk-genbtn.gen-week{border-left:3px solid var(--gwanak);}
+  .pk-genbtn.gen-adhoc{border-left:3px solid var(--sky);}
+  /* 취합본 보기 헤더 버튼 — 높이·모양 통일 */
+  .compile-bar .pkview-btn{font-family:inherit;font-size:13px;font-weight:700;line-height:1;padding:8px 14px;border-radius:8px;
+    border:1px solid var(--line);background:#fff;color:var(--gwanak-deep);cursor:pointer;white-space:nowrap;}
+  .compile-bar .pkview-btn:hover{background:#F1F6FC;border-color:var(--gwanak);}
+  .compile-bar .pkview-btn.primary{background:var(--gwanak);color:#fff;border-color:var(--gwanak);}
+  .compile-bar .pkview-btn.primary:hover{background:var(--gwanak-deep);border-color:var(--gwanak-deep);}
   /* 자료마당 하위 섹션 탭 */
   .res-subnav{display:flex;gap:6px;margin-bottom:16px;border-bottom:1px solid var(--line);}
-  .rsub{appearance:none;border:none;background:none;cursor:pointer;font-family:inherit;font-size:14.5px;font-weight:600;
-    color:var(--muted);padding:9px 14px 10px;border-bottom:2.5px solid transparent;margin-bottom:-1px;white-space:nowrap;}
-  .rsub:hover{color:var(--gwanak);}
-  .rsub[aria-selected="true"]{color:var(--gwanak-deep);font-weight:700;border-bottom-color:var(--gwanak);}
+  .rsub{appearance:none;border:none;background:#F1F4F8;cursor:pointer;font-family:inherit;font-size:16px;font-weight:700;
+    color:var(--muted);padding:10px 18px 11px;border-radius:9px 9px 0 0;border-bottom:3px solid transparent;margin-bottom:-1px;white-space:nowrap;}
+  .rsub:hover{color:var(--gwanak);background:#E9F1FA;}
+  .rsub[aria-selected="true"]{color:#fff;background:var(--gwanak);border-bottom-color:var(--gwanak-deep);}
   .res-packet-note{font-size:12.5px;color:var(--muted);line-height:1.5;word-break:keep-all;flex:1;min-width:0;}
   .packet-doc{max-height:72vh;overflow-y:auto;padding:6px 4px;}
   /* 취합 문서 본문(HTML 서식) — 표시·인쇄 공통 */
@@ -763,7 +774,7 @@
   .pk-editor:focus{outline:2px solid var(--gwanak);outline-offset:1px;}
   .pk-editor h4{font-size:15px;font-weight:800;color:var(--gwanak-deep);margin:14px 0 5px;}
   .pk-editor img{max-width:100%;height:auto;}
-  .pk-editor-sm{min-height:min(620px,44vh);}
+  .pk-editor-sm{min-height:min(465px,33vh);}
   @media(max-width:640px){ .pk-editor{padding:22px 18px;min-height:44vh;margin:10px auto;} }
   /* 편집기 하단 글자·쪽수 표시 */
   .pk-count{font-size:11px;color:var(--muted);text-align:right;margin:2px 4px 0;}
@@ -1301,16 +1312,16 @@
     <div id="packet-doc-view" hidden>
       <div class="compile-bar no-print">
         <h3 id="packet-title" style="font-size:16px;">회의 자료</h3>
-        <div style="display:flex;gap:8px;">
-          <button type="button" class="btn-primary" id="packet-print">🖨 인쇄</button>
+        <div style="display:flex;gap:8px;align-items:center;">
+          <button type="button" class="pkview-btn primary" id="packet-print">🖨 인쇄</button>
           <span class="pk-savewrap">
-            <button type="button" class="auth-btn" id="packet-download" aria-haspopup="true" aria-expanded="false">💾 파일 저장 ▾</button>
+            <button type="button" class="pkview-btn" id="packet-download" aria-haspopup="true" aria-expanded="false">💾 파일 저장 ▾</button>
             <span class="pk-savemenu" id="packet-savemenu" hidden>
               <button type="button" data-fmt="pdf">PDF로 저장 (.pdf)</button>
               <button type="button" data-fmt="doc">한글·워드 문서 (.doc)</button>
             </span>
           </span>
-          <button type="button" class="auth-btn" id="packet-doc-close">닫기</button>
+          <button type="button" class="pkview-btn" id="packet-doc-close">닫기</button>
         </div>
       </div>
       <div id="packet-doc" class="packet-doc"></div>
@@ -2238,8 +2249,8 @@
       + '<div class="list-toolbar">'
       + '<span class="res-packet-note">주간회의·수시회의 자료를 취합해 보관합니다. 각 단원이 연구단마당에 올린 최신 원고(주간/수시)를 자동으로 모읍니다 — 버튼을 눌러 다듬은 뒤 올리면 됩니다. 취합은 로그인한 단원 누구나 할 수 있고(평소에는 행정지원 주무관 담당), 한 번 올린 자료는 수정할 수 없어 바로잡을 때는 새로 올립니다. 삭제는 관리자와 행정지원 주무관(최근 7일 내 자료)만 가능합니다.</span>'
       + '<span style="display:flex;gap:6px;flex-wrap:wrap;">'
-      + '<button type="button" class="write-toggle" data-pkkind="주간">📋 주간회의 자료 취합</button>'
-      + '<button type="button" class="write-toggle" data-pkkind="수시">🗓 수시회의 자료 취합</button></span>'
+      + '<button type="button" class="pk-genbtn gen-week" data-pkkind="주간">📋 주간회의 자료 취합</button>'
+      + '<button type="button" class="pk-genbtn gen-adhoc" data-pkkind="수시">🗓 수시회의 자료 취합</button></span>'
       + '</div>'
       + '<div id="res-packet-list"><p class="status">불러오는 중입니다…</p></div>'
       + '</div>';
@@ -2968,13 +2979,12 @@
     packetCache = data || [];
     if (!packetCache.length) { list.innerHTML = '<p class="empty-note">아직 취합된 회의 자료가 없습니다.</p>'; return; }
     // 날짜·id 내림차순 정렬이므로 맨 앞이 최신
-    list.innerHTML = packetCache.map((p, i) => {
+    list.innerHTML = packetCache.map((p) => {
       const kind = (p.kind === "수시") ? "수시" : "주간";
       const preview = (p.summary && p.summary.trim()) || packetPreview(p.content);
       return '<div class="pk-row"><div class="pk-main">'
       + '<div class="pk-info"><span class="pk-date">' + fmtMDW(p.packet_date) + '</span>'
       + '<span class="pk-kind ' + (kind === "수시" ? "k-adhoc" : "k-week") + '">' + kind + '</span>'
-      + (i === 0 ? '<span class="pk-latest">최신</span>' : '')
       + '<span class="pk-title">' + esc(p.title || (kind + "회의 자료")) + '</span>'
       + '<span class="pk-by">취합 ' + esc(packetAuthorName(p.created_by)) + '</span></div>'
       + (preview ? '<div class="pk-sum">' + esc(preview) + '</div>' : '')
