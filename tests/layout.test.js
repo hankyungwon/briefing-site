@@ -171,6 +171,15 @@ const WIDTHS = [1400, 1280, 1024, 900, 820, 768, 640, 540, 430, 412, 390, 375, 3
   c.ok(base.ow === "break-word", "긴 문자열 안전장치 overflow-wrap:break-word (현재 " + base.ow + ")");
   c.ok(base.inherited === "keep-all", "하위 요소에도 상속됨 (현재 " + base.inherited + ")");
 
+  // 자료마당 '회의 자료' 안내 문단 — 좁은 폭(360px)에서 flex 최소폭 붕괴로 글자가 한 자씩
+  // 세로로 쌓이면 폭이 매우 좁아지고 높이가 폭발한다. 그 회귀를 폭으로 잡는다.
+  await page.setViewportSize({ width: 360, height: 1000 });
+  await page.click('nav button[data-panel="resources"]'); await page.waitForTimeout(500);
+  const note = await page.evaluate(() => { const n = document.querySelector(".res-packet-note"); if (!n) return null; const r = n.getBoundingClientRect(); return { w: Math.round(r.width), h: Math.round(r.height) }; });
+  c.ok(note && note.w >= 180, "회의 자료 안내 문단이 좁은 폭에서 붕괴하지 않음 (폭 " + (note ? note.w : "없음") + "px)");
+  const rov = await overflow();
+  c.ok(rov.length === 0, "자료마당(회의 자료): 가로 스크롤 없음" + (rov.length ? " — " + rov[0] : ""));
+
   server.close();
   await c.finish(browser);
 })().catch(e => { console.error("FAIL", e.message, e.stack); process.exit(1); });
