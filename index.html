@@ -706,9 +706,9 @@
   #packet-modal.pk-full .compile-modal{max-width:none;margin:0;border-radius:0;min-height:100vh;}
   #packet-modal.pk-full .packet-doc{max-height:calc(100vh - 96px);}
   /* 취합 문서 본문(HTML 서식) — 표시·인쇄 공통 */
-  .packet-body{font-family:'Noto Sans KR',sans-serif;font-size:14.5px;line-height:1.6;color:var(--ink);word-break:keep-all;}
+  .packet-body{font-family:'Noto Sans KR',sans-serif;font-size:16px;line-height:1.65;color:var(--ink);word-break:keep-all;}
   .packet-body h3{font-family:'Noto Serif KR',serif;font-size:24px;font-weight:700;color:var(--gwanak-deep);margin:2px 0 10px;line-height:1.4;}
-  .packet-body h4{font-family:'Noto Sans KR',sans-serif;font-size:15px;font-weight:800;color:var(--gwanak-deep);margin:14px 0 5px;}
+  .packet-body h4{font-family:'Noto Sans KR',sans-serif;font-size:17px;font-weight:800;color:var(--gwanak-deep);margin:16px 0 6px;}
   .packet-body p{margin:4px 0;}
   .packet-body ul,.packet-body ol{margin:4px 0 4px 4px;padding-left:20px;}
   .packet-body li{margin:2px 0;}
@@ -1200,6 +1200,7 @@
             <button type="button" data-fmt="pdf">PDF로 저장 (.pdf)</button>
             <button type="button" data-fmt="doc">한글·워드 문서 (.doc)</button>
             <button type="button" data-fmt="md">마크다운 (.md)</button>
+            <button type="button" data-fmt="html">웹 문서 (.html)</button>
           </span>
         </span>
       </div>
@@ -1339,6 +1340,7 @@
               <button type="button" data-fmt="pdf">PDF로 저장 (.pdf)</button>
               <button type="button" data-fmt="doc">한글·워드 문서 (.doc)</button>
               <button type="button" data-fmt="md">마크다운 (.md)</button>
+              <button type="button" data-fmt="html">웹 문서 (.html)</button>
             </span>
           </span>
           <button type="button" class="pkview-btn" id="packet-doc-close">닫기</button>
@@ -2981,10 +2983,10 @@
   // 각 단원이 올린 해당 구분(주간/수시)의 최신 원고를 하나의 문서로 취합 — 이후 자유롭게 편집
   function buildPacketContent(byEmail, stamp, kind) {
     let h = '<h3 style="text-align:center;">관악구 AI혁신정책연구단 ' + esc(kind) + '회의 자료</h3>';
-    h += '<p class="pk-stamp" style="text-align:center;color:#667;font-size:14px;">' + esc(stamp) + '</p><hr>';
+    h += '<p class="pk-stamp" style="text-align:center;color:#667;font-size:15px;">' + esc(stamp) + '</p><hr>';
     MEMBERS.forEach((m, i) => {
       const n = byEmail[MEMBER_EMAILS[m.key]];
-      const when = n && n.updated_at ? ' <span style="color:#889;font-size:12px;font-weight:400;">〈' + esc(fmtStamp(n.updated_at)) + '〉</span>' : '';
+      const when = n && n.updated_at ? ' <span style="color:#889;font-size:13px;font-weight:400;">〈' + esc(fmtStamp(n.updated_at)) + '〉</span>' : '';
       h += '<h4>[' + (i + 1) + '] ' + esc(m.name) + ' · ' + esc(m.role) + when + '</h4>';
       h += '<div>' + (n && n.body ? richToHtml(n.body) : '<span style="color:#B23;">(작성된 ' + esc(kind) + ' 원고 없음)</span>') + '</div>';
     });
@@ -3016,10 +3018,12 @@
     list.innerHTML = packetCache.map((p) => {
       const kind = (p.kind === "수시") ? "수시" : "주간";
       const preview = (p.summary && p.summary.trim()) || packetPreview(p.content);
+      // 목록 맨 앞에 이미 날짜가 있으므로 제목 끝의 「(9.1)」은 떼고 보여준다(저장된 제목·파일명은 그대로)
+      const listTitle = (p.title || (kind + "회의 자료")).replace(/\s*\(\s*\d{1,2}\.\d{1,2}\s*\)\s*$/, "");
       return '<div class="pk-row"><div class="pk-main">'
       + '<div class="pk-info"><span class="pk-date">' + fmtMDW(p.packet_date) + '</span>'
       + '<span class="pk-kind ' + (kind === "수시" ? "k-adhoc" : "k-week") + '">' + kind + '</span>'
-      + '<span class="pk-title">' + esc(p.title || (kind + "회의 자료")) + '</span>'
+      + '<span class="pk-title">' + esc(listTitle) + '</span>'
       + '<span class="pk-by">by ' + esc(packetAuthorName(p.created_by)) + '</span></div>'
       + (preview ? '<div class="pk-sum">' + esc(preview) + '</div>' : '')
       + '</div>'
@@ -3072,10 +3076,14 @@
     wrap.innerHTML = html || "";
     const h3 = wrap.querySelector("h3");
     if (h3 && /연구단\s*·\s*/.test(h3.textContent)) h3.textContent = h3.textContent.replace(/연구단\s*·\s*/, "연구단 ");
-    const stamp = wrap.querySelector("p");
-    if (stamp && /취합/.test(stamp.textContent)) {
-      stamp.textContent = stamp.textContent.replace(/^\s*취합\s+/, "").replace(/\s*·\s*취합\s+/, "  by ");
-      stamp.style.fontSize = "14px";
+    // 머리글은 제목 바로 다음 문단이다 — 본문은 건드리지 않는다
+    const stamp = h3 && h3.nextElementSibling && h3.nextElementSibling.tagName === "P" ? h3.nextElementSibling : null;
+    if (stamp) {
+      stamp.textContent = stamp.textContent
+        .replace(/^\s*취합\s+/, "")                 // 앞머리 「취합 」
+        .replace(/\s*·\s*(취합|by)\s+/i, "  by ")   // 「 · 취합 」「 · by 」 모두
+        .trim();
+      stamp.style.fontSize = "15px";
     }
     return wrap.innerHTML;
   }
@@ -3214,11 +3222,13 @@
     walk(root);
     return lines.join("\n\n").replace(/\n{3,}/g, "\n\n").trim() + "\n";
   }
-  async function downloadText(filename, text) {
-    const blob = new Blob([text], { type: "text/markdown;charset=utf-8" });
+  async function downloadText(filename, text, mime, desc) {
+    mime = mime || "text/markdown"; desc = desc || "마크다운 문서";
+    const ext = "." + filename.split(".").pop();
+    const blob = new Blob([text], { type: mime + ";charset=utf-8" });
     if (window.showSaveFilePicker) {
       try {
-        const handle = await window.showSaveFilePicker({ suggestedName: filename, types: [{ description: "마크다운 문서", accept: { "text/markdown": [".md"] } }] });
+        const handle = await window.showSaveFilePicker({ suggestedName: filename, types: [{ description: desc, accept: { [mime]: [ext] } }] });
         const w = await handle.createWritable(); await w.write(blob); await w.close(); return;
       } catch (e) { if (e && e.name === "AbortError") return; /* 미지원·거부 시 아래 기본 저장 */ }
     }
@@ -3236,6 +3246,7 @@
     const r = packetDocHtml();
     if (fmt === "pdf") printHtml(r.html);
     else if (fmt === "md") downloadText(safeFileName(r.title) + ".md", "# " + r.title + "\n\n" + htmlToMarkdown(document.getElementById("packet-doc").innerHTML));
+    else if (fmt === "html") downloadText(safeFileName(r.title) + ".html", r.html, "text/html", "웹 문서");
     else downloadDoc(safeFileName(r.title) + ".doc", r.html);
   });
   document.getElementById("packet-save").addEventListener("click", savePacket);
@@ -4171,6 +4182,7 @@
     const r = memoExportDoc();
     if (fmt === 'pdf') printHtml(r.html);
     else if (fmt === 'md') downloadText(safeFileName(r.title) + ".md", "# " + r.title + "\n\n" + htmlToMarkdown(r.raw));
+    else if (fmt === 'html') downloadText(safeFileName(r.title) + ".html", r.html, "text/html", "웹 문서");
     else downloadDoc(safeFileName(r.title) + ".doc", r.html);
   });
   makeRichEditor("memo-toolbar", "memo-img-input", [document.getElementById("memo-body")]);

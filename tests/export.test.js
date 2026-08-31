@@ -25,7 +25,7 @@ const fs = require("fs");
     }));
     c.ok(JSON.stringify(ui.kinds) === JSON.stringify(["주간", "수시"]), "원고 구분 선택: 주간/수시");
     c.ok(!/PDF/i.test(ui.printLabel), "인쇄 버튼에서 PDF 분리됨 (" + ui.printLabel + ")");
-    c.ok(JSON.stringify(ui.menu) === JSON.stringify(["pdf", "doc", "md"]), "파일 저장 메뉴: PDF + .doc + .md");
+    c.ok(JSON.stringify(ui.menu) === JSON.stringify(["pdf", "doc", "md", "html"]), "파일 저장 메뉴: PDF + .doc + .md + .html");
 
     await page.click("#memo-body"); await page.type("#memo-body", "AI 정책 초안을 완성했다");
     await page.evaluate(() => {
@@ -50,11 +50,14 @@ const fs = require("fs");
     const page = await H.newPage(browser);
     await page.addInitScript(() => { try { delete window.showSaveFilePicker; } catch (e) { window.showSaveFilePicker = undefined; } });
     const { user, session } = H.mkSession("syho99@naver.com", "song");
-    const packets = [{ id: 1, packet_date: "2026-07-21", title: "주간회의 자료 (7.21)", content: "<h3 style=\"text-align:center;\">관악구 AI혁신정책연구단 · 주간회의 자료</h3><p style=\"text-align:center;color:#667;font-size:12px;\">취합 7.21(화) 22:03 · 취합 송프로</p><hr><h4>[1] 이프로</h4><p>지난주 <b>실적</b></p><table class=\"pk-table\"><tbody><tr><td>가</td><td>나</td></tr></tbody></table>", created_by: "syho99@naver.com" }];
+    const packets = [{ id: 1, packet_date: "2026-07-21", title: "주간회의 자료 (7.21)", content: "<h3 style=\"text-align:center;\">관악구 AI혁신정책연구단 · 주간회의 자료</h3><p style=\"text-align:center;color:#667;font-size:12px;\">취합 7.21(화) 22:03 · 취합 송프로</p><hr><h4>[1] 이프로</h4><p>지난주 <b>실적</b></p><table class=\"pk-table\"><tbody><tr><td>가</td><td>나</td></tr></tbody></table>", created_by: "syho99@naver.com" },
+      { id: 2, packet_date: "2026-07-14", title: "주간회의 자료 (7.14)", content: "<h3 style=\"text-align:center;\">관악구 AI혁신정책연구단 주간회의 자료</h3><p style=\"text-align:center;color:#667;font-size:12px;\">7.14(화) 09:00 · by 송프로</p><hr><h4>[1] 이프로</h4><p>지난 기록</p>", created_by: "syho99@naver.com" }];
     await H.setupPage(page, { user, session, routes: p => p === "/rest/v1/meeting_packets" ? packets : H.defaultBriefingRoutes(p) });
     await H.login(page, port, "syho99@naver.com");
     await page.click('nav button[data-panel="resources"]'); await page.waitForTimeout(400);
     await page.click('.res-subnav [data-ressec="packets"]'); await page.waitForTimeout(400);
+    const rowTitle = await page.evaluate(() => (document.querySelector("#res-packet-list .pk-row .pk-title") || {}).textContent || "");
+    c.ok(rowTitle === "주간회의 자료", "목록 제목에서 날짜 중복 제거 (" + rowTitle + ")");
     await page.click("#res-packet-list [data-pk-view]"); await page.waitForTimeout(300);
     c.ok(await page.evaluate(() => document.getElementById("packet-title").textContent) === "주간회의 자료 (7.21)", "취합본 보기 제목");
 
@@ -97,6 +100,19 @@ const fs = require("fs");
     c.ok(/\*\*실적\*\*/.test(md), "md: 굵게가 **강조**로");
     c.ok(/\|\s*가\s*\|\s*나\s*\|/.test(md) && /\| --- \|/.test(md), "md: 표가 마크다운 표로");
     c.ok(!/<table|<b>|<h4/.test(md), "md: HTML 태그가 남지 않음");
+
+    // 웹 문서(.html) 저장 — 서식·표를 그대로 보존한 완전한 문서
+    await page.click("#packet-download"); await page.waitForTimeout(120);
+    const dlh = await Promise.all([page.waitForEvent("download"), page.click('#packet-savemenu [data-fmt="html"]')]).then(a => a[0]);
+    const htmlOut = fs.readFileSync(await dlh.path(), "utf8");
+    c.ok(/<html/i.test(htmlOut) && /이프로/.test(htmlOut) && /<table/.test(htmlOut), "취합본 .html: 완전한 문서로 서식·표 보존");
+
+    // 「날짜 · by 취합자」 중간 형식으로 저장된 자료도 가운뎃점이 정리된다
+    await page.click("#packet-doc-close"); await page.waitForTimeout(200);
+    const views = await page.$$("#res-packet-list [data-pk-view]");
+    await views[1].click(); await page.waitForTimeout(300);
+    const stamp2 = await page.evaluate(() => ((document.querySelector("#packet-doc .packet-body p") || {}).textContent || "").trim());
+    c.ok(/^7\.14\(화\) 09:00\s+by 송프로$/.test(stamp2) && !/·/.test(stamp2), "중간 형식의 by 앞 가운뎃점도 정리 (" + stamp2 + ")");
     await page.close();
   }
 
