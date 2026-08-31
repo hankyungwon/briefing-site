@@ -107,6 +107,7 @@ const daysAgo = n => { const d = new Date(); d.setDate(d.getDate() - n); return 
       "머리글은 「날짜  by 취합자」 — '취합' 중복·by 앞 가운뎃점 없음");
     c.ok(/〈[^〉]*7\.20[^〉]*〉/.test(draftHasFmt) && !/작성[)〉]/.test(draftHasFmt),
       "단원 작성 시각은 〈…〉 표기 — 괄호 중복·'작성' 꼬리말 없음");
+    c.ok(!/<hr\s*\/?>/i.test(draftHasFmt), "취합 초안에 긴 가로선 없음");
 
     await page.fill("#packet-edit-summary", "AI 교육 확대·공모사업 마감 대응");
     await page.click("#packet-save"); await page.waitForTimeout(500);

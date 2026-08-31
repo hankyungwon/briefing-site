@@ -70,6 +70,7 @@ const fs = require("fs");
     c.ok(head.h3 === "관악구 AI혁신정책연구단 주간회의 자료", "옛 취합본 제목의 가운뎃점 정리 (" + head.h3 + ")");
     c.ok(/^7\.21\(화\) 22:03\s+by 송프로$/.test(head.stamp.trim()), "옛 머리글 「취합 …·취합 …」 → 「날짜  by 취합자」 (" + head.stamp.trim() + ")");
     c.ok(head.h3px >= 22, "본문보다 확실히 큰 제목 (" + head.h3px + "px)");
+    c.ok(await page.evaluate(() => !document.querySelector("#packet-doc .packet-body hr")), "머리글 아래 긴 가로선 제거(옛 자료 포함)");
     const h4txt = await page.evaluate(() => (document.querySelector("#packet-doc .packet-body h4") || {}).textContent || "");
     c.ok(/〈7\.20\(월\) 09:30〉/.test(h4txt) && !/작성/.test(h4txt),
       "옛 「(…작성)」도 〈…〉로 정리 — 괄호 중복 없음 (" + h4txt.trim() + ")");

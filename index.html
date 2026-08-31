@@ -2236,7 +2236,7 @@
     }
     resourcesView.innerHTML =
       '<div class="res-subnav">'
-      + '<button type="button" class="rsub" data-ressec="packets" aria-selected="true">🗂 회의 자료</button>'
+      + '<button type="button" class="rsub" data-ressec="packets" aria-selected="true">📋 회의 자료</button>'
       + '<button type="button" class="rsub" data-ressec="general" aria-selected="false">📁 일반 자료</button>'
       + '</div>'
       + '<div id="res-general">'
@@ -2980,7 +2980,7 @@
   // 각 단원이 올린 해당 구분(주간/수시)의 최신 원고를 하나의 문서로 취합 — 이후 자유롭게 편집
   function buildPacketContent(byEmail, stamp, kind) {
     let h = '<h3 style="text-align:center;">관악구 AI혁신정책연구단 ' + esc(kind) + '회의 자료</h3>';
-    h += '<p class="pk-stamp" style="text-align:center;color:#667;font-size:15px;">' + esc(stamp) + '</p><hr>';
+    h += '<p class="pk-stamp" style="text-align:center;color:#667;font-size:15px;">' + esc(stamp) + '</p>';
     MEMBERS.forEach((m, i) => {
       const n = byEmail[MEMBER_EMAILS[m.key]];
       const when = n && n.updated_at ? ' <span style="color:#889;font-size:13px;font-weight:400;">〈' + esc(fmtStamp(n.updated_at)) + '〉</span>' : '';
@@ -3081,6 +3081,9 @@
         .trim();
       stamp.style.fontSize = "15px";
     }
+    // 머리글 바로 아래의 긴 가로선은 지저분해 보이므로 지운다(본문 중간의 선은 그대로 둔다)
+    const hr = stamp && stamp.nextElementSibling;
+    if (hr && hr.tagName === "HR") hr.remove();
     // 단원 이름 옆 작성 시각 — 옛 「(9.1(화) 01:00 작성)」을 「〈9.1(화) 01:00〉」으로
     wrap.querySelectorAll("h4 span").forEach(sp => {
       const m = sp.textContent.match(/^\s*\(\s*(.*?)\s*작성\s*\)\s*$/);
