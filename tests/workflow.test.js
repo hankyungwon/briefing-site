@@ -167,15 +167,15 @@ const daysAgo = n => { const d = new Date(); d.setDate(d.getDate() - n); return 
     await H.login(page, port, "hanpro@hanmail.net");
     await page.click('nav button[data-panel="about"]'); await page.waitForTimeout(500);
     c.ok(await page.evaluate(() => { const hd = document.getElementById("head-directive"); return hd && !hd.hidden && !!hd.querySelector("[data-directive-new]") && !hd.querySelector("[data-directive-edit]"); }), "지시사항: 「새 지시」 버튼(수정 아님) 노출");
-    c.ok(await page.evaluate(() => document.querySelectorAll("#head-directive .hd-note").length === 1 && !!document.querySelector("#head-directive .hd-time")), "기존 지시 1건 + 타임코드 표시");
+    c.ok(await page.evaluate(() => document.querySelectorAll("#head-directive .board-note").length === 1 && !!document.querySelector("#head-directive .board-time")), "기존 지시 1건 + 타임코드 표시");
     await page.click("#head-directive [data-directive-new]"); await page.waitForTimeout(300);
     c.ok(await page.evaluate(() => document.getElementById("directive-body").value === ""), "「새 지시」는 빈칸에서 시작(누적)");
     await page.fill("#directive-body", "· 공모사업 마감 준수\n· AI 교육 확대");
     await page.click("#directive-submit"); await page.waitForTimeout(400);
     c.ok(dirs.length === 2 && /공모사업/.test(dirs[1].body), "새 지시가 회차로 누적(insert)");
     const st = await page.evaluate(() => {
-      const notes = [...document.querySelectorAll("#head-directive .hd-note")];
-      return { count: notes.length, firstBody: (notes[0].querySelector(".hd-body") || {}).textContent || "",
+      const notes = [...document.querySelectorAll("#head-directive .board-note")];
+      return { count: notes.length, firstBody: (notes[0].querySelector(".board-body") || {}).textContent || "",
                del: !!notes[0].querySelector("[data-directive-del]") };
     });
     c.ok(st.count === 2, "지시 2건이 세로로 누적");
@@ -196,7 +196,7 @@ const daysAgo = n => { const d = new Date(); d.setDate(d.getDate() - n); return 
     await page.click('nav button[data-panel="about"]'); await page.waitForTimeout(500);
     const v = await page.evaluate(() => {
       const hd = document.getElementById("head-directive");
-      return { shown: hd && !hd.hidden, body: (hd.querySelector(".hd-body") || {}).textContent || "",
+      return { shown: hd && !hd.hidden, body: (hd.querySelector(".board-body") || {}).textContent || "",
                newBtn: !!hd.querySelector("[data-directive-new]"), del: !!hd.querySelector("[data-directive-del]") };
     });
     c.ok(v.shown && /지시 내용/.test(v.body), "일반 단원도 지시사항 열람 가능");
@@ -255,8 +255,8 @@ const daysAgo = n => { const d = new Date(); d.setDate(d.getDate() - n); return 
     await page.click('nav button[data-panel="about"]'); await page.waitForTimeout(500);
     // 최신(오늘)은 본문 클램프 영역, 지난 회의록은 details 안 — 둘 다 삭제 버튼 유무만 본다
     await page.evaluate(() => { const d = document.querySelector("#mboard details"); if (d) d.open = true; });
-    const del = await page.evaluate(() => [...document.querySelectorAll("#mboard .mb-note")].map(n => ({
-      txt: (n.querySelector(".mb-text") || {}).textContent || "", del: !!n.querySelector("[data-meeting-del]") })));
+    const del = await page.evaluate(() => [...document.querySelectorAll("#mboard .board-note")].map(n => ({
+      txt: (n.querySelector(".board-body") || {}).textContent || "", del: !!n.querySelector("[data-meeting-del]") })));
     const recent = del.find(x => /이번 주/.test(x.txt)), old = del.find(x => /지난주/.test(x.txt));
     c.ok(recent && recent.del, "송프로: 이번 주 회의록 삭제 버튼 보임");
     c.ok(old && !old.del, "송프로: 지난주 이전 회의록 삭제 버튼 없음");
