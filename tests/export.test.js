@@ -50,7 +50,7 @@ const fs = require("fs");
     const page = await H.newPage(browser);
     await page.addInitScript(() => { try { delete window.showSaveFilePicker; } catch (e) { window.showSaveFilePicker = undefined; } });
     const { user, session } = H.mkSession("syho99@naver.com", "song");
-    const packets = [{ id: 1, packet_date: "2026-07-21", title: "주간회의 자료 (7.21)", content: "<h3 style=\"text-align:center;\">관악구 AI혁신정책연구단 · 주간회의 자료</h3><p style=\"text-align:center;color:#667;font-size:12px;\">취합 7.21(화) 22:03 · 취합 송프로</p><hr><h4>[1] 이프로</h4><p>지난주 <b>실적</b></p><table class=\"pk-table\"><tbody><tr><td>가</td><td>나</td></tr></tbody></table>", created_by: "syho99@naver.com" },
+    const packets = [{ id: 1, packet_date: "2026-07-21", title: "주간회의 자료 (7.21)", content: "<h3 style=\"text-align:center;\">관악구 AI혁신정책연구단 · 주간회의 자료</h3><p style=\"text-align:center;color:#667;font-size:12px;\">취합 7.21(화) 22:03 · 취합 송프로</p><hr><h4>[1] 이프로 · AI혁신 선임연구관 <span style=\"color:#889;font-size:11px;\">(7.20(월) 09:30 작성)</span></h4><p>지난주 <b>실적</b></p><table class=\"pk-table\"><tbody><tr><td>가</td><td>나</td></tr></tbody></table>", created_by: "syho99@naver.com" },
       { id: 2, packet_date: "2026-07-14", title: "주간회의 자료 (7.14)", content: "<h3 style=\"text-align:center;\">관악구 AI혁신정책연구단 주간회의 자료</h3><p style=\"text-align:center;color:#667;font-size:12px;\">7.14(화) 09:00 · by 송프로</p><hr><h4>[1] 이프로</h4><p>지난 기록</p>", created_by: "syho99@naver.com" }];
     await H.setupPage(page, { user, session, routes: p => p === "/rest/v1/meeting_packets" ? packets : H.defaultBriefingRoutes(p) });
     await H.login(page, port, "syho99@naver.com");
@@ -70,6 +70,9 @@ const fs = require("fs");
     c.ok(head.h3 === "관악구 AI혁신정책연구단 주간회의 자료", "옛 취합본 제목의 가운뎃점 정리 (" + head.h3 + ")");
     c.ok(/^7\.21\(화\) 22:03\s+by 송프로$/.test(head.stamp.trim()), "옛 머리글 「취합 …·취합 …」 → 「날짜  by 취합자」 (" + head.stamp.trim() + ")");
     c.ok(head.h3px >= 22, "본문보다 확실히 큰 제목 (" + head.h3px + "px)");
+    const h4txt = await page.evaluate(() => (document.querySelector("#packet-doc .packet-body h4") || {}).textContent || "");
+    c.ok(/〈7\.20\(월\) 09:30〉/.test(h4txt) && !/작성/.test(h4txt),
+      "옛 「(…작성)」도 〈…〉로 정리 — 괄호 중복 없음 (" + h4txt.trim() + ")");
 
     // 보기 확대·축소·전체보기 — 인쇄하지 않고 노트북 화면으로 회의를 진행할 때
     const z0 = await page.evaluate(() => document.getElementById("packet-zoom-label").textContent);

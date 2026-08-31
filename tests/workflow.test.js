@@ -120,12 +120,12 @@ const daysAgo = n => { const d = new Date(); d.setDate(d.getDate() - n); return 
       const r = document.querySelector(".pk-row");
       return { by: (r.querySelector(".pk-by") || {}).textContent || "",
                sum: (r.querySelector(".pk-sum") || {}).textContent || "",
-               kind: !!r.querySelector(".pk-kind"),
+               kind: !!r.querySelector(".pk-kind"), title: (r.querySelector(".pk-title") || {}).textContent || "",
                del: !!r.querySelector("[data-pk-del]"), edit: !!r.querySelector("[data-pk-edit]") };
     });
     c.ok(/AI 교육 확대/.test(row.sum), "목록에 한 줄 요약 표시");
     c.ok(/^by 송프로/.test(row.by.trim()), "목록에 'by 송프로' 표시 (" + row.by.trim() + ")");
-    c.ok(row.kind, "종류 배지 표시(주간/수시)");
+    c.ok(!row.kind && /^주간회의 자료/.test(row.title), "목록에 종류 배지 없음 — 제목이 종류를 말해줌 (" + row.title + ")");
     c.ok(row.del, "송프로는 이번 주(오늘) 자료 삭제 버튼 보임");
     c.ok(!row.edit, "게시본에 「수정」 버튼 없음(수정 불가)");
     await page.close();
@@ -181,7 +181,7 @@ const daysAgo = n => { const d = new Date(); d.setDate(d.getDate() - n); return 
     c.ok(/수시회의 자료/.test(draft) && /수시원고/.test(draft), "수시 취합은 각 단원의 최신 수시 원고를 모음");
     await page.click("#packet-save"); await page.waitForTimeout(500);
     c.ok(packets.length === 1 && packets[0].kind === "수시", "수시 취합본 게시 + kind=수시 저장");
-    c.ok(await page.evaluate(() => /수시/.test((document.querySelector(".pk-row .pk-kind") || {}).textContent || "")), "목록에 수시 배지 표시");
+    c.ok(await page.evaluate(() => /^수시회의 자료/.test((document.querySelector(".pk-row .pk-title") || {}).textContent || "")), "수시 자료도 배지 없이 제목으로 구분");
     await page.close();
   }
 
