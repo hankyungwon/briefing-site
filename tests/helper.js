@@ -72,6 +72,12 @@ const selAll = (page, id) => page.evaluate(i => {
 
 // 최소 브리핑 목 데이터(홈 화면 렌더용)
 function defaultBriefingRoutes(p) {
+  // 명단 이메일 — 실제 사이트는 members 테이블(로그인 전용)에서 불러온다. 테스트 계정과 짝을 맞춘다.
+  if (p === "/rest/v1/members") return [
+    { key: "two", email: "twopro@hanmail.net" }, { key: "three", email: "threepro@hanmail.net" },
+    { key: "four", email: "fourpro@hanmail.net" }, { key: "five", email: "fivepro@hanmail.net" },
+    { key: "song", email: "syho99@naver.com" }
+  ];
   if (p === "/rest/v1/briefings") return [{ id: 4, issue_no: 4, published_date: "2026-07-21", edition: "daily" }];
   if (p === "/rest/v1/briefing_items") return [{ id: 40, briefing_id: 4, category: "gov", title: "AI", keyword: "AI", summary: "x", source_url: "https://a.b", source_name: "출처", position: 1 }];
   return undefined;

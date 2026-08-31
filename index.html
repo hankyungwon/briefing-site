@@ -1624,9 +1624,13 @@
   let isAdminUser = false;
 
   async function checkAdmin() {
-    if (!currentUser) { isAdminUser = false; updateBriefAdminUI(); renderAboutBoards(); return; }
-    const { data } = await sb.from("admin_emails").select("email").eq("email", currentUser.email).maybeSingle();
+    if (!currentUser) { isAdminUser = false; MEMBER_EMAILS = {}; updateBriefAdminUI(); renderAboutBoards(); return; }
+    const [{ data }, { data: mem }] = await Promise.all([
+      sb.from("admin_emails").select("email").eq("email", currentUser.email).maybeSingle(),
+      sb.from("members").select("key,email")            // 개인 이메일은 로그인한 사람만 받아온다
+    ]);
     isAdminUser = !!data;
+    MEMBER_EMAILS = Object.fromEntries((mem || []).map(m => [m.key, m.email]));
     updateBriefAdminUI();
     renderAboutBoards();
   }
@@ -2855,7 +2859,7 @@
     let h = '<h3 style="text-align:center;">관악구 AI혁신정책연구단 · 주간회의 자료</h3>';
     h += '<p style="text-align:center;color:#667;font-size:12px;">취합 ' + esc(stamp) + '</p><hr>';
     MEMBERS.forEach((m, i) => {
-      const n = latestByEmail[m.email];
+      const n = latestByEmail[MEMBER_EMAILS[m.key]];
       h += '<h4>[' + (i + 1) + '] ' + esc(m.name) + ' · ' + esc(m.role) + '  (' + (n ? fmtWeekRange(n.week_start) : "미작성") + ')</h4>';
       h += '<div><b>지난주 실적</b>' + (n && n.last_week ? '<div>' + richToHtml(n.last_week) + '</div>' : ' —') + '</div>';
       h += '<div><b>이번주 계획</b>' + (n && n.this_week ? '<div>' + richToHtml(n.this_week) + '</div>' : ' —') + '</div>';
@@ -3690,15 +3694,17 @@
   // ── 연구단마당 업무게시판 (로그인 직원 전용) ─────────────────
   // 각 단원 카드 → 본인만 편집하는 '지난주 실적·이번주 계획' 포스트잇
   // 단장 카드 → 관리자만 편집하는 '회의결과·단장 지시사항' (회의별 이력 보관)
-  // 단원 메타 — 주간회의 자료 취합·주간기록 매핑에 공용으로 사용 (이메일은 잠정값, 채용 후 교체)
+  // 단원 메타 — 주간회의 자료 취합·주간기록 매핑에 공용으로 사용.
+  // 개인 이메일은 이 파일이 누구에게나 공개되므로 여기에 두지 않는다 —
+  // members 테이블(로그인한 사람만 읽기)에서 로그인 직후 불러온다.
   const MEMBERS = [
-    { key: "two",   name: "오프로", role: "AI혁신 선임연구관", email: "twopro@hanmail.net" },
-    { key: "three", name: "백프로", role: "지역개발 연구관",   email: "threepro@hanmail.net" },
-    { key: "four",  name: "박프로", role: "도시행정 연구관",   email: "fourpro@hanmail.net" },
-    { key: "five",  name: "유프로", role: "대외협력 연구관",   email: "fivepro@hanmail.net" },
-    { key: "song",  name: "송프로", role: "행정지원 주무관",   email: "syho99@naver.com" }
+    { key: "two",   name: "오프로", role: "AI혁신 선임연구관" },
+    { key: "three", name: "백프로", role: "지역개발 연구관" },
+    { key: "four",  name: "박프로", role: "도시행정 연구관" },
+    { key: "five",  name: "유프로", role: "대외협력 연구관" },
+    { key: "song",  name: "송프로", role: "행정지원 주무관" }
   ];
-  const MEMBER_EMAILS = Object.fromEntries(MEMBERS.map(m => [m.key, m.email]));
+  let MEMBER_EMAILS = {};   // key → email. checkAdmin()에서 채우고, 로그아웃하면 비운다.
   function mondayOf(d) { const s = stripTime(d); const g = s.getDay(); s.setDate(s.getDate() + (g === 0 ? -6 : 1 - g)); return s; }
   function fmtWeekRange(iso) {
     const s = new Date(iso + "T00:00:00"), e = new Date(s); e.setDate(e.getDate() + 6);
@@ -3838,7 +3844,8 @@
     const secLast = '<h2>지난주 실적</h2>' + (isEmpty(lastRaw) ? none : lastRaw);
     const secThis = '<h2>이번주 계획</h2>' + (isEmpty(thisRaw) ? none : thisRaw);
     const email = memoModal.dataset.email;
-    const m = MEMBERS.find(x => (x.email || "").toLowerCase() === (email || "").toLowerCase());
+    const mkey = Object.keys(MEMBER_EMAILS).find(k => (MEMBER_EMAILS[k] || "").toLowerCase() === (email || "").toLowerCase());
+    const m = MEMBERS.find(x => x.key === mkey);
     const who = m ? m.name : "연구단";
     const week = document.getElementById('memo-week').value;
     const range = week ? fmtWeekRange(week) : "";
