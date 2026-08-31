@@ -19,46 +19,29 @@ const fs = require("fs");
     await page.click('#about .member[data-member="two"] [data-memo-edit]'); await page.waitForTimeout(400);
 
     const ui = await page.evaluate(() => ({
-      scope: [...document.querySelectorAll("#memo-export-scope option")].map(o => o.value),
+      kinds: [...document.querySelectorAll("#memo-kind option")].map(o => o.value),
       printLabel: document.getElementById("memo-print").textContent.trim(),
       menu: [...document.querySelectorAll("#memo-savemenu button")].map(b => b.dataset.fmt)
     }));
-    c.ok(JSON.stringify(ui.scope) === JSON.stringify(["both", "last", "this"]), "출력 범위 3종(통합/지난주/이번주)");
+    c.ok(JSON.stringify(ui.kinds) === JSON.stringify(["주간", "수시"]), "원고 구분 선택: 주간/수시");
     c.ok(!/PDF/i.test(ui.printLabel), "인쇄 버튼에서 PDF 분리됨 (" + ui.printLabel + ")");
     c.ok(JSON.stringify(ui.menu) === JSON.stringify(["pdf", "doc"]), "파일 저장 메뉴: PDF + .doc");
 
-    await page.click("#memo-last"); await page.type("#memo-last", "지난주에 AI 정책 초안을 완성했다");
-    await page.click("#memo-this"); await page.type("#memo-this", "이번주에 부서 협의를 진행한다");
+    await page.click("#memo-body"); await page.type("#memo-body", "AI 정책 초안을 완성했다");
     await page.evaluate(() => {
       const cv = document.createElement("canvas"); cv.width = 200; cv.height = 120; cv.getContext("2d").fillRect(0, 0, 200, 120);
-      const ed = document.getElementById("memo-this");
+      const ed = document.getElementById("memo-body");
       ed.innerHTML += '<img src="' + cv.toDataURL("image/png") + '" style="max-width:100%;width:50%;">';
       ed.dispatchEvent(new Event("input"));
     });
 
-    // 통합 저장(.doc)
-    await page.selectOption("#memo-export-scope", "both");
+    // 원고 저장(.doc) — 한 칸 원고
     await page.click("#memo-download"); await page.waitForTimeout(120);
-    let dl = await Promise.all([page.waitForEvent("download"), page.click('#memo-savemenu [data-fmt="doc"]')]).then(a => a[0]);
-    const both = fs.readFileSync(await dl.path(), "utf8");
-    c.ok(/지난주 실적/.test(both) && /이번주 계획/.test(both), "통합: 두 섹션 포함");
-    c.ok(/AI 정책 초안/.test(both) && /부서 협의/.test(both), "통합: 본문 포함");
-    c.ok(/font-size:14px/.test(both) && /@page/.test(both), "WYSIWYG px 서식 + A4 여백");
-    c.ok(/width:\s*50%/.test(both), "그림 크기(50%) 보존");
-
-    // 지난주만
-    await page.selectOption("#memo-export-scope", "last");
-    await page.click("#memo-download"); await page.waitForTimeout(120);
-    dl = await Promise.all([page.waitForEvent("download"), page.click('#memo-savemenu [data-fmt="doc"]')]).then(a => a[0]);
-    const last = fs.readFileSync(await dl.path(), "utf8");
-    c.ok(/지난주 실적/.test(last) && !/<h2>이번주 계획/.test(last), "지난주만: 이번주 섹션 없음");
-
-    // 이번주만
-    await page.selectOption("#memo-export-scope", "this");
-    await page.click("#memo-download"); await page.waitForTimeout(120);
-    dl = await Promise.all([page.waitForEvent("download"), page.click('#memo-savemenu [data-fmt="doc"]')]).then(a => a[0]);
-    const ths = fs.readFileSync(await dl.path(), "utf8");
-    c.ok(/이번주 계획/.test(ths) && !/<h2>지난주 실적/.test(ths), "이번주만: 지난주 섹션 없음");
+    const dl = await Promise.all([page.waitForEvent("download"), page.click('#memo-savemenu [data-fmt="doc"]')]).then(a => a[0]);
+    const doc = fs.readFileSync(await dl.path(), "utf8");
+    c.ok(/AI 정책 초안/.test(doc), "원고 본문 포함");
+    c.ok(/font-size:14px/.test(doc) && /@page/.test(doc), "WYSIWYG px 서식 + A4 여백");
+    c.ok(/width:\s*50%/.test(doc), "그림 크기(50%) 보존");
     await page.close();
   }
 

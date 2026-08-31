@@ -1150,30 +1150,23 @@
 
 <div class="modal-backdrop" id="memo-modal">
   <div class="modal compile-modal" role="dialog" aria-modal="true" aria-labelledby="memo-title">
-    <h3 id="memo-title">주간 업무 기록</h3>
+    <h3 id="memo-title">회의 자료 원고</h3>
     <p class="modal-sub" id="memo-sub"></p>
     <form id="memo-form">
-      <div class="field">
-        <label for="memo-week">해당 주 (월요일 기준)</label>
-        <input id="memo-week" type="date" required>
+      <div class="field" style="max-width:220px;">
+        <label for="memo-kind">구분</label>
+        <select id="memo-kind">
+          <option value="주간">주간회의</option>
+          <option value="수시">수시회의</option>
+        </select>
       </div>
       <div class="pk-toolbar" id="memo-toolbar"></div>
       <div class="field" style="margin-top:8px;">
-        <label>지난주 실적</label>
-        <div id="memo-last" class="pk-editor pk-editor-sm" contenteditable="true" data-ph="지난 한 주 동안 처리한 업무를 정리하세요."></div>
-      </div>
-      <div class="field">
-        <label>이번주 계획</label>
-        <div id="memo-this" class="pk-editor pk-editor-sm" contenteditable="true" data-ph="이번 주에 추진할 업무를 적으세요."></div>
+        <label>원고</label>
+        <div id="memo-body" class="pk-editor pk-editor-sm" contenteditable="true" data-ph="회의 자료로 취합될 내용을 자유롭게 작성하세요."></div>
       </div>
       <input type="file" id="memo-img-input" accept="image/*" multiple hidden>
       <div class="pk-export no-print">
-        <span class="pk-xlabel">출력 범위</span>
-        <select id="memo-export-scope">
-          <option value="both">지난주 실적 ＋ 이번주 계획 (통합)</option>
-          <option value="last">지난주 실적만</option>
-          <option value="this">이번주 계획만</option>
-        </select>
         <button type="button" class="wb-mini" id="memo-print">🖨 인쇄</button>
         <span class="pk-savewrap">
           <button type="button" class="wb-mini" id="memo-download" aria-haspopup="true" aria-expanded="false">💾 파일 저장 ▾</button>
@@ -2238,10 +2231,10 @@
       + '</div>'
       + '<div id="res-packets" hidden>'
       + '<div class="list-toolbar">'
-      + '<span class="res-packet-note">주간회의·수시회의 자료를 취합해 보관합니다. <b>주간</b>은 각 단원의 최신 주간기록을 자동으로 모아 주고, <b>수시</b>는 빈 양식에서 직접 정리해 올립니다. 취합은 로그인한 단원 누구나 할 수 있고(평소엔 행정지원 주무관이 맡습니다), 한 번 올린 자료는 수정할 수 없어 바로잡을 때는 새로 올립니다. 삭제는 관리자와 행정지원 주무관(최근 7일 자료)만 가능합니다.</span>'
+      + '<span class="res-packet-note">주간회의·수시회의 자료를 취합해 보관합니다. 각 단원이 연구단마당에 올린 최신 원고(주간/수시)를 자동으로 모읍니다 — 버튼을 눌러 다듬은 뒤 올리면 됩니다. 취합은 로그인한 단원 누구나 할 수 있고(평소엔 행정지원 주무관이 맡습니다), 한 번 올린 자료는 수정할 수 없어 바로잡을 때는 새로 올립니다. 삭제는 관리자와 행정지원 주무관(최근 7일 자료)만 가능합니다.</span>'
       + '<span style="display:flex;gap:6px;flex-wrap:wrap;">'
       + '<button type="button" class="write-toggle" data-pkkind="주간">📋 주간회의 자료 취합</button>'
-      + '<button type="button" class="write-toggle" data-pkkind="수시">🗓 수시회의 자료 작성</button></span>'
+      + '<button type="button" class="write-toggle" data-pkkind="수시">🗓 수시회의 자료 취합</button></span>'
       + '</div>'
       + '<div id="res-packet-list"><p class="status">불러오는 중입니다…</p></div>'
       + '</div>';
@@ -2934,23 +2927,16 @@
   function closePacketModal() { packetModal.classList.remove("open"); }
   // 각 단원의 최신 주간기록을 기본 서식(HTML)이 적용된 문서로 취합 — 이후 송프로가 자유롭게 편집
   const NL2BR = s => esc(s).replace(/\n/g, "<br>");
-  function buildPacketContent(latestByEmail, stamp) {
-    let h = '<h3 style="text-align:center;">관악구 AI혁신정책연구단 · 주간회의 자료</h3>';
+  // 각 단원이 올린 해당 구분(주간/수시)의 최신 원고를 하나의 문서로 취합 — 이후 자유롭게 편집
+  function buildPacketContent(byEmail, stamp, kind) {
+    let h = '<h3 style="text-align:center;">관악구 AI혁신정책연구단 · ' + esc(kind) + '회의 자료</h3>';
     h += '<p style="text-align:center;color:#667;font-size:12px;">취합 ' + esc(stamp) + '</p><hr>';
     MEMBERS.forEach((m, i) => {
-      const n = latestByEmail[MEMBER_EMAILS[m.key]];
-      h += '<h4>[' + (i + 1) + '] ' + esc(m.name) + ' · ' + esc(m.role) + '  (' + (n ? fmtWeekRange(n.week_start) : "미작성") + ')</h4>';
-      h += '<div><b>지난주 실적</b>' + (n && n.last_week ? '<div>' + richToHtml(n.last_week) + '</div>' : ' —') + '</div>';
-      h += '<div><b>이번주 계획</b>' + (n && n.this_week ? '<div>' + richToHtml(n.this_week) + '</div>' : ' —') + '</div>';
+      const n = byEmail[MEMBER_EMAILS[m.key]];
+      h += '<h4>[' + (i + 1) + '] ' + esc(m.name) + ' · ' + esc(m.role) + '</h4>';
+      h += '<div>' + (n && n.body ? richToHtml(n.body) : '—') + '</div>';
     });
     return h;
-  }
-  // 수시회의는 정기적 개인 기록이 없으므로 빈 양식으로 열고 작성자가 직접 채운다.
-  function buildAdhocContent(stamp) {
-    return '<h3 style="text-align:center;">관악구 AI혁신정책연구단 · 수시회의 자료</h3>'
-      + '<p style="text-align:center;color:#667;font-size:12px;">작성 ' + esc(stamp) + '</p><hr>'
-      + '<p><b>일시</b>  </p><p><b>안건</b>  </p><p><b>참석</b>  </p>'
-      + '<p><b>주요 내용·결정</b></p><div>  </div>';
   }
   // 저장·표시 전 안전 처리: 스크립트·이벤트 핸들러·위험 URL 제거 (내부 문서지만 방어)
   function sanitizePacketHtml(html) {
@@ -2993,24 +2979,18 @@
     if (!currentUser) return;
     kind = (kind === "수시") ? "수시" : "주간";
     packetDraftKind = kind;
+    const btns = document.querySelectorAll("[data-pkkind]"); btns.forEach(b => b.disabled = true);
+    const { data, error } = await sb.from("staff_notes").select("*").eq("kind", kind);
+    btns.forEach(b => b.disabled = false);
+    if (error) { alert("원고를 불러오지 못했습니다. (" + error.message + ")"); return; }
+    const byEmail = {};
+    (data || []).forEach(n => { byEmail[n.member_email] = n; });   // 구분별 단원당 1편(최신)
     const now = new Date();
     const stamp = now.getFullYear() + "." + (now.getMonth() + 1) + "." + now.getDate() + "(" + WEEKDAYS[now.getDay()] + ") " + pad2(now.getHours()) + ":" + pad2(now.getMinutes());
-    const who = " · 작성 " + packetAuthorName(currentUser.email);
-    let content;
-    if (kind === "주간") {
-      const btns = document.querySelectorAll("[data-pkkind]"); btns.forEach(b => b.disabled = true);
-      const { data, error } = await sb.from("staff_notes").select("*").order("week_start", { ascending: false });
-      btns.forEach(b => b.disabled = false);
-      if (error) { alert("주간기록을 불러오지 못했습니다. (" + error.message + ")"); return; }
-      const latestByEmail = {};
-      (data || []).forEach(n => { const cur = latestByEmail[n.member_email]; if (!cur || n.week_start > cur.week_start) latestByEmail[n.member_email] = n; });
-      content = buildPacketContent(latestByEmail, stamp + who);
-    } else {
-      content = buildAdhocContent(stamp + who);
-    }
+    const content = buildPacketContent(byEmail, stamp + " · 취합 " + packetAuthorName(currentUser.email), kind);
     ensureEditorFonts();
     document.getElementById("packet-error").classList.remove("show");
-    document.getElementById("packet-edit-heading").textContent = kind + "회의 자료 " + (kind === "주간" ? "취합" : "작성") + " — 다듬어 올리기";
+    document.getElementById("packet-edit-heading").textContent = kind + "회의 자료 취합 — 다듬어 올리기";
     document.getElementById("packet-save").textContent = "올리기";
     document.getElementById("packet-edit-name").value = kind + "회의 자료 (" + (now.getMonth() + 1) + "." + now.getDate() + ")";
     document.getElementById("packet-edit-date").value = ymd(stripTime(now));
@@ -3795,23 +3775,19 @@
     { key: "song",  name: "송프로", role: "행정지원 주무관" }
   ];
   let MEMBER_EMAILS = {};   // key → email. checkAdmin()에서 채우고, 로그아웃하면 비운다.
-  function mondayOf(d) { const s = stripTime(d); const g = s.getDay(); s.setDate(s.getDate() + (g === 0 ? -6 : 1 - g)); return s; }
-  function fmtWeekRange(iso) {
-    const s = new Date(iso + "T00:00:00"), e = new Date(s); e.setDate(e.getDate() + 6);
-    const f = x => (x.getMonth() + 1) + "." + x.getDate(); return f(s) + " ~ " + f(e);
-  }
   function fmtMDW(iso) { const d = new Date(iso + "T00:00:00"); return (d.getMonth() + 1) + "." + d.getDate() + "(" + WEEKDAYS[d.getDay()] + ")"; }
   let staffNotesCache = [], meetingNotesCache = [], directiveCache = null;
 
   function staffNoteHtml(n, isOwner, key) {
     const canDel = isOwner || isAdminUser;
+    const kind = n.kind || "주간";
     let acts = "";
-    if (isOwner) acts += '<button type="button" class="wb-mini" data-memo-edit="' + key + '" data-memo-week="' + n.week_start + '">수정</button>';
+    if (isOwner) acts += '<button type="button" class="wb-mini" data-memo-edit="' + key + '" data-memo-kind="' + kind + '">수정</button>';
     if (canDel) acts += '<button type="button" class="wb-mini danger" data-staff-del="' + n.id + '"' + (!isOwner ? ' title="관리자 삭제"' : '') + '>삭제</button>';
     return '<div class="wb-note">'
       + (acts ? '<div class="wb-actions">' + acts + '</div>' : '')
-      + '<div class="wb-sec"><span class="wl">지난주 실적</span><div class="wt rich">' + (n.last_week ? richToHtml(n.last_week) : "—") + '</div></div>'
-      + '<div class="wb-sec"><span class="wl">이번주 계획</span><div class="wt rich">' + (n.this_week ? richToHtml(n.this_week) : "—") + '</div></div>'
+      + '<div class="wb-sec"><span class="board-kind ' + (kind === "수시" ? "k-soft" : "k-strong") + '">' + esc(kind) + '</span>'
+      + '<div class="wt rich" style="margin-top:6px;">' + (n.body ? richToHtml(n.body) : "—") + '</div></div>'
       + '</div>';
   }
   function fmtMeetingWhen(m) { return fmtMDW(m.meeting_date) + (m.meeting_time ? " " + m.meeting_time.slice(0, 5) : ""); }
@@ -3870,21 +3846,15 @@
     return h;
   }
   function staffBoardHtml(notes, isOwner, key) {
-    const latest = notes[0];
-    let h = '<div class="wb-head"><span class="wb-when">' + (latest ? "최근 " + fmtWeekRange(latest.week_start) : "주간 업무 기록") + '</span>'
-      + (isOwner ? '<button type="button" class="wb-btn" data-memo-edit="' + key + '">📝 주간 기록 작성</button>' : '') + '</div>';
+    let h = '<div class="wb-head"><span class="wb-when">회의 자료 원고</span>'
+      + (isOwner ? '<button type="button" class="wb-btn" data-memo-edit="' + key + '">📝 원고 작성</button>' : '') + '</div>';
     // 처음부터 동일한 높이(고정)로 담고, 내용이 길면 스크롤 (지시사항·회의록과 동일)
-    let body;
-    if (!latest) {
-      body = '<p class="wb-empty">' + (isOwner ? "아직 작성한 주간 기록이 없습니다. ‘📝 주간 기록 작성’으로 시작하세요." : "아직 작성된 주간 기록이 없습니다.") + '</p>';
-    } else {
-      body = staffNoteHtml(latest, isOwner, key);
-      const past = notes.slice(1);
-      if (past.length) {
-        body += '<details class="wb-hist"><summary>지난 기록 ' + past.length + '주</summary>'
-          + past.map(n => '<div class="wb-when" style="margin-top:9px;">' + fmtWeekRange(n.week_start) + '</div>' + staffNoteHtml(n, isOwner, key)).join("") + '</details>';
-      }
-    }
+    // 주간 원고 먼저, 수시 원고 다음. 각 단원은 구분별로 최신 한 편씩 보관.
+    const order = { "주간": 0, "수시": 1 };
+    const sorted = [...notes].sort((a, b) => (order[a.kind || "주간"] ?? 9) - (order[b.kind || "주간"] ?? 9));
+    let body = sorted.length
+      ? sorted.map(n => staffNoteHtml(n, isOwner, key)).join("")
+      : '<p class="wb-empty">' + (isOwner ? "아직 작성된 원고가 없습니다. ‘📝 원고 작성’으로 시작하세요." : "아직 작성된 원고가 없습니다.") + '</p>';
     h += '<div class="wb-scroll">' + body + '</div>';
     return h;
   }
@@ -3952,7 +3922,7 @@
   // 편집 버튼 위임
   document.getElementById('about').addEventListener('click', e => {
     const mb = e.target.closest('[data-memo-edit]');
-    if (mb) { openMemoModal(mb.dataset.memoEdit, mb.dataset.memoWeek || null); return; }
+    if (mb) { openMemoModal(mb.dataset.memoEdit, mb.dataset.memoKind || null); return; }
     if (e.target.closest('[data-directive-new]')) { openDirectiveModal(); return; }
     const dd = e.target.closest('[data-directive-del]');
     if (dd) { deleteDirective(dd.dataset.directiveDel); return; }
@@ -3974,75 +3944,64 @@
   const memoForm = document.getElementById('memo-form');
   const memoError = document.getElementById('memo-error');
   function prefillMemo() {
-    const email = memoModal.dataset.email, week = document.getElementById('memo-week').value;
-    const ex = staffNotesCache.find(n => n.member_email === email && n.week_start === week);
-    document.getElementById('memo-last').innerHTML = ex ? richToHtml(ex.last_week) : "";
-    document.getElementById('memo-this').innerHTML = ex ? richToHtml(ex.this_week) : "";
-    ['memo-last', 'memo-this'].forEach(id => { const e = document.getElementById(id); if (e._updCount) e._updCount(); });
+    const email = memoModal.dataset.email, kind = document.getElementById('memo-kind').value;
+    const ex = staffNotesCache.find(n => n.member_email === email && (n.kind || "주간") === kind);
+    document.getElementById('memo-body').innerHTML = ex && ex.body ? richToHtml(ex.body) : "";
+    const e = document.getElementById('memo-body'); if (e._updCount) e._updCount();
   }
-  // 연구관 개인 인쇄·파일 저장 — 통합 또는 지난주실적/이번주계획 개별
-  function memoExportDoc(scope) {
-    const lastRaw = sanitizePacketHtml(document.getElementById('memo-last').innerHTML);
-    const thisRaw = sanitizePacketHtml(document.getElementById('memo-this').innerHTML);
+  // 연구관 개인 원고 인쇄·파일 저장 (한 칸 원고)
+  function memoExportDoc() {
+    const raw = sanitizePacketHtml(document.getElementById('memo-body').innerHTML);
     const isEmpty = h => !h.replace(/<br\s*\/?>|<p>|<\/p>|&nbsp;|\s/gi, "").length;
     const none = '<p style="color:#8A97A5;">(작성된 내용이 없습니다)</p>';
-    const secLast = '<h2>지난주 실적</h2>' + (isEmpty(lastRaw) ? none : lastRaw);
-    const secThis = '<h2>이번주 계획</h2>' + (isEmpty(thisRaw) ? none : thisRaw);
     const email = memoModal.dataset.email;
     const mkey = Object.keys(MEMBER_EMAILS).find(k => (MEMBER_EMAILS[k] || "").toLowerCase() === (email || "").toLowerCase());
     const m = MEMBERS.find(x => x.key === mkey);
     const who = m ? m.name : "연구단";
-    const week = document.getElementById('memo-week').value;
-    const range = week ? fmtWeekRange(week) : "";
-    const scopeLabel = scope === 'last' ? '지난주 실적' : scope === 'this' ? '이번주 계획' : '주간 업무 기록';
-    const title = who + ' ' + scopeLabel + (range ? ' (' + range + ')' : '');
-    let body = '<h1>' + esc(who) + ' ' + esc(scopeLabel) + '</h1>'
-      + '<div class="doc-meta">관악구 AI혁신정책연구단'
-      + (m && m.role ? ' · ' + esc(m.role) : '') + (range ? ' · ' + esc(range) + ' 주간' : '') + '</div>';
-    body += scope === 'last' ? secLast : scope === 'this' ? secThis : (secLast + secThis);
+    const kind = document.getElementById('memo-kind').value;
+    const title = who + ' ' + kind + '회의 원고';
+    let body = '<h1>' + esc(title) + '</h1>'
+      + '<div class="doc-meta">관악구 AI혁신정책연구단' + (m && m.role ? ' · ' + esc(m.role) : '') + '</div>';
+    body += isEmpty(raw) ? none : raw;
     return { title: title, html: buildStandaloneHtml(title, body) };
   }
-  function openMemoModal(key, week) {
+  function openMemoModal(key, kind) {
     const email = MEMBER_EMAILS[key];
     if (!currentUser || !email || (currentUser.email || "").toLowerCase() !== email) return; // 본인만
     memoError.classList.remove('show');
     ensureEditorFonts();
     memoModal.dataset.email = email;
-    document.getElementById('memo-week').value = week || ymd(mondayOf(new Date()));
-    document.getElementById('memo-sub').textContent = "매주 월요일 아침 지난주 실적과 이번주 계획을 기록합니다. 같은 주에 다시 저장하면 갱신되고, 새로운 주는 별도로 쌓입니다. 매주 초 작성된 자료는 연구단 주간회의 자료로 취합됩니다.";
+    document.getElementById('memo-kind').value = (kind === "수시") ? "수시" : "주간";
+    document.getElementById('memo-sub').textContent = "회의 자료로 취합될 원고를 작성합니다. 구분(주간/수시)별로 각각 한 편을 보관하며, 같은 구분에 다시 저장하면 최신 내용으로 갱신됩니다.";
     prefillMemo();
     memoModal.classList.add('open');
   }
-  document.getElementById('memo-week').addEventListener('change', prefillMemo);
+  document.getElementById('memo-kind').addEventListener('change', prefillMemo);
   document.getElementById('memo-cancel').addEventListener('click', () => memoModal.classList.remove('open'));
   memoModal.addEventListener('click', e => { if (e.target === memoModal) memoModal.classList.remove('open'); });
   memoForm.addEventListener('submit', async e => {
     e.preventDefault();
-    const email = memoModal.dataset.email, week = document.getElementById('memo-week').value;
-    if (!email || !week) return;
+    const email = memoModal.dataset.email, kind = document.getElementById('memo-kind').value;
+    if (!email) return;
     const btn = document.getElementById('memo-submit'); btn.disabled = true;
-    const cleanLast = sanitizePacketHtml(document.getElementById('memo-last').innerHTML);
-    const cleanThis = sanitizePacketHtml(document.getElementById('memo-this').innerHTML);
+    const clean = sanitizePacketHtml(document.getElementById('memo-body').innerHTML);
     const isEmpty = h => !h.replace(/<br\s*\/?>|<p>|<\/p>|&nbsp;|\s/gi, "").length;
     const { error } = await sb.from('staff_notes').upsert({
-      member_email: email, week_start: week,
-      last_week: isEmpty(cleanLast) ? null : cleanLast,
-      this_week: isEmpty(cleanThis) ? null : cleanThis,
+      member_email: email, kind, body: isEmpty(clean) ? null : clean,
+      week_start: ymd(stripTime(new Date())),
       updated_at: new Date().toISOString()
-    }, { onConflict: 'member_email,week_start' });
+    }, { onConflict: 'member_email,kind' });
     btn.disabled = false;
     if (error) { memoError.textContent = "저장하지 못했습니다. (" + error.message + ")"; memoError.classList.add('show'); return; }
     memoModal.classList.remove('open');
     await renderAboutBoards();
   });
-  document.getElementById('memo-print').addEventListener('click', () => {
-    printHtml(memoExportDoc(document.getElementById('memo-export-scope').value).html);
-  });
+  document.getElementById('memo-print').addEventListener('click', () => { printHtml(memoExportDoc().html); });
   wireSaveMenu('memo-download', 'memo-savemenu', fmt => {
-    const r = memoExportDoc(document.getElementById('memo-export-scope').value);
+    const r = memoExportDoc();
     if (fmt === 'pdf') printHtml(r.html); else downloadDoc(safeFileName(r.title) + ".doc", r.html);
   });
-  makeRichEditor("memo-toolbar", "memo-img-input", [document.getElementById("memo-last"), document.getElementById("memo-this")]);
+  makeRichEditor("memo-toolbar", "memo-img-input", [document.getElementById("memo-body")]);
 
   // 회의록 모달 — 로그인한 단원 누구나 새로 올린다(대직). 올린 뒤 수정 불가, 항상 새 항목으로 추가.
   const meetingModal = document.getElementById('meeting-modal');
