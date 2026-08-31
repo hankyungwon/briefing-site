@@ -633,25 +633,22 @@
   .board-meta-row{display:flex;align-items:center;gap:8px;margin-bottom:4px;flex-wrap:wrap;}  /* 날짜·종류·기록자 왼쪽 정렬 */
   .board-time{font-size:12.5px;font-weight:700;white-space:nowrap;}
   .board-by{font-size:12px;color:var(--muted);font-weight:600;white-space:nowrap;}
-  .board-kind{font-size:11px;font-weight:800;color:#fff;border-radius:5px;padding:1px 7px;white-space:nowrap;}
+  /* 종류 배지 — 바탕색은 오직 이 배지(정기·수시·주간 글자)에만. 정기·주간=진한 파랑 / 수시=연한 파랑 */
+  .board-kind{font-size:11px;font-weight:800;border-radius:5px;padding:1px 7px;white-space:nowrap;}
+  .board-kind.k-strong{background:var(--gwanak);color:#fff;}
+  .board-kind.k-soft{background:#D3E4F5;color:var(--gwanak-deep);}
   .board-body{font-size:14.5px;color:var(--ink);line-height:1.7;word-break:keep-all;white-space:pre-wrap;}
-  /* 단장 지시사항: 골드 테두리·라벨. 종류(정기/수시)로 바탕색 차이 */
+  /* 단장 지시사항: 골드 테두리·라벨 (회차 바탕은 흰색, 배지만 색) */
   .head-directive{border:1px solid #D9B94A;border-left:5px solid var(--gold);--gb-div:#E4CE86;}
   .head-directive .hd-label{font-size:17px;font-weight:800;color:var(--gold);letter-spacing:.01em;white-space:nowrap;}
   .head-directive .board-list{max-height:214px;}
   .head-directive .board-time{color:#8A6E17;}
-  .head-directive .board-kind.k-reg{background:var(--gold);}      /* 정기 배지 */
-  .head-directive .board-kind.k-adhoc{background:#CDA94B;}        /* 수시 배지 */
-  /* 종류별 회차 바탕색 — 파란색 계열. 정기·주간은 진하게 / 수시는 연하게 (두 표 공통) */
-  .board-note.bg-strong{background:#D8E6F5;}
-  .board-note.bg-soft{background:#F1F6FC;}
   .hd-empty{font-size:13.5px;color:var(--muted);}
   /* 연구단 회의록: 회색 테두리 + 왼쪽 두꺼운 선(같은 회색), 블루 라벨 */
   .mboard{border:1px solid var(--line);border-left:5px solid var(--line);--gb-div:#D6DFE9;}
   .mboard .mb-label{font-size:17px;font-weight:800;color:var(--gwanak-deep);letter-spacing:.01em;white-space:nowrap;}
   .mboard .board-list{max-height:250px;}
   .mboard .board-time{color:var(--gwanak);}
-  .mboard .board-kind{background:var(--sky);}
   .mb-empty{font-size:13.5px;color:var(--muted);}
   /* 단원 주간기록 — 내용이 길어도 카드가 무한정 늘지 않도록 스크롤로 높이 고정 */
   .wb-scroll{max-height:300px;overflow-y:auto;}
@@ -3802,9 +3799,9 @@
     return (now - d) <= 7 * 86400000;
   }
   function mNoteHtml(m) {
-    const bg = (m.kind === "주간") ? "bg-strong" : "bg-soft";   // 주간=진하게 / 수시=연하게
-    return '<div class="board-note ' + bg + '">'
-      + '<div class="board-meta-row"><span class="board-kind">' + esc(m.kind || "회의") + '</span>'
+    const kc = (m.kind === "주간") ? "k-strong" : "k-soft";   // 주간 배지=진한 파랑 / 수시 배지=연한 파랑
+    return '<div class="board-note">'
+      + '<div class="board-meta-row"><span class="board-kind ' + kc + '">' + esc(m.kind || "회의") + '</span>'
       + '<span class="board-time">' + fmtMeetingWhen(m) + '</span>'
       + '<span class="board-by">기록 ' + esc(packetAuthorName(m.author_email)) + '</span>'
       + (mCanDelete(m) ? '<button type="button" class="wb-mini danger" data-meeting-del="' + m.id + '">삭제</button>' : '')
@@ -3828,9 +3825,8 @@
   }
   function directiveNoteHtml(row) {
     const kind = row.kind || "수시";
-    const kc = kind === "정기" ? "k-reg" : "k-adhoc";
-    const bg = kind === "정기" ? "bg-strong" : "bg-soft";   // 정기=진하게 / 수시=연하게
-    return '<div class="board-note ' + bg + '"><div class="board-meta-row">'
+    const kc = kind === "정기" ? "k-strong" : "k-soft";   // 정기 배지=진한 파랑 / 수시 배지=연한 파랑
+    return '<div class="board-note"><div class="board-meta-row">'
       + '<span class="board-kind ' + kc + '">' + esc(kind) + '</span>'
       + '<span class="board-time">' + esc(fmtStamp(row.updated_at)) + '</span>'
       + '<span class="board-by">기록 ' + esc(packetAuthorName(row.author_email)) + '</span>'
