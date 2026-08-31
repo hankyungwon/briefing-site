@@ -260,7 +260,7 @@ const daysAgo = n => { const d = new Date(); d.setDate(d.getDate() - n); return 
     c.ok(st.count === 2, "지시 2건이 세로로 누적");
     c.ok(/공모사업 마감 준수/.test(st.firstBody), "새 지시가 맨 위에 표시");
     c.ok(/정기/.test(st.kind), "지시에 종류 배지(정기/수시) 표시");
-    c.ok(/기록 단장/.test(st.by), "지시에 기록자를 호칭으로 표시 (" + st.by.trim() + ")");
+    c.ok(/^by 단장/.test(st.by.trim()), "지시 기록자를 「by 호칭」으로 표시 (" + st.by.trim() + ")");
     c.ok(st.del, "각 지시에 삭제 버튼(관리자)");
     await page.close();
   }
@@ -311,7 +311,7 @@ const daysAgo = n => { const d = new Date(); d.setDate(d.getDate() - n); return 
       return { by: (mb.querySelector(".board-by") || {}).textContent || "", kind: (mb.querySelector(".board-kind") || {}).textContent || "",
                del: !!mb.querySelector("[data-meeting-del]"), edit: !!mb.querySelector("[data-meeting-edit]") };
     });
-    c.ok(/오프로/.test(g.by), "목록에 '기록 오프로' 표시");
+    c.ok(/^by 오프로/.test(g.by.trim()), "회의록에 'by 오프로' 표시 (" + g.by.trim() + ")");
     c.ok(/수시/.test(g.kind), "구분 배지 표시");
     c.ok(!g.del, "일반 단원은 회의록 삭제 버튼 없음");
     c.ok(!g.edit, "회의록에 수정 버튼 없음(수정 불가)");

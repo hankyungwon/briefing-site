@@ -98,7 +98,7 @@ const H = require("./helper");
     });
     return { shadow: t ? getComputedStyle(t).boxShadow : "", byType };
   });
-  c.ok(/inset/.test(look.shadow) && /2px/.test(look.shadow), "오늘 날짜 칸에 사각 테두리 (" + look.shadow + ")");
+  c.ok(/inset/.test(look.shadow) && /1\.5px/.test(look.shadow), "오늘 날짜 칸에 얇은 사각 테두리 (" + look.shadow + ")");
   c.ok(look.byType.meeting && look.byType.meal && look.byType.meeting !== look.byType.meal,
     "회의와 식사 색이 서로 다름 (회의 " + look.byType.meeting + " / 식사 " + look.byType.meal + ")");
   c.ok(look.byType.meal === "rgb(126, 87, 194)", "식사는 주황과 헷갈리지 않는 보라");
