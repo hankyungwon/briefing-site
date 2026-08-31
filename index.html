@@ -619,19 +619,20 @@
   .mlog-sum{font-size:13px;color:var(--ink);line-height:1.5;word-break:keep-all;white-space:pre-wrap;}
   .mlog-meta{font-size:11.5px;color:var(--muted);margin-top:5px;}
   /* 연구단마당 업무 안내 배너 */
-  .work-info{background:#FFF7DC;border:1px solid #F0E4B8;border-radius:10px;padding:11px 14px;margin-bottom:20px;
-    font-size:13.5px;color:#6B5A18;line-height:1.6;word-break:keep-all;}
-  /* 단장 지시사항 — 연구단마당 최상단 강조 박스 (단장·관리자만 작성) */
-  .head-directive{background:#FFFBEA;border:1px solid #EBD9A0;border-left:5px solid var(--gold);
-    border-radius:10px;padding:12px 15px;margin-bottom:14px;box-shadow:0 1px 3px rgba(180,126,18,.10);}
+  /* 주간기록·취합 안내 — 회의록 아래, 지시사항(골드)과 헷갈리지 않게 파랑 계열 */
+  .work-info{background:#EEF4FB;border:1px solid #CFE0F1;border-radius:10px;padding:11px 14px;margin-bottom:24px;
+    font-size:13.5px;color:#3C5A79;line-height:1.6;word-break:keep-all;}
+  /* 단장 지시사항 — 연구단마당 최상단 강조 박스 (단장·관리자만 작성). 가장 눈에 띄게. */
+  .head-directive{background:#FFF6D2;border:1px solid #E2C25E;border-left:6px solid var(--gold);
+    border-radius:10px;padding:13px 16px;margin-bottom:16px;box-shadow:0 2px 7px rgba(180,126,18,.18);}
   .hd-head{display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:7px;}
-  .hd-label{font-size:13px;font-weight:800;color:var(--gold);letter-spacing:.02em;white-space:nowrap;}
+  .hd-label{font-size:14px;font-weight:800;color:var(--gold);letter-spacing:.02em;white-space:nowrap;}
   .hd-body{font-size:14px;color:var(--ink);line-height:1.7;word-break:keep-all;white-space:pre-wrap;
     max-height:8.4em;overflow-y:auto;}   /* 한 번에 5줄쯤 보이고, 넘치면 스크롤 */
   .hd-empty{font-size:13px;color:var(--muted);}
   /* 회의록 게시판 — 2×3 그리드 위, 짧게 (최신 1건 + 지난 회의록 접기) */
   .mboard{background:var(--card);border:1px solid var(--line);border-radius:10px;
-    padding:12px 15px;margin-bottom:24px;box-shadow:0 1px 3px rgba(14,95,168,.05);}
+    padding:12px 15px;margin-bottom:10px;box-shadow:0 1px 3px rgba(14,95,168,.05);}
   .mb-head{display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:8px;flex-wrap:wrap;}
   .mb-label{font-size:13px;font-weight:800;color:var(--gwanak-deep);letter-spacing:.02em;white-space:nowrap;}
   .mb-when{font-size:11.5px;color:var(--muted);font-weight:700;}
@@ -967,9 +968,9 @@
       연구·개발하기 위해 민선 9기 구청장 공약에 따라 AI혁신정책연구단을 설치해 운영 중입니다.
       본 연구단은 AI 으뜸 관악구를 실현하기 위해 지식 관리와 변화 관리에 힘쓰고 있습니다.
     </p>
-    <p class="work-info" id="about-workinfo" hidden>💡 매주 월요일 아침 지난주 실적과 이번주 계획을 기록합니다. 매주 초 작성된 자료는 연구단 주간회의 자료로 취합됩니다.</p>
     <div class="head-directive" id="head-directive" hidden></div>
     <div class="mboard" id="mboard" hidden></div>
+    <p class="work-info" id="about-workinfo" hidden>💡 매주 월요일 아침 지난주 실적과 이번주 계획을 기록합니다. 매주 초 작성된 자료는 연구단 주간회의 자료로 취합됩니다.</p>
     <div class="team-grid">
       <div class="member head" data-member="lead">
         <div class="role-tag">단장</div>
@@ -2197,7 +2198,7 @@
       + '<div class="list-toolbar">'
       + '<input type="search" class="filter-input" id="res-filter" placeholder="🔎 자료 검색 — 제목·링크·코멘트·작성자">'
       + (isAdminUser ? '<button type="button" class="write-toggle modlog-toggle" id="res-modlog-btn">🛡 삭제 이력</button>' : '')
-      + '<button type="button" class="write-toggle" id="res-write-toggle" aria-expanded="false">✏️ 새 자료 올리기</button>'
+      + '<button type="button" class="write-toggle" id="res-write-toggle" aria-expanded="false">📝 새 자료 올리기</button>'
       + '</div>'
       + '<p class="form-ok" id="post-ok" role="status"></p>'
       + '<div class="form-wrap" id="res-form-wrap"><div class="post-form">'
@@ -2262,7 +2263,7 @@
     wrap.classList.toggle("open", isOpen);
     btn.classList.toggle("open", isOpen);
     btn.setAttribute("aria-expanded", isOpen ? "true" : "false");
-    btn.textContent = isOpen ? "✕ 닫기" : "✏️ 새 자료 올리기";
+    btn.textContent = isOpen ? "✕ 닫기" : "📝 새 자료 올리기";
     if (isOpen) document.getElementById("post-title").focus();
   }
 
@@ -2842,7 +2843,7 @@
       '<div class="list-toolbar">'
       + '<input type="search" class="filter-input" id="fp-filter" placeholder="🔎 글 검색 — 제목·내용·작성자">'
       + (isAdminUser ? '<button type="button" class="write-toggle modlog-toggle" id="modlog-btn">🛡 삭제 이력</button>' : '')
-      + '<button type="button" class="write-toggle" id="fp-write-toggle" aria-expanded="false">✏️ 새 글 쓰기</button>'
+      + '<button type="button" class="write-toggle" id="fp-write-toggle" aria-expanded="false">📝 새 글 쓰기</button>'
       + '</div>'
       + '<p class="form-ok" id="fp-ok" role="status"></p>'
       + '<div class="form-wrap" id="fp-form-wrap"><div class="post-form"><form id="fp-form">'
@@ -3567,7 +3568,7 @@
     wrap.classList.toggle("open", isOpen);
     btn.classList.toggle("open", isOpen);
     btn.setAttribute("aria-expanded", isOpen ? "true" : "false");
-    btn.textContent = isOpen ? "✕ 닫기" : "✏️ 새 글 쓰기";
+    btn.textContent = isOpen ? "✕ 닫기" : "📝 새 글 쓰기";
     if (isOpen) document.getElementById("fp-title").focus();
   }
 
@@ -3800,7 +3801,7 @@
     const latest = meetings[0];
     let h = '<div class="mb-head"><span class="mb-label">🗒 회의록</span>'
       + (latest ? '<span class="mb-when">최근 ' + fmtMeetingWhen(latest) + '</span>' : '')
-      + '<button type="button" class="wb-btn" data-meeting-new="1" style="margin-left:auto;">✏️ 새 회의록</button></div>';
+      + '<button type="button" class="wb-btn" data-meeting-new="1" style="margin-left:auto;">📝 새 회의록</button></div>';
     if (!latest) { h += '<p class="mb-empty">아직 기록된 회의가 없습니다. 회의 후 「새 회의록」으로 안건·결론을 남겨 주세요.</p>'; return h; }
     h += mNoteHtml(latest, true);
     const past = meetings.slice(1);
@@ -3813,8 +3814,8 @@
   // 단장 지시사항 — 최신 1건을 강조 박스로. 작성·수정은 관리자만.
   function directiveHtml(row) {
     const has = row && row.body && row.body.trim();
-    let h = '<div class="hd-head"><span class="hd-label">📌 단장 지시사항</span>'
-      + (isAdminUser ? '<button type="button" class="wb-btn" data-directive-edit="1">✏️ ' + (has ? "수정" : "작성") + '</button>' : '') + '</div>';
+    let h = '<div class="hd-head"><span class="hd-label">📢 단장 지시사항</span>'
+      + (isAdminUser ? '<button type="button" class="wb-btn" data-directive-edit="1">📝 ' + (has ? "수정" : "작성") + '</button>' : '') + '</div>';
     h += has ? '<div class="hd-body">' + plain2html(row.body) + '</div>'
              : '<p class="hd-empty">' + (isAdminUser ? "아직 등록된 지시사항이 없습니다. 「작성」으로 남겨 주세요." : "등록된 지시사항이 없습니다.") + '</p>';
     return h;
@@ -3822,8 +3823,8 @@
   function staffBoardHtml(notes, isOwner, key) {
     const latest = notes[0];
     let h = '<div class="wb-head"><span class="wb-when">' + (latest ? "최근 " + fmtWeekRange(latest.week_start) : "주간 업무 기록") + '</span>'
-      + (isOwner ? '<button type="button" class="wb-btn" data-memo-edit="' + key + '">✏️ 주간 기록 작성</button>' : '') + '</div>';
-    if (!latest) { h += '<p class="wb-empty">' + (isOwner ? "아직 작성한 주간 기록이 없습니다. ‘✏️ 주간 기록 작성’으로 시작하세요." : "아직 작성된 주간 기록이 없습니다.") + '</p>'; return h; }
+      + (isOwner ? '<button type="button" class="wb-btn" data-memo-edit="' + key + '">📝 주간 기록 작성</button>' : '') + '</div>';
+    if (!latest) { h += '<p class="wb-empty">' + (isOwner ? "아직 작성한 주간 기록이 없습니다. ‘📝 주간 기록 작성’으로 시작하세요." : "아직 작성된 주간 기록이 없습니다.") + '</p>'; return h; }
     h += staffNoteHtml(latest, isOwner, key);
     const past = notes.slice(1);
     if (past.length) {
