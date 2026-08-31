@@ -103,6 +103,7 @@ const daysAgo = n => { const d = new Date(); d.setDate(d.getDate() - n); return 
     c.ok(editorOpen, "취합 시 편집기가 열리고 버튼이 「올리기」");
     const draftHasFmt = await page.evaluate(() => document.getElementById("packet-edit-body").innerHTML);
     c.ok(/굵은 원고|<b>/i.test(draftHasFmt), "초안에 단원 원고(서식)가 실려 있음");
+    c.ok(/· by 송프로/.test(draftHasFmt) && !/취합/.test(draftHasFmt), "머리글은 「날짜 · by 취합자」 — '취합' 글자 중복 없음");
 
     await page.fill("#packet-edit-summary", "AI 교육 확대·공모사업 마감 대응");
     await page.click("#packet-save"); await page.waitForTimeout(500);
