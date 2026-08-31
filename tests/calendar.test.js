@@ -83,6 +83,26 @@ const H = require("./helper");
   c.ok(!posted, "차단 시 서버 저장 요청 없음");
   c.ok(err.kept === "역전 시험", "입력 내용 유실 없음");
 
+  // 오늘 날짜 칸의 사각 테두리 + 종류별 색 구분(회의 주황 / 식사 보라 — 서로 헷갈리지 않게)
+  // 앞 검사에서 열어둔 등록창을 닫고 월간 보기로 되돌린 뒤 확인
+  await page.evaluate(() => { document.getElementById("event-modal").classList.remove("open"); });
+  await page.click('[data-view="month"]'); await page.waitForTimeout(400);
+  const look = await page.evaluate(() => {
+    const t = document.querySelector(".cal-day.today");
+    const byType = {};
+    document.querySelectorAll(".today-strip .ev-pill").forEach(p => {
+      const d = p.querySelector(".ev-dot"); const txt = p.textContent;
+      if (!d) return;
+      if (/회의/.test(txt)) byType.meeting = getComputedStyle(d).backgroundColor;
+      if (/식사/.test(txt)) byType.meal = getComputedStyle(d).backgroundColor;
+    });
+    return { shadow: t ? getComputedStyle(t).boxShadow : "", byType };
+  });
+  c.ok(/inset/.test(look.shadow) && /2px/.test(look.shadow), "오늘 날짜 칸에 사각 테두리 (" + look.shadow + ")");
+  c.ok(look.byType.meeting && look.byType.meal && look.byType.meeting !== look.byType.meal,
+    "회의와 식사 색이 서로 다름 (회의 " + look.byType.meeting + " / 식사 " + look.byType.meal + ")");
+  c.ok(look.byType.meal === "rgb(126, 87, 194)", "식사는 주황과 헷갈리지 않는 보라");
+
   server.close();
   await c.finish(browser);
 })().catch(e => { console.error("FAIL", e.message, e.stack); process.exit(1); });
