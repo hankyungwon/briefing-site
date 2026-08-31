@@ -260,7 +260,7 @@ const daysAgo = n => { const d = new Date(); d.setDate(d.getDate() - n); return 
     c.ok(st.count === 2, "지시 2건이 세로로 누적");
     c.ok(/공모사업 마감 준수/.test(st.firstBody), "새 지시가 맨 위에 표시");
     c.ok(/정기/.test(st.kind), "지시에 종류 배지(정기/수시) 표시");
-    c.ok(/기록/.test(st.by), "지시에 기록자 표시");
+    c.ok(/기록 단장/.test(st.by), "지시에 기록자를 호칭으로 표시 (" + st.by.trim() + ")");
     c.ok(st.del, "각 지시에 삭제 버튼(관리자)");
     await page.close();
   }

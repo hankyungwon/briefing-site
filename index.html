@@ -2950,13 +2950,9 @@
     return (now - d) <= 7 * 86400000;
   }
   // created_by(이메일) → 단원 이름. 명단에 없으면(단장 등) 이메일 앞부분으로 표시.
-  function packetAuthorName(email) {
-    if (!email) return "—";
-    const e = email.toLowerCase();
-    const k = Object.keys(MEMBER_EMAILS).find(x => (MEMBER_EMAILS[x] || "").toLowerCase() === e);
-    const m = k && MEMBERS.find(x => x.key === k);
-    return m ? m.name : email.split("@")[0];
-  }
+  // 회의록·지시사항·취합본의 기록자 표기 — 게시판과 같은 호칭 규칙을 쓴다
+  // (단장·관리자·한뱀도 알아보고, 필명만 저장된 경우도 호칭으로 바꾼다)
+  function packetAuthorName(email) { return email ? authorName(email) : "—"; }
   // 작성자 표기 통일 — 게시판·댓글·자료·일정의 필명(이메일 앞부분)이나 이메일을 호칭으로 바꾼다.
   // 예: happyrunto→백프로, hanpro→단장, admin→관리자. 이미 호칭(한뱀 등)이거나 모르면 원본 그대로.
   function authorName(v) {
