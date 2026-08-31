@@ -170,16 +170,22 @@ const daysAgo = n => { const d = new Date(); d.setDate(d.getDate() - n); return 
     c.ok(await page.evaluate(() => document.querySelectorAll("#head-directive .board-note").length === 1 && !!document.querySelector("#head-directive .board-time")), "기존 지시 1건 + 타임코드 표시");
     await page.click("#head-directive [data-directive-new]"); await page.waitForTimeout(300);
     c.ok(await page.evaluate(() => document.getElementById("directive-body").value === ""), "「새 지시」는 빈칸에서 시작(누적)");
+    await page.selectOption("#directive-kind", "정기");
     await page.fill("#directive-body", "· 공모사업 마감 준수\n· AI 교육 확대");
     await page.click("#directive-submit"); await page.waitForTimeout(400);
     c.ok(dirs.length === 2 && /공모사업/.test(dirs[1].body), "새 지시가 회차로 누적(insert)");
+    c.ok(dirs[1].kind === "정기", "지시 종류(정기/수시) 저장");
     const st = await page.evaluate(() => {
       const notes = [...document.querySelectorAll("#head-directive .board-note")];
       return { count: notes.length, firstBody: (notes[0].querySelector(".board-body") || {}).textContent || "",
+               kind: (notes[0].querySelector(".board-kind") || {}).textContent || "",
+               by: (notes[0].querySelector(".board-by") || {}).textContent || "",
                del: !!notes[0].querySelector("[data-directive-del]") };
     });
     c.ok(st.count === 2, "지시 2건이 세로로 누적");
     c.ok(/공모사업 마감 준수/.test(st.firstBody), "새 지시가 맨 위에 표시");
+    c.ok(/정기/.test(st.kind), "지시에 종류 배지(정기/수시) 표시");
+    c.ok(/기록/.test(st.by), "지시에 기록자 표시");
     c.ok(st.del, "각 지시에 삭제 버튼(관리자)");
     await page.close();
   }
@@ -227,7 +233,7 @@ const daysAgo = n => { const d = new Date(); d.setDate(d.getDate() - n); return 
     c.ok(notes[0].kind === "수시" && /예산/.test(notes[0].result), "구분·개요·결과 저장");
     const g = await page.evaluate(() => {
       const mb = document.getElementById("mboard");
-      return { by: (mb.querySelector(".mb-by") || {}).textContent || "", kind: (mb.querySelector(".mb-kind") || {}).textContent || "",
+      return { by: (mb.querySelector(".board-by") || {}).textContent || "", kind: (mb.querySelector(".board-kind") || {}).textContent || "",
                del: !!mb.querySelector("[data-meeting-del]"), edit: !!mb.querySelector("[data-meeting-edit]") };
     });
     c.ok(/오프로/.test(g.by), "목록에 '기록 오프로' 표시");
