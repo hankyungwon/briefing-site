@@ -123,29 +123,43 @@ const WIDTHS = [1400, 1280, 1024, 900, 820, 768, 640, 540, 430, 412, 390, 375, 3
   }
   c.ok(wide.length === 0, "지난브리핑: 서체가 넓어져도 호수·배지·날짜가 한 줄" + (wide.length ? " — " + wide.join(" / ") : ""));
 
-  // 「최신」과 「종합·연휴」 배지는 같은 높이에 서야 한다.
-  // 둘은 구조가 달라 어긋나기 쉽다 — 「최신」은 .an 안의 가상요소(vertical-align이 먹음),
-  // 「종합·연휴」는 .arch-head의 flex 항목(vertical-align이 무시됨). 실제로 2px 어긋난 적이 있다.
-  // 가상요소는 좌표를 잴 수 없으므로, 같은 스타일의 임시 요소를 .an 안에 넣어 대신 잰다.
+  // 최신호 표시 — 글자 배지 대신 네 변을 모두 붉게 두른다.
+  // 배지를 쓰면 「종합·연휴」와 나란히 놓여 산만하고, 호수가 세 자리가 되면 날짜가 아랫줄로 밀린다.
   await page.evaluate(() => { const s = document.getElementById("__wide"); if (s) s.textContent = ""; });
   await page.waitForTimeout(120);
-  const badgeGap = await page.evaluate(() => {
-    const card = [...document.querySelectorAll(".arch-card")].find(c => c.querySelector(".edition-chip"));
-    if (!card) return null;
-    const an = card.querySelector(".an"), chip = card.querySelector(".edition-chip");
-    const af = getComputedStyle(document.querySelector(".arch-card.latest .an"), "::after");
-    const probe = document.createElement("span");
-    probe.textContent = "최신";
-    probe.style.cssText = "display:inline-block;white-space:nowrap;visibility:hidden;"
-      + "font-family:" + af.fontFamily + ";font-size:" + af.fontSize + ";font-weight:" + af.fontWeight
-      + ";line-height:" + af.lineHeight + ";letter-spacing:" + af.letterSpacing
-      + ";padding:" + af.padding + ";margin-left:" + af.marginLeft + ";vertical-align:" + af.verticalAlign + ";";
-    an.appendChild(probe);
-    const d = Math.round(probe.getBoundingClientRect().top - chip.getBoundingClientRect().top);
-    probe.remove();
-    return d;
+  const latestMark = await page.evaluate(() => {
+    const card = document.querySelector(".arch-card.latest");
+    const af = getComputedStyle(card.querySelector(".an"), "::after");
+    const cs = getComputedStyle(card);
+    // 붉은색 판정: 빨강 성분이 크고, 초록·파랑보다 뚜렷이 높아야 한다.
+    // (자릿수만 보면 옅은 회색 rgb(215,224,234)도 통과해버린다)
+    const red = c => { const m = c.match(/(\d+), *(\d+), *(\d+)/);
+      return !!m && +m[1] > 180 && +m[1] - +m[2] > 80 && +m[1] - +m[3] > 80; };
+    return {
+      배지글자: (af.content || "none").replace(/"/g, ""),
+      사면: [cs.borderTopColor, cs.borderRightColor, cs.borderBottomColor, cs.borderLeftColor],
+      모두빨강: [cs.borderTopColor, cs.borderRightColor, cs.borderBottomColor, cs.borderLeftColor].every(red)
+    };
   });
-  c.ok(badgeGap !== null && Math.abs(badgeGap) <= 1, "지난브리핑: 「최신」과 「종합·연휴」 배지 높이 일치 (차이 " + badgeGap + "px)");
+  c.ok(!/최신/.test(latestMark.배지글자), "최신호에 「최신」 글자 배지가 없음");
+  c.ok(latestMark.모두빨강, "최신호는 네 변이 모두 붉은 테두리 (" + latestMark.사면.join(" / ") + ")");
+
+  // 호수는 세 자리(제999호)까지 커진다. 그때도 날짜가 아랫줄로 밀리면 안 된다.
+  // 실제 Noto 서체는 이 환경의 대체 서체보다 넓으므로 자간을 벌려 확인한다.
+  const big = [];
+  for (const ls of [0, 0.4, 0.8]) {
+    await page.evaluate(v => {
+      const card = document.querySelector(".arch-card");
+      card.querySelector(".an").textContent = "제999호";          // 세 자리 호수로 바꿔 최악을 만든다
+      let s = document.getElementById("__wide");
+      if (!s) { s = document.createElement("style"); s.id = "__wide"; document.head.appendChild(s); }
+      s.textContent = ".arch-card .an,.arch-card .ad,.edition-chip{letter-spacing:" + v + "px !important;}";
+    }, ls);
+    await page.waitForTimeout(120);
+    const h = await page.evaluate(() => document.querySelector(".arch-head").getBoundingClientRect().height);
+    if (h > 34) big.push("자간+" + ls + "px에서 " + Math.round(h) + "px(2줄)");
+  }
+  c.ok(big.length === 0, "지난브리핑: 호수가 세 자리(제999호)여도 날짜가 한 줄에 남음" + (big.length ? " — " + big.join(" / ") : ""));
 
   // 전역 원칙이 실제로 적용됐는지 — 요소마다 손으로 바르지 않아도 상속되어야 한다
   const base = await page.evaluate(() => {
