@@ -620,34 +620,40 @@
   .mlog-meta{font-size:11.5px;color:var(--muted);margin-top:5px;}
   /* 연구단마당 업무 안내 배너 */
   /* 주간기록·취합 안내 — 회의록 아래, 지시사항(골드)과 헷갈리지 않게 파랑 계열 */
-  .work-info{background:#EEF4FB;border:1px solid #CFE0F1;border-radius:10px;padding:11px 14px;margin-bottom:24px;
-    font-size:13.5px;color:#3C5A79;line-height:1.6;word-break:keep-all;}
-  /* 단장 지시사항·회의록 — 레이아웃은 동일, 색·아이콘만 다르게. 흰 배경 + 각자 테두리 */
+  .work-info{background:#EEF4FB;border:1px solid #CFE0F1;border-radius:10px;padding:8px 14px;margin:22px 0 10px;
+    font-size:13px;color:#3C5A79;line-height:1.5;word-break:keep-all;}
+  /* 단장 지시사항·연구단 회의록 — 레이아웃 동일, 색·아이콘만 다르게. 흰 배경 + 각자 테두리 */
   /* 공용 게시판 카드 */
   .board-card{background:var(--card);border-radius:10px;padding:12px 15px;margin-bottom:12px;
     box-shadow:0 1px 3px rgba(14,95,168,.05);}
   .board-head{display:flex;align-items:center;gap:8px;margin-bottom:8px;flex-wrap:wrap;}
   .board-list{overflow-y:auto;}                     /* 길면 상자 안 스크롤(펼침으로 아래가 밀리지 않게) */
-  .board-note{padding:9px 2px 4px;}
+  .board-note{padding:9px 4px 6px;}
   .board-note + .board-note{border-top:1px dashed var(--gb-div);}   /* 회차 구획 = 가로 점선 */
-  .board-meta-row{display:flex;align-items:center;gap:8px;margin-bottom:4px;flex-wrap:wrap;}  /* 날짜 등 왼쪽 정렬 */
-  .board-time{font-size:11.5px;font-weight:700;white-space:nowrap;}
-  .board-body{font-size:13.5px;color:var(--ink);line-height:1.65;word-break:keep-all;white-space:pre-wrap;}
-  /* 단장 지시사항: 골드 테두리·라벨 (약 2건 보이고 스크롤) */
-  .head-directive{border:1px solid #D9B94A;border-left:5px solid var(--gold);--gb-div:#D9B94A;}
-  .head-directive .hd-label{font-size:14px;font-weight:800;color:var(--gold);letter-spacing:.02em;white-space:nowrap;}
-  .head-directive .board-list{max-height:210px;}
-  .head-directive .board-time{color:#9A7B1E;}
-  .hd-empty{font-size:13px;color:var(--muted);}
-  /* 회의록: 회색 테두리·블루 라벨 (약 2건 보이고 스크롤) */
-  .mboard{border:1px solid var(--line);--gb-div:#D6DFE9;}
-  .mboard .mb-label{font-size:13px;font-weight:800;color:var(--gwanak-deep);letter-spacing:.02em;white-space:nowrap;}
-  .mboard .mb-when{font-size:11.5px;color:var(--muted);font-weight:700;}
+  .board-meta-row{display:flex;align-items:center;gap:8px;margin-bottom:4px;flex-wrap:wrap;}  /* 날짜·종류·기록자 왼쪽 정렬 */
+  .board-time{font-size:12.5px;font-weight:700;white-space:nowrap;}
+  .board-by{font-size:12px;color:var(--muted);font-weight:600;white-space:nowrap;}
+  .board-kind{font-size:11px;font-weight:800;color:#fff;border-radius:5px;padding:1px 7px;white-space:nowrap;}
+  .board-body{font-size:14.5px;color:var(--ink);line-height:1.7;word-break:keep-all;white-space:pre-wrap;}
+  /* 단장 지시사항: 골드 테두리·라벨. 종류(정기/수시)로 바탕색 차이 */
+  .head-directive{border:1px solid #D9B94A;border-left:5px solid var(--gold);--gb-div:#E4CE86;}
+  .head-directive .hd-label{font-size:17px;font-weight:800;color:var(--gold);letter-spacing:.01em;white-space:nowrap;}
+  .head-directive .board-list{max-height:214px;}
+  .head-directive .board-time{color:#8A6E17;}
+  .head-directive .board-kind.k-reg{background:var(--gold);}      /* 정기 */
+  .head-directive .board-kind.k-adhoc{background:#CDA94B;}        /* 수시 */
+  .head-directive .board-note.k-reg{background:#FBF3D3;}          /* 정기: 옅은 골드 바탕 */
+  .head-directive .board-note.k-adhoc{background:transparent;}    /* 수시: 흰색(카드색) */
+  .hd-empty{font-size:13.5px;color:var(--muted);}
+  /* 연구단 회의록: 회색 테두리 + 왼쪽 두꺼운 선(같은 회색), 블루 라벨 */
+  .mboard{border:1px solid var(--line);border-left:5px solid var(--line);--gb-div:#D6DFE9;}
+  .mboard .mb-label{font-size:17px;font-weight:800;color:var(--gwanak-deep);letter-spacing:.01em;white-space:nowrap;}
   .mboard .board-list{max-height:250px;}
   .mboard .board-time{color:var(--gwanak);}
-  .mb-kind{font-size:10.5px;font-weight:800;color:#fff;background:var(--sky);border-radius:5px;padding:1px 6px;white-space:nowrap;}
-  .mb-by{font-size:11.5px;color:var(--muted);font-weight:600;white-space:nowrap;}
-  .mb-empty{font-size:13px;color:var(--muted);}
+  .mboard .board-kind{background:var(--sky);}
+  .mb-empty{font-size:13.5px;color:var(--muted);}
+  /* 단원 주간기록 — 내용이 길어도 카드가 무한정 늘지 않도록 스크롤로 높이 고정 */
+  .wb-scroll{max-height:300px;overflow-y:auto;}
   /* 취합 문서 */
   .compile-modal{max-width:900px;margin:4vh auto 40px;}
   .compile-bar{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:14px;}
@@ -1218,6 +1224,13 @@
     <h3 id="directive-title">새 지시사항</h3>
     <p class="modal-sub">단원들이 잘 기억하도록 개조식으로 간단히 적습니다. 저장하면 새 회차로 맨 위에 등록되고, 이전 지시는 그 아래로 쌓입니다. (단장·관리자만 작성)</p>
     <form id="directive-form">
+      <div class="field" style="max-width:200px;">
+        <label for="directive-kind">종류</label>
+        <select id="directive-kind">
+          <option value="정기">정기</option>
+          <option value="수시">수시</option>
+        </select>
+      </div>
       <div class="field">
         <label for="directive-body">지시사항 (개조식)</label>
         <textarea id="directive-body" maxlength="1500" placeholder="· …&#10;· …"></textarea>
@@ -3789,9 +3802,9 @@
   }
   function mNoteHtml(m) {
     return '<div class="board-note">'
-      + '<div class="board-meta-row"><span class="mb-kind">' + esc(m.kind || "회의") + '</span>'
+      + '<div class="board-meta-row"><span class="board-kind">' + esc(m.kind || "회의") + '</span>'
       + '<span class="board-time">' + fmtMeetingWhen(m) + '</span>'
-      + '<span class="mb-by">기록 ' + esc(packetAuthorName(m.author_email)) + '</span>'
+      + '<span class="board-by">기록 ' + esc(packetAuthorName(m.author_email)) + '</span>'
       + (mCanDelete(m) ? '<button type="button" class="wb-mini danger" data-meeting-del="' + m.id + '">삭제</button>' : '')
       + '</div>'
       + '<div class="board-body">' + (m.result ? plain2html(m.result) : "—") + '</div>'
@@ -3800,8 +3813,7 @@
   // 최신이 위로 쌓이고, 약 2건 보인 뒤 나머지는 상자 안 스크롤(펼침으로 아래가 밀리지 않게)
   function mboardHtml(meetings) {
     const latest = meetings[0];
-    let h = '<div class="board-head"><span class="mb-label">🗒 회의록</span>'
-      + (latest ? '<span class="mb-when">최근 ' + fmtMeetingWhen(latest) + '</span>' : '')
+    let h = '<div class="board-head"><span class="mb-label">🗒 연구단 회의록</span>'
       + '<button type="button" class="wb-btn" data-meeting-new="1" style="margin-left:auto;">📝 새 회의록</button></div>';
     if (!latest) { h += '<p class="mb-empty">아직 기록된 회의가 없습니다. 회의 후 「새 회의록」으로 안건·결론을 남겨 주세요.</p>'; return h; }
     h += '<div class="board-list">' + meetings.map(mNoteHtml).join("") + '</div>';
@@ -3813,7 +3825,12 @@
     return (d.getMonth() + 1) + "." + d.getDate() + "(" + WEEKDAYS[d.getDay()] + ") " + pad2(d.getHours()) + ":" + pad2(d.getMinutes());
   }
   function directiveNoteHtml(row) {
-    return '<div class="board-note"><div class="board-meta-row"><span class="board-time">' + esc(fmtStamp(row.updated_at)) + '</span>'
+    const kind = row.kind || "수시";
+    const kc = kind === "정기" ? "k-reg" : "k-adhoc";
+    return '<div class="board-note ' + kc + '"><div class="board-meta-row">'
+      + '<span class="board-kind ' + kc + '">' + esc(kind) + '</span>'
+      + '<span class="board-time">' + esc(fmtStamp(row.updated_at)) + '</span>'
+      + '<span class="board-by">기록 ' + esc(packetAuthorName(row.author_email)) + '</span>'
       + (isAdminUser ? '<button type="button" class="wb-mini danger" data-directive-del="' + row.id + '">삭제</button>' : '')
       + '</div><div class="board-body">' + (row.body ? plain2html(row.body) : "—") + '</div></div>';
   }
@@ -3830,12 +3847,14 @@
     let h = '<div class="wb-head"><span class="wb-when">' + (latest ? "최근 " + fmtWeekRange(latest.week_start) : "주간 업무 기록") + '</span>'
       + (isOwner ? '<button type="button" class="wb-btn" data-memo-edit="' + key + '">📝 주간 기록 작성</button>' : '') + '</div>';
     if (!latest) { h += '<p class="wb-empty">' + (isOwner ? "아직 작성한 주간 기록이 없습니다. ‘📝 주간 기록 작성’으로 시작하세요." : "아직 작성된 주간 기록이 없습니다.") + '</p>'; return h; }
-    h += staffNoteHtml(latest, isOwner, key);
+    // 내용이 길어도 카드가 무한정 늘지 않도록 스크롤 영역 안에 담는다(지시사항·회의록과 동일)
+    let body = staffNoteHtml(latest, isOwner, key);
     const past = notes.slice(1);
     if (past.length) {
-      h += '<details class="wb-hist"><summary>지난 기록 ' + past.length + '주</summary>'
+      body += '<details class="wb-hist"><summary>지난 기록 ' + past.length + '주</summary>'
         + past.map(n => '<div class="wb-when" style="margin-top:9px;">' + fmtWeekRange(n.week_start) + '</div>' + staffNoteHtml(n, isOwner, key)).join("") + '</details>';
     }
+    h += '<div class="wb-scroll">' + body + '</div>';
     return h;
   }
 
@@ -4037,6 +4056,7 @@
     if (!isAdminUser) return;
     directiveError.classList.remove('show');
     document.getElementById('directive-body').value = "";   // 새 지시는 항상 빈칸에서
+    document.getElementById('directive-kind').value = "수시";
     directiveModal.classList.add('open');
   }
   async function deleteDirective(id) {
@@ -4054,7 +4074,8 @@
     if (!body) { directiveError.textContent = "내용을 입력해 주세요."; directiveError.classList.add('show'); return; }
     const btn = document.getElementById('directive-submit'); btn.disabled = true;
     const { error } = await sb.from('directives').insert({
-      body, author_email: currentUser ? currentUser.email : null, updated_at: new Date().toISOString()
+      body, kind: document.getElementById('directive-kind').value || null,
+      author_email: currentUser ? currentUser.email : null, updated_at: new Date().toISOString()
     });
     btn.disabled = false;
     if (error) { directiveError.textContent = "저장하지 못했습니다. (" + error.message + ")"; directiveError.classList.add('show'); return; }
