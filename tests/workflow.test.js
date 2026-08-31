@@ -151,11 +151,11 @@ const daysAgo = n => { const d = new Date(); d.setDate(d.getDate() - n); return 
     await page.close();
   }
 
-  // F. 단장 지시사항 — 관리자만 작성. 저장 시 directives에 기록되고 맨 위 강조 박스에 표시.
+  // F. 단장 지시사항 — 관리자가 「새 지시」로 회차를 쌓는다. 각 회차에 타임코드·삭제 버튼, 새 지시가 위로.
   {
     const page = await H.newPage(browser, { viewport: { width: 900, height: 1100 } });
     const { user, session } = H.mkSession("hanpro@hanmail.net", "boss");
-    let dirs = [], nid = 1;
+    let dirs = [{ id: 1, body: "· 이전 지시", author_email: "hanpro@hanmail.net", updated_at: "2026-08-20T01:00:00Z" }], nid = 2;
     await H.setupPage(page, { user, session, routes: (p, m, req) => {
       if (p === "/rest/v1/admin_emails") return [{ email: "hanpro@hanmail.net" }];
       if (p === "/rest/v1/directives") {
@@ -166,31 +166,41 @@ const daysAgo = n => { const d = new Date(); d.setDate(d.getDate() - n); return 
     }});
     await H.login(page, port, "hanpro@hanmail.net");
     await page.click('nav button[data-panel="about"]'); await page.waitForTimeout(500);
-    c.ok(await page.evaluate(() => { const hd = document.getElementById("head-directive"); return hd && !hd.hidden && !!hd.querySelector("[data-directive-edit]"); }), "지시사항: 관리자에게 작성 버튼 노출");
-    await page.click("#head-directive [data-directive-edit]"); await page.waitForTimeout(300);
+    c.ok(await page.evaluate(() => { const hd = document.getElementById("head-directive"); return hd && !hd.hidden && !!hd.querySelector("[data-directive-new]") && !hd.querySelector("[data-directive-edit]"); }), "지시사항: 「새 지시」 버튼(수정 아님) 노출");
+    c.ok(await page.evaluate(() => document.querySelectorAll("#head-directive .hd-note").length === 1 && !!document.querySelector("#head-directive .hd-time")), "기존 지시 1건 + 타임코드 표시");
+    await page.click("#head-directive [data-directive-new]"); await page.waitForTimeout(300);
+    c.ok(await page.evaluate(() => document.getElementById("directive-body").value === ""), "「새 지시」는 빈칸에서 시작(누적)");
     await page.fill("#directive-body", "· 공모사업 마감 준수\n· AI 교육 확대");
     await page.click("#directive-submit"); await page.waitForTimeout(400);
-    c.ok(dirs.length === 1 && /공모사업/.test(dirs[0].body), "지시사항 저장(directives insert)");
-    c.ok(await page.evaluate(() => /공모사업 마감 준수/.test((document.querySelector("#head-directive .hd-body") || {}).textContent || "")), "저장한 지시사항이 강조 박스에 표시");
+    c.ok(dirs.length === 2 && /공모사업/.test(dirs[1].body), "새 지시가 회차로 누적(insert)");
+    const st = await page.evaluate(() => {
+      const notes = [...document.querySelectorAll("#head-directive .hd-note")];
+      return { count: notes.length, firstBody: (notes[0].querySelector(".hd-body") || {}).textContent || "",
+               del: !!notes[0].querySelector("[data-directive-del]") };
+    });
+    c.ok(st.count === 2, "지시 2건이 세로로 누적");
+    c.ok(/공모사업 마감 준수/.test(st.firstBody), "새 지시가 맨 위에 표시");
+    c.ok(st.del, "각 지시에 삭제 버튼(관리자)");
     await page.close();
   }
 
-  // F2. 일반 단원은 지시사항을 열람만 — 작성/수정 버튼이 없다.
+  // F2. 일반 단원은 지시사항을 열람만 — 새 지시/삭제 버튼이 없다.
   {
     const page = await H.newPage(browser, { viewport: { width: 900, height: 1100 } });
     const { user, session } = H.mkSession("twopro@hanmail.net", "two");
     await H.setupPage(page, { user, session, routes: (p) => {
-      if (p === "/rest/v1/directives") return [{ id: 5, body: "· 지시 내용", author_email: "hanpro@hanmail.net" }];
+      if (p === "/rest/v1/directives") return [{ id: 5, body: "· 지시 내용", author_email: "hanpro@hanmail.net", updated_at: "2026-08-25T02:00:00Z" }];
       return H.defaultBriefingRoutes(p);
     }});
     await H.login(page, port, "twopro@hanmail.net");
     await page.click('nav button[data-panel="about"]'); await page.waitForTimeout(500);
     const v = await page.evaluate(() => {
       const hd = document.getElementById("head-directive");
-      return { shown: hd && !hd.hidden, body: (hd.querySelector(".hd-body") || {}).textContent || "", edit: !!hd.querySelector("[data-directive-edit]") };
+      return { shown: hd && !hd.hidden, body: (hd.querySelector(".hd-body") || {}).textContent || "",
+               newBtn: !!hd.querySelector("[data-directive-new]"), del: !!hd.querySelector("[data-directive-del]") };
     });
     c.ok(v.shown && /지시 내용/.test(v.body), "일반 단원도 지시사항 열람 가능");
-    c.ok(!v.edit, "일반 단원에겐 지시사항 작성/수정 버튼 없음");
+    c.ok(!v.newBtn && !v.del, "일반 단원에겐 새 지시·삭제 버튼 없음");
     await page.close();
   }
 
