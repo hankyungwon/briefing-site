@@ -2966,8 +2966,9 @@
     h += '<p style="text-align:center;color:#667;font-size:12px;">취합 ' + esc(stamp) + '</p><hr>';
     MEMBERS.forEach((m, i) => {
       const n = byEmail[MEMBER_EMAILS[m.key]];
-      h += '<h4>[' + (i + 1) + '] ' + esc(m.name) + ' · ' + esc(m.role) + '</h4>';
-      h += '<div>' + (n && n.body ? richToHtml(n.body) : '—') + '</div>';
+      const when = n && n.updated_at ? ' <span style="color:#889;font-size:11px;">(' + esc(fmtStamp(n.updated_at)) + ' 작성)</span>' : '';
+      h += '<h4>[' + (i + 1) + '] ' + esc(m.name) + ' · ' + esc(m.role) + when + '</h4>';
+      h += '<div>' + (n && n.body ? richToHtml(n.body) : '<span style="color:#B23;">(작성된 ' + esc(kind) + ' 원고 없음)</span>') + '</div>';
     });
     return h;
   }
@@ -3024,11 +3025,11 @@
     kind = (kind === "수시") ? "수시" : "주간";
     packetDraftKind = kind;
     const btns = document.querySelectorAll("[data-pkkind]"); btns.forEach(b => b.disabled = true);
-    const { data, error } = await sb.from("staff_notes").select("*").eq("kind", kind);
+    const { data, error } = await sb.from("staff_notes").select("*").eq("kind", kind).order("updated_at", { ascending: false });
     btns.forEach(b => b.disabled = false);
     if (error) { alert("원고를 불러오지 못했습니다. (" + error.message + ")"); return; }
     const byEmail = {};
-    (data || []).forEach(n => { byEmail[n.member_email] = n; });   // 구분별 단원당 1편(최신)
+    (data || []).forEach(n => { if (!byEmail[n.member_email]) byEmail[n.member_email] = n; });   // 해당 구분에서 단원당 최신 1편
     const now = new Date();
     const stamp = now.getFullYear() + "." + (now.getMonth() + 1) + "." + now.getDate() + "(" + WEEKDAYS[now.getDay()] + ") " + pad2(now.getHours()) + ":" + pad2(now.getMinutes());
     const content = buildPacketContent(byEmail, stamp + " · 취합 " + packetAuthorName(currentUser.email), kind);
@@ -3828,11 +3829,12 @@
     const canDel = isOwner || isAdminUser;
     const kind = n.kind || "주간";
     let acts = "";
-    if (isOwner) acts += '<button type="button" class="wb-mini" data-memo-edit="' + key + '" data-memo-kind="' + kind + '">수정</button>';
+    if (isOwner) acts += '<button type="button" class="wb-mini" data-memo-edit="' + n.id + '">수정</button>';
     if (canDel) acts += '<button type="button" class="wb-mini danger" data-staff-del="' + n.id + '"' + (!isOwner ? ' title="관리자 삭제"' : '') + '>삭제</button>';
     return '<div class="wb-note">'
       + (acts ? '<div class="wb-actions">' + acts + '</div>' : '')
       + '<div class="wb-sec"><span class="board-kind ' + (kind === "수시" ? "k-soft" : "k-strong") + '">' + esc(kind) + '</span>'
+      + (n.updated_at ? '<span class="board-time" style="margin-left:8px;">' + esc(fmtStamp(n.updated_at)) + '</span>' : '')
       + '<div class="wt rich" style="margin-top:6px;">' + (n.body ? richToHtml(n.body) : "—") + '</div></div>'
       + '</div>';
   }
@@ -3893,14 +3895,12 @@
   }
   function staffBoardHtml(notes, isOwner, key) {
     let h = '<div class="wb-head"><span class="wb-when">회의 자료 원고</span>'
-      + (isOwner ? '<button type="button" class="wb-btn" data-memo-edit="' + key + '">📝 원고 작성</button>' : '') + '</div>';
-    // 처음부터 동일한 높이(고정)로 담고, 내용이 길면 스크롤 (지시사항·회의록과 동일)
-    // 주간 원고 먼저, 수시 원고 다음. 각 단원은 구분별로 최신 한 편씩 보관.
-    const order = { "주간": 0, "수시": 1 };
-    const sorted = [...notes].sort((a, b) => (order[a.kind || "주간"] ?? 9) - (order[b.kind || "주간"] ?? 9));
-    let body = sorted.length
-      ? sorted.map(n => staffNoteHtml(n, isOwner, key)).join("")
-      : '<p class="wb-empty">' + (isOwner ? "아직 작성된 원고가 없습니다. ‘📝 원고 작성’으로 시작하세요." : "아직 작성된 원고가 없습니다.") + '</p>';
+      + (isOwner ? '<button type="button" class="wb-btn" data-memo-new="' + key + '">📝 새 원고</button>' : '') + '</div>';
+    // 최신이 위로 쌓이는 개인 원고 게시판(누적). 카드 높이는 고정, 넘치면 스크롤.
+    // notes는 renderAboutBoards에서 updated_at 내림차순으로 실려 오므로 그대로 최신순.
+    let body = notes.length
+      ? notes.map(n => staffNoteHtml(n, isOwner, key)).join("")
+      : '<p class="wb-empty">' + (isOwner ? "아직 작성된 원고가 없습니다. ‘📝 새 원고’로 시작하세요." : "아직 작성된 원고가 없습니다.") + '</p>';
     h += '<div class="wb-scroll">' + body + '</div>';
     return h;
   }
@@ -3929,7 +3929,7 @@
     let staff = [], meetings = [], directives = [];
     try {
       const [rs, rm, rd] = await Promise.all([
-        sb.from('staff_notes').select('*').order('week_start', { ascending: false }),
+        sb.from('staff_notes').select('*').order('updated_at', { ascending: false }),
         sb.from('meeting_notes').select('*').order('meeting_date', { ascending: false }).order('meeting_time', { ascending: false, nullsFirst: false }).order('id', { ascending: false }),
         sb.from('directives').select('*').order('id', { ascending: false }).limit(50)
       ]);
@@ -3967,8 +3967,10 @@
 
   // 편집 버튼 위임
   document.getElementById('about').addEventListener('click', e => {
+    const mn = e.target.closest('[data-memo-new]');
+    if (mn) { openMemoModal(MEMBER_EMAILS[mn.dataset.memoNew], null); return; }
     const mb = e.target.closest('[data-memo-edit]');
-    if (mb) { openMemoModal(mb.dataset.memoEdit, mb.dataset.memoKind || null); return; }
+    if (mb) { const note = staffNotesCache.find(n => String(n.id) === mb.dataset.memoEdit); if (note) openMemoModal(note.member_email, note); return; }
     if (e.target.closest('[data-directive-new]')) { openDirectiveModal(); return; }
     const dd = e.target.closest('[data-directive-del]');
     if (dd) { deleteDirective(dd.dataset.directiveDel); return; }
@@ -3979,7 +3981,7 @@
     if (sd) { deleteStaffNote(sd.dataset.staffDel); return; }
   });
   async function deleteStaffNote(id) {
-    if (!confirm("이 주간 기록을 삭제할까요? 되돌릴 수 없습니다.")) return;
+    if (!confirm("이 원고를 삭제할까요? 되돌릴 수 없습니다.")) return;
     const { error } = await sb.from('staff_notes').delete().eq('id', Number(id));
     if (error) { alert("삭제하지 못했습니다. (" + error.message + ")"); return; }
     await renderAboutBoards();
@@ -3989,12 +3991,6 @@
   const memoModal = document.getElementById('memo-modal');
   const memoForm = document.getElementById('memo-form');
   const memoError = document.getElementById('memo-error');
-  function prefillMemo() {
-    const email = memoModal.dataset.email, kind = document.getElementById('memo-kind').value;
-    const ex = staffNotesCache.find(n => n.member_email === email && (n.kind || "주간") === kind);
-    document.getElementById('memo-body').innerHTML = ex && ex.body ? richToHtml(ex.body) : "";
-    const e = document.getElementById('memo-body'); if (e._updCount) e._updCount();
-  }
   // 연구관 개인 원고 인쇄·파일 저장 (한 칸 원고)
   function memoExportDoc() {
     const raw = sanitizePacketHtml(document.getElementById('memo-body').innerHTML);
@@ -4011,32 +4007,44 @@
     body += isEmpty(raw) ? none : raw;
     return { title: title, html: buildStandaloneHtml(title, body) };
   }
-  function openMemoModal(key, kind) {
-    const email = MEMBER_EMAILS[key];
-    if (!currentUser || !email || (currentUser.email || "").toLowerCase() !== email) return; // 본인만
+  // note가 있으면 그 원고를 고치는 모드, 없으면 빈 화면에서 새 원고를 쓰는 모드
+  function openMemoModal(email, note) {
+    if (!currentUser || !email || (currentUser.email || "").toLowerCase() !== String(email).toLowerCase()) return; // 본인만
     memoError.classList.remove('show');
     ensureEditorFonts();
     memoModal.dataset.email = email;
-    document.getElementById('memo-kind').value = (kind === "수시") ? "수시" : "주간";
-    document.getElementById('memo-sub').textContent = "회의 자료로 취합될 원고를 작성합니다. 구분(주간/수시)별로 각각 한 편을 보관하며, 같은 구분에 다시 저장하면 최신 내용으로 갱신됩니다.";
-    prefillMemo();
+    memoModal.dataset.noteId = note ? String(note.id) : "";
+    document.getElementById('memo-kind').value = (note && note.kind === "수시") ? "수시" : "주간";
+    document.getElementById('memo-sub').textContent = note
+      ? "이 원고를 고쳐 다시 저장합니다."
+      : "회의 자료로 취합될 원고를 새로 작성합니다. 저장하면 카드 맨 위에 쌓이고, 취합 때는 구분별 최신 원고가 사용됩니다.";
+    const bodyEl = document.getElementById('memo-body');
+    bodyEl.innerHTML = note && note.body ? richToHtml(note.body) : "";
+    if (bodyEl._updCount) bodyEl._updCount();
     memoModal.classList.add('open');
   }
-  document.getElementById('memo-kind').addEventListener('change', prefillMemo);
   document.getElementById('memo-cancel').addEventListener('click', () => memoModal.classList.remove('open'));
   memoModal.addEventListener('click', e => { if (e.target === memoModal) memoModal.classList.remove('open'); });
   memoForm.addEventListener('submit', async e => {
     e.preventDefault();
     const email = memoModal.dataset.email, kind = document.getElementById('memo-kind').value;
+    const noteId = memoModal.dataset.noteId;
     if (!email) return;
     const btn = document.getElementById('memo-submit'); btn.disabled = true;
     const clean = sanitizePacketHtml(document.getElementById('memo-body').innerHTML);
     const isEmpty = h => !h.replace(/<br\s*\/?>|<p>|<\/p>|&nbsp;|\s/gi, "").length;
-    const { error } = await sb.from('staff_notes').upsert({
-      member_email: email, kind, body: isEmpty(clean) ? null : clean,
-      week_start: ymd(stripTime(new Date())),
-      updated_at: new Date().toISOString()
-    }, { onConflict: 'member_email,kind' });
+    const body = isEmpty(clean) ? null : clean;
+    let error;
+    if (noteId) {
+      // 본인 원고 수정 — 해당 항목만 갱신(누적 이력은 그대로)
+      ({ error } = await sb.from('staff_notes').update({ kind, body, updated_at: new Date().toISOString() }).eq('id', Number(noteId)));
+    } else {
+      // 새 원고 — 항상 새 항목으로 추가(덮어쓰지 않음)
+      ({ error } = await sb.from('staff_notes').insert({
+        member_email: email, kind, body,
+        week_start: ymd(stripTime(new Date())), updated_at: new Date().toISOString()
+      }));
+    }
     btn.disabled = false;
     if (error) { memoError.textContent = "저장하지 못했습니다. (" + error.message + ")"; memoError.classList.add('show'); return; }
     memoModal.classList.remove('open');
