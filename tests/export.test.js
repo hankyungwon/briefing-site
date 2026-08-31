@@ -16,7 +16,7 @@ const fs = require("fs");
     await H.setupPage(page, { user, session, routes: H.defaultBriefingRoutes });
     await H.login(page, port, "twopro@hanmail.net");
     await page.click('nav button[data-panel="about"]'); await page.waitForTimeout(500);
-    await page.click('#about .member[data-member="two"] [data-memo-edit]'); await page.waitForTimeout(400);
+    await page.click('#about .member[data-member="two"] [data-memo-new]'); await page.waitForTimeout(400);
 
     const ui = await page.evaluate(() => ({
       kinds: [...document.querySelectorAll("#memo-kind option")].map(o => o.value),

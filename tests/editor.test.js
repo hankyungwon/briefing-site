@@ -11,7 +11,7 @@ const H = require("./helper");
   await H.setupPage(page, { user, session, routes: H.defaultBriefingRoutes });
   await H.login(page, port, "twopro@hanmail.net");
   await page.click('nav button[data-panel="about"]'); await page.waitForTimeout(500);
-  await page.click('#about .member[data-member="two"] [data-memo-edit]'); await page.waitForTimeout(400);
+  await page.click('#about .member[data-member="two"] [data-memo-new]'); await page.waitForTimeout(400);
 
   // 1) 툴바 그룹 — 정렬 4개가 한 그룹
   const grp = await page.evaluate(() => {

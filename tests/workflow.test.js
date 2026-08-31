@@ -23,7 +23,7 @@ const daysAgo = n => { const d = new Date(); d.setDate(d.getDate() - n); return 
     }});
     await H.login(page, port, "twopro@hanmail.net");
     await page.click('nav button[data-panel="about"]'); await page.waitForTimeout(600);
-    await page.click('#about .member[data-member="two"] [data-memo-edit]'); await page.waitForTimeout(400);
+    await page.click('#about .member[data-member="two"] [data-memo-new]'); await page.waitForTimeout(400);
     c.ok(await page.evaluate(() => document.getElementById("memo-body").isContentEditable), "원고 편집기 contenteditable");
 
     await page.click("#memo-body"); await page.type("#memo-body", "중요 업무 완료");
@@ -34,6 +34,47 @@ const daysAgo = n => { const d = new Date(); d.setDate(d.getDate() - n); return 
     c.ok(saved && saved.kind === "주간", "원고에 구분(주간) 저장");
     const rendered = await page.evaluate(() => { const w = document.querySelector('#about .member[data-member="two"] .wt.rich'); return w ? w.innerHTML : ""; });
     c.ok(/<(b|strong)|font-weight/i.test(rendered), "카드에 원고 서식 렌더");
+    await page.close();
+  }
+
+  // A2. 원고는 개인 게시판처럼 누적 — 「새 원고」는 항상 빈 화면, 저장하면 최신이 위로 쌓임(덮어쓰기 X)
+  {
+    const page = await H.newPage(browser, { viewport: { width: 900, height: 1100 } });
+    const { user, session } = H.mkSession("twopro@hanmail.net", "two");
+    let staff = [], nid = 1;
+    await H.setupPage(page, { user, session, routes: (p, m, req) => {
+      if (p === "/rest/v1/staff_notes") {
+        if (m === "POST") { const row = JSON.parse(req.postData()); row.id = nid++; staff.push(row); return [row]; }
+        return [...staff].sort((a, b) => b.id - a.id);   // 최신이 위
+      }
+      return H.defaultBriefingRoutes(p);
+    }});
+    await H.login(page, port, "twopro@hanmail.net");
+    await page.click('nav button[data-panel="about"]'); await page.waitForTimeout(600);
+    // 첫 원고
+    await page.click('#about .member[data-member="two"] [data-memo-new]'); await page.waitForTimeout(300);
+    await page.click("#memo-body"); await page.type("#memo-body", "첫 원고");
+    await page.click("#memo-submit"); await page.waitForTimeout(600);
+    // 다시 「새 원고」 → 빈 화면이어야 함(이전 내용이 뜨면 버그)
+    await page.click('#about .member[data-member="two"] [data-memo-new]'); await page.waitForTimeout(300);
+    const blank = await page.evaluate(() => document.getElementById("memo-body").innerText.trim());
+    c.ok(blank === "", "「새 원고」는 빈 화면에서 시작(이전 내용이 뜨지 않음)");
+    await page.click("#memo-body"); await page.type("#memo-body", "둘째 원고");
+    await page.click("#memo-submit"); await page.waitForTimeout(600);
+    c.ok(staff.length === 2, "원고가 덮어써지지 않고 누적됨(2건)");
+    const view = await page.evaluate(() => {
+      const notes = [...document.querySelectorAll('#about .member[data-member="two"] .wb-note')];
+      return { count: notes.length,
+        firstText: notes[0] ? (notes[0].querySelector('.wt') || {}).innerText || "" : "",
+        edit: notes[0] ? !!notes[0].querySelector('[data-memo-edit]') : false,
+        del: notes[0] ? !!notes[0].querySelector('[data-staff-del]') : false };
+    });
+    c.ok(view.count === 2, "카드에 원고 2건이 누적 표시");
+    c.ok(/둘째 원고/.test(view.firstText), "최신 원고가 맨 위");
+    c.ok(view.edit && view.del, "본인 원고에 수정·삭제 버튼(개인 게시판)");
+    // 수정 버튼 → 그 원고 내용이 실려 편집 모드로 열림
+    await page.click('#about .member[data-member="two"] .wb-note [data-memo-edit]'); await page.waitForTimeout(300);
+    c.ok(/둘째 원고/.test(await page.evaluate(() => document.getElementById("memo-body").innerText)), "「수정」은 그 원고 내용을 불러와 편집");
     await page.close();
   }
 
