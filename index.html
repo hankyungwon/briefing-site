@@ -655,9 +655,6 @@
   /* 단원 주간기록 — 처음부터 동일한 높이로 고정, 내용이 길면 스크롤 */
   .wb-scroll{height:320px;overflow-y:auto;}
   /* 취합본 종류 배지 — 주간=진한 파랑(흰 글자) / 수시=연한 파랑(진한 글자) */
-  .pk-kind{font-size:12px;font-weight:800;border-radius:5px;padding:1.5px 7px;flex:none;white-space:nowrap;}
-  .pk-kind.k-week{background:var(--gwanak);color:#fff;}
-  .pk-kind.k-adhoc{background:#7FB0DC;color:var(--gwanak-deep);}
   /* 취합 문서 */
   .compile-modal{max-width:900px;margin:4vh auto 40px;}
   .compile-bar{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:14px;}
@@ -3022,7 +3019,6 @@
       const listTitle = (p.title || (kind + "회의 자료")).replace(/\s*\(\s*\d{1,2}\.\d{1,2}\s*\)\s*$/, "");
       return '<div class="pk-row"><div class="pk-main">'
       + '<div class="pk-info"><span class="pk-date">' + fmtMDW(p.packet_date) + '</span>'
-      + '<span class="pk-kind ' + (kind === "수시" ? "k-adhoc" : "k-week") + '">' + kind + '</span>'
       + '<span class="pk-title">' + esc(listTitle) + '</span>'
       + '<span class="pk-by">by ' + esc(packetAuthorName(p.created_by)) + '</span></div>'
       + (preview ? '<div class="pk-sum">' + esc(preview) + '</div>' : '')
@@ -3085,6 +3081,12 @@
         .trim();
       stamp.style.fontSize = "15px";
     }
+    // 단원 이름 옆 작성 시각 — 옛 「(9.1(화) 01:00 작성)」을 「〈9.1(화) 01:00〉」으로
+    wrap.querySelectorAll("h4 span").forEach(sp => {
+      const m = sp.textContent.match(/^\s*\(\s*(.*?)\s*작성\s*\)\s*$/);
+      if (m) { sp.textContent = "〈" + m[1] + "〉"; sp.style.fontSize = "13px"; }
+      else if (/^\s*〈.*〉\s*$/.test(sp.textContent)) sp.style.fontSize = "13px";
+    });
     return wrap.innerHTML;
   }
   function showPacketDoc(id) {
