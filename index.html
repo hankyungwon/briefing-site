@@ -664,6 +664,9 @@
   /* 주간회의 자료실 — 목록·문서(작은 글씨·좁은 줄간격) */
   .pk-row{display:flex;align-items:center;gap:10px;justify-content:space-between;border:1px solid var(--line);
     border-radius:9px;padding:9px 12px;margin-bottom:8px;}
+  .pk-main{flex:1;min-width:0;}
+  .pk-sum{font-size:12px;color:var(--muted);margin-top:3px;line-height:1.45;word-break:keep-all;
+    display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;}   /* 미리보기 1~2줄 */
   .pk-info{display:flex;align-items:baseline;gap:9px;min-width:0;flex-wrap:wrap;}
   .pk-date{font-size:12px;font-weight:800;color:var(--gwanak);flex:none;}
   .pk-title{font-size:13.5px;color:var(--ink);font-weight:600;word-break:keep-all;}
@@ -1321,6 +1324,8 @@
         <div class="field" style="flex:1;"><label for="packet-edit-date">날짜</label>
           <input id="packet-edit-date" type="date"></div>
       </div>
+      <div class="field"><label for="packet-edit-summary">한 줄 요약 <span style="font-weight:400;color:var(--muted);">— 목록에서 미리 보일 핵심 (비우면 본문 앞부분이 자동으로 보입니다)</span></label>
+        <input id="packet-edit-summary" type="text" maxlength="140" placeholder="예: AI 교육 확대·공모사업 마감 대응·신규임용자 출입권한 — 3개 부서 협의"></div>
       <div class="field"><label>내용 <span style="font-weight:400;color:var(--muted);">— 한글(HWP)·워드에서 복사해 붙여넣어도 정리되어 들어옵니다. 그림은 붙여넣기(스크린샷)도 됩니다.</span></label>
         <div class="pk-toolbar" id="packet-toolbar"></div>
         <div id="packet-edit-body" class="pk-editor" contenteditable="true"></div>
@@ -2201,8 +2206,8 @@
     }
     resourcesView.innerHTML =
       '<div class="res-subnav">'
-      + '<button type="button" class="rsub" data-ressec="general" aria-selected="true">📁 일반 자료</button>'
-      + '<button type="button" class="rsub" data-ressec="packets" aria-selected="false">🗂 회의 자료</button>'
+      + '<button type="button" class="rsub" data-ressec="packets" aria-selected="true">🗂 회의 자료</button>'
+      + '<button type="button" class="rsub" data-ressec="general" aria-selected="false">📁 일반 자료</button>'
       + '</div>'
       + '<div id="res-general">'
       + '<div class="list-toolbar">'
@@ -2231,7 +2236,7 @@
       + '</div>'
       + '<div id="res-packets" hidden>'
       + '<div class="list-toolbar">'
-      + '<span class="res-packet-note">주간회의·수시회의 자료를 취합해 보관합니다. 각 단원이 연구단마당에 올린 최신 원고(주간/수시)를 자동으로 모읍니다 — 버튼을 눌러 다듬은 뒤 올리면 됩니다. 취합은 로그인한 단원 누구나 할 수 있고(평소엔 행정지원 주무관이 맡습니다), 한 번 올린 자료는 수정할 수 없어 바로잡을 때는 새로 올립니다. 삭제는 관리자와 행정지원 주무관(최근 7일 자료)만 가능합니다.</span>'
+      + '<span class="res-packet-note">주간회의·수시회의 자료를 취합해 보관합니다. 각 단원이 연구단마당에 올린 최신 원고(주간/수시)를 자동으로 모읍니다 — 버튼을 눌러 다듬은 뒤 올리면 됩니다. 취합은 로그인한 단원 누구나 할 수 있고(평소에는 행정지원 주무관 담당), 한 번 올린 자료는 수정할 수 없어 바로잡을 때는 새로 올립니다. 삭제는 관리자와 행정지원 주무관(최근 7일 내 자료)만 가능합니다.</span>'
       + '<span style="display:flex;gap:6px;flex-wrap:wrap;">'
       + '<button type="button" class="write-toggle" data-pkkind="주간">📋 주간회의 자료 취합</button>'
       + '<button type="button" class="write-toggle" data-pkkind="수시">🗓 수시회의 자료 취합</button></span>'
@@ -2258,6 +2263,8 @@
     ["post-title", "post-url", "post-comment"].forEach(id =>
       document.getElementById(id).addEventListener("input", saveResDraft));
     loadPosts();
+    // 회의 자료를 기본(왼쪽 먼저)으로 연다 — 사용 빈도가 높아 우선. 단, 작성 중 초안이 있으면 일반 자료 유지.
+    switchResSection(hasDraft ? "general" : "packets");
   }
 
   function switchResSection(sec) {
@@ -2963,15 +2970,27 @@
     // 날짜·id 내림차순 정렬이므로 맨 앞이 최신
     list.innerHTML = packetCache.map((p, i) => {
       const kind = (p.kind === "수시") ? "수시" : "주간";
-      return '<div class="pk-row"><div class="pk-info"><span class="pk-date">' + fmtMDW(p.packet_date) + '</span>'
+      const preview = (p.summary && p.summary.trim()) || packetPreview(p.content);
+      return '<div class="pk-row"><div class="pk-main">'
+      + '<div class="pk-info"><span class="pk-date">' + fmtMDW(p.packet_date) + '</span>'
       + '<span class="pk-kind ' + (kind === "수시" ? "k-adhoc" : "k-week") + '">' + kind + '</span>'
       + (i === 0 ? '<span class="pk-latest">최신</span>' : '')
       + '<span class="pk-title">' + esc(p.title || (kind + "회의 자료")) + '</span>'
       + '<span class="pk-by">취합 ' + esc(packetAuthorName(p.created_by)) + '</span></div>'
+      + (preview ? '<div class="pk-sum">' + esc(preview) + '</div>' : '')
+      + '</div>'
       + '<div class="pk-acts"><button type="button" class="wb-mini" data-pk-view="' + p.id + '">보기·인쇄</button>'
       + (packetCanDelete(p) ? '<button type="button" class="wb-mini danger" data-pk-del="' + p.id + '">삭제</button>' : '')
       + '</div></div>';
     }).join("");
+  }
+  // 요약이 없으면 본문에서 앞부분 텍스트를 잘라 미리보기로 쓴다(태그·머리글·구분선 제거)
+  function packetPreview(html) {
+    if (!html) return "";
+    const doc = new DOMParser().parseFromString(html, "text/html");
+    doc.querySelectorAll("h1,h2,h3,hr,style,script").forEach(n => n.remove());
+    const t = (doc.body.textContent || "").replace(/취합\s*\S+.*?(·[^·]*)?(\n|$)/, " ").replace(/\s+/g, " ").trim();
+    return t.length > 90 ? t.slice(0, 90) + "…" : t;
   }
   // 취합 = 자동으로 초안을 만들어 편집기로 연다. 다듬은 뒤 「올리기」를 눌러야 실제로 게시된다.
   // 로그인한 단원이면 누구나 가능(주 담당 부재 시 대직). 게시 후에는 수정 불가 — 바로잡으려면 새로 올린다.
@@ -2994,6 +3013,7 @@
     document.getElementById("packet-save").textContent = "올리기";
     document.getElementById("packet-edit-name").value = kind + "회의 자료 (" + (now.getMonth() + 1) + "." + now.getDate() + ")";
     document.getElementById("packet-edit-date").value = ymd(stripTime(now));
+    document.getElementById("packet-edit-summary").value = "";
     const pe = document.getElementById("packet-edit-body");
     pe.innerHTML = sanitizePacketHtml(content);
     if (pe._updCount) pe._updCount();
@@ -3015,6 +3035,7 @@
       title: document.getElementById("packet-edit-name").value.trim() || null,
       packet_date: document.getElementById("packet-edit-date").value,
       kind: packetDraftKind,
+      summary: document.getElementById("packet-edit-summary").value.trim() || null,
       content: sanitizePacketHtml(document.getElementById("packet-edit-body").innerHTML),
       created_by: currentUser ? currentUser.email : null,
       updated_at: new Date().toISOString()
