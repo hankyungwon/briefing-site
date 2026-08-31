@@ -63,17 +63,21 @@ const daysAgo = n => { const d = new Date(); d.setDate(d.getDate() - n); return 
     const draftHasFmt = await page.evaluate(() => document.getElementById("packet-edit-body").innerHTML);
     c.ok(/굵은 원고|<b>/i.test(draftHasFmt), "초안에 단원 원고(서식)가 실려 있음");
 
+    await page.fill("#packet-edit-summary", "AI 교육 확대·공모사업 마감 대응");
     await page.click("#packet-save"); await page.waitForTimeout(500);
     c.ok(packets.length === 1, "「올리기」로 게시본 1건 생성");
     c.ok(packets[0].created_by === "syho99@naver.com", "게시본에 취합자(created_by) 기록");
     c.ok(packets[0].kind === "주간", "주간 취합본에 kind=주간 저장");
+    c.ok(packets[0].summary === "AI 교육 확대·공모사업 마감 대응", "한 줄 요약 저장");
     c.ok(/굵은 원고|<b>/i.test(packets[0].content), "게시본에 단원 원고 반영");
 
     const row = await page.evaluate(() => {
       const r = document.querySelector(".pk-row");
       return { by: (r.querySelector(".pk-by") || {}).textContent || "", latest: !!r.querySelector(".pk-latest"),
+               sum: (r.querySelector(".pk-sum") || {}).textContent || "",
                del: !!r.querySelector("[data-pk-del]"), edit: !!r.querySelector("[data-pk-edit]") };
     });
+    c.ok(/AI 교육 확대/.test(row.sum), "목록에 한 줄 요약 표시");
     c.ok(/송프로/.test(row.by), "목록에 '취합 송프로' 표시");
     c.ok(row.latest, "최신 자료에 「최신」 배지");
     c.ok(row.del, "송프로는 이번 주(오늘) 자료 삭제 버튼 보임");
