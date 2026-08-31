@@ -103,7 +103,10 @@ const daysAgo = n => { const d = new Date(); d.setDate(d.getDate() - n); return 
     c.ok(editorOpen, "취합 시 편집기가 열리고 버튼이 「올리기」");
     const draftHasFmt = await page.evaluate(() => document.getElementById("packet-edit-body").innerHTML);
     c.ok(/굵은 원고|<b>/i.test(draftHasFmt), "초안에 단원 원고(서식)가 실려 있음");
-    c.ok(/· by 송프로/.test(draftHasFmt) && !/취합/.test(draftHasFmt), "머리글은 「날짜 · by 취합자」 — '취합' 글자 중복 없음");
+    c.ok(/ by 송프로/.test(draftHasFmt) && !/취합/.test(draftHasFmt) && !/·\s*by/.test(draftHasFmt),
+      "머리글은 「날짜  by 취합자」 — '취합' 중복·by 앞 가운뎃점 없음");
+    c.ok(/〈[^〉]*7\.20[^〉]*〉/.test(draftHasFmt) && !/작성[)〉]/.test(draftHasFmt),
+      "단원 작성 시각은 〈…〉 표기 — 괄호 중복·'작성' 꼬리말 없음");
 
     await page.fill("#packet-edit-summary", "AI 교육 확대·공모사업 마감 대응");
     await page.click("#packet-save"); await page.waitForTimeout(500);
@@ -121,7 +124,7 @@ const daysAgo = n => { const d = new Date(); d.setDate(d.getDate() - n); return 
                del: !!r.querySelector("[data-pk-del]"), edit: !!r.querySelector("[data-pk-edit]") };
     });
     c.ok(/AI 교육 확대/.test(row.sum), "목록에 한 줄 요약 표시");
-    c.ok(/송프로/.test(row.by), "목록에 '취합 송프로' 표시");
+    c.ok(/^by 송프로/.test(row.by.trim()), "목록에 'by 송프로' 표시 (" + row.by.trim() + ")");
     c.ok(row.kind, "종류 배지 표시(주간/수시)");
     c.ok(row.del, "송프로는 이번 주(오늘) 자료 삭제 버튼 보임");
     c.ok(!row.edit, "게시본에 「수정」 버튼 없음(수정 불가)");

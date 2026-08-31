@@ -695,6 +695,9 @@
   /* 안내 문단 — 모바일에서 폭이 0으로 붕괴해 글자가 세로로 쌓이지 않도록 최소폭 확보 + 데스크톱 최대폭 제한 */
   .res-packet-note{font-size:13.5px;color:var(--muted);line-height:1.6;word-break:keep-all;flex:1 1 300px;min-width:200px;max-width:600px;}
   .packet-doc{max-height:72vh;overflow-y:auto;padding:6px 4px;}
+  /* 보기 화면 좌상단 제목은 본문에 이미 큰 제목이 있으므로 화면에서만 감춘다(저장 파일명·접근성 라벨은 그대로) */
+  #packet-doc-view .compile-bar{justify-content:flex-end;}
+  #packet-doc-view .compile-bar h3{position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap;border:0;}
   /* 회의 자료 보기 — 노트북으로 회의를 진행할 때 쓰는 확대·축소·전체보기 */
   .pk-zoomwrap{display:inline-flex;align-items:center;gap:2px;border:1px solid var(--line);border-radius:8px;padding:2px;flex:none;}
   .compile-bar .pk-zoomwrap .pkview-btn{border:none;padding:6px 10px;font-size:15px;}
@@ -704,7 +707,7 @@
   #packet-modal.pk-full .packet-doc{max-height:calc(100vh - 96px);}
   /* 취합 문서 본문(HTML 서식) — 표시·인쇄 공통 */
   .packet-body{font-family:'Noto Sans KR',sans-serif;font-size:14.5px;line-height:1.6;color:var(--ink);word-break:keep-all;}
-  .packet-body h3{font-family:'Noto Serif KR',serif;font-size:17px;font-weight:700;color:var(--gwanak-deep);margin:2px 0 6px;}
+  .packet-body h3{font-family:'Noto Serif KR',serif;font-size:22px;font-weight:700;color:var(--gwanak-deep);margin:2px 0 8px;}
   .packet-body h4{font-family:'Noto Sans KR',sans-serif;font-size:15px;font-weight:800;color:var(--gwanak-deep);margin:14px 0 5px;}
   .packet-body p{margin:4px 0;}
   .packet-body ul,.packet-body ol{margin:4px 0 4px 4px;padding-left:20px;}
@@ -840,7 +843,7 @@
   .char-empty{font-size:12px;color:var(--muted);}
   @media print {
     .packet-body{font-size:13px;line-height:1.5;}
-    .packet-body h3{font-size:15px;} .packet-body h4{font-size:13px;}
+    .packet-body h3{font-size:19px;} .packet-body h4{font-size:13px;}
     body * { visibility: hidden; }
     #packet-modal.open #packet-doc-view:not([hidden]), #packet-modal.open #packet-doc-view:not([hidden]) * { visibility: visible; }
     #packet-modal.open { position: absolute; inset: 0; display: block; background: #fff; padding: 0; overflow: visible; }
@@ -2977,11 +2980,11 @@
   const NL2BR = s => esc(s).replace(/\n/g, "<br>");
   // 각 단원이 올린 해당 구분(주간/수시)의 최신 원고를 하나의 문서로 취합 — 이후 자유롭게 편집
   function buildPacketContent(byEmail, stamp, kind) {
-    let h = '<h3 style="text-align:center;">관악구 AI혁신정책연구단 · ' + esc(kind) + '회의 자료</h3>';
-    h += '<p class="pk-stamp" style="text-align:center;color:#667;font-size:12px;">' + esc(stamp) + '</p><hr>';
+    let h = '<h3 style="text-align:center;">관악구 AI혁신정책연구단 ' + esc(kind) + '회의 자료</h3>';
+    h += '<p class="pk-stamp" style="text-align:center;color:#667;font-size:14px;">' + esc(stamp) + '</p><hr>';
     MEMBERS.forEach((m, i) => {
       const n = byEmail[MEMBER_EMAILS[m.key]];
-      const when = n && n.updated_at ? ' <span style="color:#889;font-size:11px;">(' + esc(fmtStamp(n.updated_at)) + ' 작성)</span>' : '';
+      const when = n && n.updated_at ? ' <span style="color:#889;font-size:12px;font-weight:400;">〈' + esc(fmtStamp(n.updated_at)) + '〉</span>' : '';
       h += '<h4>[' + (i + 1) + '] ' + esc(m.name) + ' · ' + esc(m.role) + when + '</h4>';
       h += '<div>' + (n && n.body ? richToHtml(n.body) : '<span style="color:#B23;">(작성된 ' + esc(kind) + ' 원고 없음)</span>') + '</div>';
     });
@@ -3017,7 +3020,7 @@
       + '<div class="pk-info"><span class="pk-date">' + fmtMDW(p.packet_date) + '</span>'
       + '<span class="pk-kind ' + (kind === "수시" ? "k-adhoc" : "k-week") + '">' + kind + '</span>'
       + '<span class="pk-title">' + esc(p.title || (kind + "회의 자료")) + '</span>'
-      + '<span class="pk-by">취합 ' + esc(packetAuthorName(p.created_by)) + '</span></div>'
+      + '<span class="pk-by">by ' + esc(packetAuthorName(p.created_by)) + '</span></div>'
       + (preview ? '<div class="pk-sum">' + esc(preview) + '</div>' : '')
       + '</div>'
       + '<div class="pk-acts"><button type="button" class="wb-mini" data-pk-view="' + p.id + '">보기·인쇄</button>'
@@ -3047,7 +3050,7 @@
     (data || []).forEach(n => { if (!byEmail[n.member_email]) byEmail[n.member_email] = n; });   // 해당 구분에서 단원당 최신 1편
     const now = new Date();
     const stamp = now.getFullYear() + "." + (now.getMonth() + 1) + "." + now.getDate() + "(" + WEEKDAYS[now.getDay()] + ") " + pad2(now.getHours()) + ":" + pad2(now.getMinutes());
-    const content = buildPacketContent(byEmail, stamp + " · by " + packetAuthorName(currentUser.email), kind);
+    const content = buildPacketContent(byEmail, stamp + "  by " + packetAuthorName(currentUser.email), kind);
     ensureEditorFonts();
     document.getElementById("packet-error").classList.remove("show");
     document.getElementById("packet-edit-heading").textContent = kind + "회의 자료 취합 — 다듬어 올리기";
