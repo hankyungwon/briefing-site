@@ -245,7 +245,7 @@
   .cal-day:hover{background:#F7FAFD;}
   .cal-day.other{background:#FAFBFC;}
   .cal-day.other .dnum{color:#C4CDD8;}
-  .cal-day.today{background:#EFF6FF;}
+  .cal-day.today{background:#EFF6FF;box-shadow:inset 0 0 0 2px var(--gwanak);}
   .cal-day .dnum{font-size:13px;font-weight:600;color:var(--ink);display:inline-block;}
   .cal-day.today .dnum{background:var(--gwanak);color:#fff;border-radius:50%;width:22px;height:22px;
     line-height:22px;text-align:center;}
@@ -2236,7 +2236,7 @@
     }
     resourcesView.innerHTML =
       '<div class="res-subnav">'
-      + '<button type="button" class="rsub" data-ressec="packets" aria-selected="true">🗂 회의 자료</button>'
+      + '<button type="button" class="rsub" data-ressec="packets" aria-selected="true">📋 회의 자료</button>'
       + '<button type="button" class="rsub" data-ressec="general" aria-selected="false">📁 일반 자료</button>'
       + '</div>'
       + '<div id="res-general">'
@@ -2546,7 +2546,7 @@
   // ── 연구단일정 ─────────────────────────────
   const EV_TYPES = {
     meeting: { label: "회의", color: "#E8843A" },   // 가장 중요 — 주황
-    meal:    { label: "식사", color: "#FBC02D" },   // 에너지 — 밝은 노랑
+    meal:    { label: "식사", color: "#7E57C2" },   // 회의(주황)와 헷갈리지 않게 — 보라
     trip:    { label: "출장", color: "#5DA2D9" },   // 이동 — 연한 파랑
     leave:   { label: "연가", color: "#2E9E6B" },   // 휴식 — 초록
     etc:     { label: "기타", color: "#6B7A8F" }    // 기타 — 슬레이트
@@ -2950,13 +2950,9 @@
     return (now - d) <= 7 * 86400000;
   }
   // created_by(이메일) → 단원 이름. 명단에 없으면(단장 등) 이메일 앞부분으로 표시.
-  function packetAuthorName(email) {
-    if (!email) return "—";
-    const e = email.toLowerCase();
-    const k = Object.keys(MEMBER_EMAILS).find(x => (MEMBER_EMAILS[x] || "").toLowerCase() === e);
-    const m = k && MEMBERS.find(x => x.key === k);
-    return m ? m.name : email.split("@")[0];
-  }
+  // 회의록·지시사항·취합본의 기록자 표기 — 게시판과 같은 호칭 규칙을 쓴다
+  // (단장·관리자·한뱀도 알아보고, 필명만 저장된 경우도 호칭으로 바꾼다)
+  function packetAuthorName(email) { return email ? authorName(email) : "—"; }
   // 작성자 표기 통일 — 게시판·댓글·자료·일정의 필명(이메일 앞부분)이나 이메일을 호칭으로 바꾼다.
   // 예: happyrunto→백프로, hanpro→단장, admin→관리자. 이미 호칭(한뱀 등)이거나 모르면 원본 그대로.
   function authorName(v) {
@@ -2980,7 +2976,7 @@
   // 각 단원이 올린 해당 구분(주간/수시)의 최신 원고를 하나의 문서로 취합 — 이후 자유롭게 편집
   function buildPacketContent(byEmail, stamp, kind) {
     let h = '<h3 style="text-align:center;">관악구 AI혁신정책연구단 ' + esc(kind) + '회의 자료</h3>';
-    h += '<p class="pk-stamp" style="text-align:center;color:#667;font-size:15px;">' + esc(stamp) + '</p><hr>';
+    h += '<p class="pk-stamp" style="text-align:center;color:#667;font-size:15px;">' + esc(stamp) + '</p>';
     MEMBERS.forEach((m, i) => {
       const n = byEmail[MEMBER_EMAILS[m.key]];
       const when = n && n.updated_at ? ' <span style="color:#889;font-size:13px;font-weight:400;">〈' + esc(fmtStamp(n.updated_at)) + '〉</span>' : '';
@@ -3081,6 +3077,9 @@
         .trim();
       stamp.style.fontSize = "15px";
     }
+    // 머리글 바로 아래의 긴 가로선은 지저분해 보이므로 지운다(본문 중간의 선은 그대로 둔다)
+    const hr = stamp && stamp.nextElementSibling;
+    if (hr && hr.tagName === "HR") hr.remove();
     // 단원 이름 옆 작성 시각 — 옛 「(9.1(화) 01:00 작성)」을 「〈9.1(화) 01:00〉」으로
     wrap.querySelectorAll("h4 span").forEach(sp => {
       const m = sp.textContent.match(/^\s*\(\s*(.*?)\s*작성\s*\)\s*$/);
