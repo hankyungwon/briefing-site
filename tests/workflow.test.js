@@ -58,7 +58,7 @@ const daysAgo = n => { const d = new Date(); d.setDate(d.getDate() - n); return 
     await page.click('nav button[data-panel="resources"]'); await page.waitForTimeout(400);
     await page.click('.res-subnav [data-ressec="packets"]'); await page.waitForTimeout(400);
 
-    await page.click("#res-packet-new"); await page.waitForTimeout(500);
+    await page.click("[data-pkkind=\"주간\"]"); await page.waitForTimeout(500);
     c.ok(packets.length === 0, "「취합」만으로는 아직 게시되지 않음(초안 편집 단계)");
     const editorOpen = await page.evaluate(() => !document.getElementById("packet-edit-view").hidden && document.getElementById("packet-save").textContent.includes("올리기"));
     c.ok(editorOpen, "취합 시 편집기가 열리고 버튼이 「올리기」");
@@ -68,6 +68,7 @@ const daysAgo = n => { const d = new Date(); d.setDate(d.getDate() - n); return 
     await page.click("#packet-save"); await page.waitForTimeout(500);
     c.ok(packets.length === 1, "「올리기」로 게시본 1건 생성");
     c.ok(packets[0].created_by === "syho99@naver.com", "게시본에 취합자(created_by) 기록");
+    c.ok(packets[0].kind === "주간", "주간 취합본에 kind=주간 저장");
     c.ok(/굵은 실적|<ul>|<li>/i.test(packets[0].content), "게시본에 연구관 서식 반영");
 
     const row = await page.evaluate(() => {
@@ -98,8 +99,8 @@ const daysAgo = n => { const d = new Date(); d.setDate(d.getDate() - n); return 
     await H.login(page, port, "twopro@hanmail.net");
     await page.click('nav button[data-panel="resources"]'); await page.waitForTimeout(400);
     await page.click('.res-subnav [data-ressec="packets"]'); await page.waitForTimeout(400);
-    c.ok(await page.evaluate(() => !!document.getElementById("res-packet-new")), "일반 연구관에게도 「취합」 버튼 노출(대직)");
-    await page.click("#res-packet-new"); await page.waitForTimeout(400);
+    c.ok(await page.evaluate(() => !!document.querySelector("[data-pkkind]")), "일반 연구관에게도 「취합」 버튼 노출(대직)");
+    await page.click("[data-pkkind=\"주간\"]"); await page.waitForTimeout(400);
     await page.click("#packet-save"); await page.waitForTimeout(500);
     c.ok(packets.length === 1 && packets[0].created_by === "twopro@hanmail.net", "연구관이 올린 취합본 게시 + 취합자 기록");
     const view = await page.evaluate(() => {
@@ -108,6 +109,31 @@ const daysAgo = n => { const d = new Date(); d.setDate(d.getDate() - n); return 
     });
     c.ok(/오프로/.test(view.by), "목록에 '취합 오프로' 표시");
     c.ok(!view.del, "일반 연구관은 삭제 버튼이 없음");
+    await page.close();
+  }
+
+  // C2. 수시회의 자료 — 「수시」 버튼은 빈 양식으로 열리고, kind=수시로 게시되어 목록에 수시 배지.
+  {
+    const page = await H.newPage(browser, { viewport: { width: 900, height: 1100 } });
+    const { user, session } = H.mkSession("syho99@naver.com", "song");
+    let packets = [], nid = 1;
+    await H.setupPage(page, { user, session, routes: (p, m, req) => {
+      if (p === "/rest/v1/staff_notes") return [{ id: 1, member_email: "twopro@hanmail.net", week_start: "2026-07-20", last_week: "<b>굵은 실적</b>", this_week: "계획", updated_at: "2026-07-20T00:00:00Z" }];
+      if (p === "/rest/v1/meeting_packets") {
+        if (m === "POST") { const row = JSON.parse(req.postData()); row.id = nid++; packets.push(row); return [row]; }
+        return [...packets].sort((a, b) => b.id - a.id);
+      }
+      return H.defaultBriefingRoutes(p);
+    }});
+    await H.login(page, port, "syho99@naver.com");
+    await page.click('nav button[data-panel="resources"]'); await page.waitForTimeout(400);
+    await page.click('.res-subnav [data-ressec="packets"]'); await page.waitForTimeout(400);
+    await page.click('[data-pkkind="수시"]'); await page.waitForTimeout(500);
+    const draft = await page.evaluate(() => document.getElementById("packet-edit-body").innerHTML);
+    c.ok(/수시회의 자료/.test(draft) && !/굵은 실적/.test(draft), "수시는 빈 양식(주간기록 미포함)으로 열림");
+    await page.click("#packet-save"); await page.waitForTimeout(500);
+    c.ok(packets.length === 1 && packets[0].kind === "수시", "수시 취합본 게시 + kind=수시 저장");
+    c.ok(await page.evaluate(() => /수시/.test((document.querySelector(".pk-row .pk-kind") || {}).textContent || "")), "목록에 수시 배지 표시");
     await page.close();
   }
 
