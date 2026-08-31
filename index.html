@@ -245,7 +245,7 @@
   .cal-day:hover{background:#F7FAFD;}
   .cal-day.other{background:#FAFBFC;}
   .cal-day.other .dnum{color:#C4CDD8;}
-  .cal-day.today{background:#EFF6FF;box-shadow:inset 0 0 0 2px var(--gwanak);}
+  .cal-day.today{background:#EFF6FF;box-shadow:inset 0 0 0 1.5px var(--gwanak);}
   .cal-day .dnum{font-size:13px;font-weight:600;color:var(--ink);display:inline-block;}
   .cal-day.today .dnum{background:var(--gwanak);color:#fff;border-radius:50%;width:22px;height:22px;
     line-height:22px;text-align:center;}
@@ -3983,7 +3983,7 @@
     return '<div class="board-note">'
       + '<div class="board-meta-row"><span class="board-kind ' + kc + '">' + esc(m.kind || "회의") + '</span>'
       + '<span class="board-time">' + fmtMeetingWhen(m) + '</span>'
-      + '<span class="board-by">기록 ' + esc(packetAuthorName(m.author_email)) + '</span>'
+      + '<span class="board-by">by ' + esc(packetAuthorName(m.author_email)) + '</span>'
       + (mCanDelete(m) ? '<button type="button" class="wb-mini danger" data-meeting-del="' + m.id + '">삭제</button>' : '')
       + '</div>'
       + '<div class="board-body">' + (m.result ? plain2html(m.result) : "—") + '</div>'
@@ -4009,7 +4009,7 @@
     return '<div class="board-note"><div class="board-meta-row">'
       + '<span class="board-kind ' + kc + '">' + esc(kind) + '</span>'
       + '<span class="board-time">' + esc(fmtStamp(row.updated_at)) + '</span>'
-      + '<span class="board-by">기록 ' + esc(packetAuthorName(row.author_email)) + '</span>'
+      + '<span class="board-by">by ' + esc(packetAuthorName(row.author_email)) + '</span>'
       + (isAdminUser ? '<button type="button" class="wb-mini danger" data-directive-del="' + row.id + '">삭제</button>' : '')
       + '</div><div class="board-body">' + (row.body ? plain2html(row.body) : "—") + '</div></div>';
   }
