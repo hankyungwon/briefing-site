@@ -707,7 +707,7 @@
   #packet-modal.pk-full .packet-doc{max-height:calc(100vh - 96px);}
   /* 취합 문서 본문(HTML 서식) — 표시·인쇄 공통 */
   .packet-body{font-family:'Noto Sans KR',sans-serif;font-size:14.5px;line-height:1.6;color:var(--ink);word-break:keep-all;}
-  .packet-body h3{font-family:'Noto Serif KR',serif;font-size:22px;font-weight:700;color:var(--gwanak-deep);margin:2px 0 8px;}
+  .packet-body h3{font-family:'Noto Serif KR',serif;font-size:24px;font-weight:700;color:var(--gwanak-deep);margin:2px 0 10px;line-height:1.4;}
   .packet-body h4{font-family:'Noto Sans KR',sans-serif;font-size:15px;font-weight:800;color:var(--gwanak-deep);margin:14px 0 5px;}
   .packet-body p{margin:4px 0;}
   .packet-body ul,.packet-body ol{margin:4px 0 4px 4px;padding-left:20px;}
@@ -843,7 +843,7 @@
   .char-empty{font-size:12px;color:var(--muted);}
   @media print {
     .packet-body{font-size:13px;line-height:1.5;}
-    .packet-body h3{font-size:19px;} .packet-body h4{font-size:13px;}
+    .packet-body h3{font-size:20px;} .packet-body h4{font-size:13px;}
     body * { visibility: hidden; }
     #packet-modal.open #packet-doc-view:not([hidden]), #packet-modal.open #packet-doc-view:not([hidden]) * { visibility: visible; }
     #packet-modal.open { position: absolute; inset: 0; display: block; background: #fff; padding: 0; overflow: visible; }
@@ -3063,12 +3063,28 @@
     if (pe._updCount) pe._updCount();
     packetView("edit");
   }
+  // 이미 게시된 취합본은 만들 때의 글자가 문서에 그대로 저장된다(수정 불가 원칙).
+  // 저장된 원문은 건드리지 않고, 화면에 보여줄 때만 옛 머리글 표기를 현재 표기로 맞춘다.
+  //   「관악구 …연구단 · 주간회의 자료」 → 가운뎃점 제거
+  //   「취합 9.1(화) 01:20 · 취합 백프로」 → 「9.1(화) 01:20  by 백프로」
+  function normalizePacketHeader(html) {
+    const wrap = document.createElement("div");
+    wrap.innerHTML = html || "";
+    const h3 = wrap.querySelector("h3");
+    if (h3 && /연구단\s*·\s*/.test(h3.textContent)) h3.textContent = h3.textContent.replace(/연구단\s*·\s*/, "연구단 ");
+    const stamp = wrap.querySelector("p");
+    if (stamp && /취합/.test(stamp.textContent)) {
+      stamp.textContent = stamp.textContent.replace(/^\s*취합\s+/, "").replace(/\s*·\s*취합\s+/, "  by ");
+      stamp.style.fontSize = "14px";
+    }
+    return wrap.innerHTML;
+  }
   function showPacketDoc(id) {
     const p = packetCache.find(x => String(x.id) === String(id));
     if (!p) return;
     ensureEditorFonts();
     document.getElementById("packet-title").textContent = p.title || "회의 자료";
-    document.getElementById("packet-doc").innerHTML = '<div class="packet-body">' + sanitizePacketHtml(p.content || "") + '</div>';
+    document.getElementById("packet-doc").innerHTML = '<div class="packet-body">' + normalizePacketHeader(sanitizePacketHtml(p.content || "")) + '</div>';
     packetView("doc");
   }
   // 취합본은 항상 '새 글'로 게시된다(수정 없음). 누가 올렸는지 created_by에 남긴다.
