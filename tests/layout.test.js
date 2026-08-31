@@ -123,6 +123,30 @@ const WIDTHS = [1400, 1280, 1024, 900, 820, 768, 640, 540, 430, 412, 390, 375, 3
   }
   c.ok(wide.length === 0, "지난브리핑: 서체가 넓어져도 호수·배지·날짜가 한 줄" + (wide.length ? " — " + wide.join(" / ") : ""));
 
+  // 「최신」과 「종합·연휴」 배지는 같은 높이에 서야 한다.
+  // 둘은 구조가 달라 어긋나기 쉽다 — 「최신」은 .an 안의 가상요소(vertical-align이 먹음),
+  // 「종합·연휴」는 .arch-head의 flex 항목(vertical-align이 무시됨). 실제로 2px 어긋난 적이 있다.
+  // 가상요소는 좌표를 잴 수 없으므로, 같은 스타일의 임시 요소를 .an 안에 넣어 대신 잰다.
+  await page.evaluate(() => { const s = document.getElementById("__wide"); if (s) s.textContent = ""; });
+  await page.waitForTimeout(120);
+  const badgeGap = await page.evaluate(() => {
+    const card = [...document.querySelectorAll(".arch-card")].find(c => c.querySelector(".edition-chip"));
+    if (!card) return null;
+    const an = card.querySelector(".an"), chip = card.querySelector(".edition-chip");
+    const af = getComputedStyle(document.querySelector(".arch-card.latest .an"), "::after");
+    const probe = document.createElement("span");
+    probe.textContent = "최신";
+    probe.style.cssText = "display:inline-block;white-space:nowrap;visibility:hidden;"
+      + "font-family:" + af.fontFamily + ";font-size:" + af.fontSize + ";font-weight:" + af.fontWeight
+      + ";line-height:" + af.lineHeight + ";letter-spacing:" + af.letterSpacing
+      + ";padding:" + af.padding + ";margin-left:" + af.marginLeft + ";vertical-align:" + af.verticalAlign + ";";
+    an.appendChild(probe);
+    const d = Math.round(probe.getBoundingClientRect().top - chip.getBoundingClientRect().top);
+    probe.remove();
+    return d;
+  });
+  c.ok(badgeGap !== null && Math.abs(badgeGap) <= 1, "지난브리핑: 「최신」과 「종합·연휴」 배지 높이 일치 (차이 " + badgeGap + "px)");
+
   // 전역 원칙이 실제로 적용됐는지 — 요소마다 손으로 바르지 않아도 상속되어야 한다
   const base = await page.evaluate(() => {
     const p = document.querySelector("#archive .arch-kw .k .kt") || document.body;

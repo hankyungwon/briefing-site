@@ -24,6 +24,9 @@
     --bg:#F4F7FB; --card:#FFFFFF; --ink:#1C2B3A;
     --gwanak:#0E5FA8; --gwanak-deep:#0B4A86; --sky:#1489A7;
     --slate:#556A8D; --gold:#B47E12; --line:#D7E0EA; --muted:#5D6B7A;
+    /* 배지를 기준선에서 띄우는 양. 「최신」·「종합」·「연휴」가 같은 높이에 서도록 한 곳에서 정한다.
+       vertical-align은 flex 항목에 먹지 않으므로, flex 자리에서는 top으로 같은 양을 보정한다. */
+    --badge-lift:2px;
   }
   *{margin:0;padding:0;box-sizing:border-box;}
   html{scroll-behavior:smooth;scrollbar-gutter:stable;}
@@ -414,7 +417,7 @@
   /* inline-block + nowrap: 없으면 폭이 좁을 때 '최'/'신'이 두 줄로 갈라진다(.edition-chip과 동일 처리) */
   .arch-card.latest .an::after{content:"최신";font-family:'Noto Sans KR',sans-serif;font-size:10px;font-weight:700;
     display:inline-block;white-space:nowrap;line-height:1.5;
-    letter-spacing:.02em;color:#fff;background:#E8542B;border-radius:4px;padding:2px 6px;margin-left:6px;vertical-align:2px;
+    letter-spacing:.02em;color:#fff;background:#E8542B;border-radius:4px;padding:2px 6px;margin-left:6px;vertical-align:var(--badge-lift);
     box-shadow:0 1px 3px rgba(232,84,43,.35);}
   .arch-card.latest{border-top-color:#E8542B;}
   .arch-kw{margin-top:10px;padding-top:10px;border-top:1px dashed var(--line);display:flex;flex-direction:column;gap:5px;}
@@ -495,9 +498,11 @@
   .cat-band.world .dot{background:var(--slate);}
   .cat-band.ahead .dot{background:var(--gold);}
   /* 발행 유형 배지 — '최신' 배지와 동일한 작은 크기로 통일, 호수 바로 뒤에 인라인 배치 */
-  .edition-chip{display:inline-block;vertical-align:2px;font-size:10px;font-weight:700;letter-spacing:.02em;color:#fff;
+  .edition-chip{display:inline-block;vertical-align:var(--badge-lift);font-size:10px;font-weight:700;letter-spacing:.02em;color:#fff;
     background:var(--gold);border-radius:4px;padding:2px 6px;margin-left:6px;line-height:1.5;white-space:nowrap;}
-  .arch-head .edition-chip{margin-left:0;}
+  /* .arch-head 안에서는 이 배지가 flex 항목이라 vertical-align이 무시된다 —
+     「최신」 배지(.an 안의 가상요소)와 높이를 맞추려면 top으로 같은 양을 올려줘야 한다 */
+  .arch-head .edition-chip{margin-left:0;position:relative;top:calc(-1 * var(--badge-lift));}
   .brief-card{
     background:var(--card);border:1px solid var(--line);border-radius:16px;
     height:300px;display:flex;flex-direction:column;
