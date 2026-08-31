@@ -319,13 +319,18 @@ const daysAgo = n => { const d = new Date(); d.setDate(d.getDate() - n); return 
     const r = await page.evaluate(() => {
       const authors = [...document.querySelectorAll("#fp-list .board-card .board-meta .author")].map(s => s.textContent);
       const commentAuthor = (document.querySelector("#fp-list .comment .c-author") || {}).textContent || "";
-      const s = document.querySelector("#fp-list .board-meta .author");
-      return { authors, commentAuthor, col: s ? getComputedStyle(s).color : "" };
+      const pa = document.querySelector("#fp-list .board-meta .author");
+      const ca = document.querySelector("#fp-list .comment .c-author");
+      const px = el => parseFloat(getComputedStyle(el).fontSize);
+      return { authors, commentAuthor,
+        postCol: pa ? getComputedStyle(pa).color : "", postSize: pa ? px(pa) : 0,
+        cmtCol: ca ? getComputedStyle(ca).color : "", cmtSize: ca ? px(ca) : 0 };
     });
     c.ok(JSON.stringify(r.authors) === JSON.stringify(["오프로", "단장", "한뱀", "randomguy"]),
       "게시판 작성자: 필명·이메일→호칭(오프로·단장), 한뱀/미상은 원본 (" + r.authors.join(",") + ")");
     c.ok(r.commentAuthor === "송프로", "댓글 작성자도 호칭(송프로)으로 표시 (" + r.commentAuthor + ")");
-    c.ok(r.col === "rgb(14, 95, 168)", "작성자 호칭이 본문과 구별되는 관악 블루 (" + r.col + ")");
+    c.ok(r.postCol === "rgb(11, 74, 134)" && r.postSize === 15, "글쓴이는 진한 파랑·15px로 강조 (" + r.postCol + ", " + r.postSize + "px)");
+    c.ok(r.cmtCol === "rgb(85, 106, 141)" && r.cmtSize < r.postSize, "댓글쓴이는 회색·더 작게 물러남 (" + r.cmtCol + ", " + r.cmtSize + "px)");
     await page.close();
   }
 
