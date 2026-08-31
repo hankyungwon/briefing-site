@@ -25,7 +25,7 @@ const fs = require("fs");
     }));
     c.ok(JSON.stringify(ui.kinds) === JSON.stringify(["주간", "수시"]), "원고 구분 선택: 주간/수시");
     c.ok(!/PDF/i.test(ui.printLabel), "인쇄 버튼에서 PDF 분리됨 (" + ui.printLabel + ")");
-    c.ok(JSON.stringify(ui.menu) === JSON.stringify(["pdf", "doc"]), "파일 저장 메뉴: PDF + .doc");
+    c.ok(JSON.stringify(ui.menu) === JSON.stringify(["pdf", "doc", "md"]), "파일 저장 메뉴: PDF + .doc + .md");
 
     await page.click("#memo-body"); await page.type("#memo-body", "AI 정책 초안을 완성했다");
     await page.evaluate(() => {
@@ -57,10 +57,36 @@ const fs = require("fs");
     await page.click('.res-subnav [data-ressec="packets"]'); await page.waitForTimeout(400);
     await page.click("#res-packet-list [data-pk-view]"); await page.waitForTimeout(300);
     c.ok(await page.evaluate(() => document.getElementById("packet-title").textContent) === "주간회의 자료 (7.21)", "취합본 보기 제목");
+
+    // 보기 확대·축소·전체보기 — 인쇄하지 않고 노트북 화면으로 회의를 진행할 때
+    const z0 = await page.evaluate(() => document.getElementById("packet-zoom-label").textContent);
+    await page.click("#packet-zoom-in"); await page.waitForTimeout(80);
+    const z1 = await page.evaluate(() => ({ label: document.getElementById("packet-zoom-label").textContent, zoom: document.getElementById("packet-doc").style.zoom }));
+    c.ok(z0 === "100%" && z1.label === "110%" && z1.zoom === "110%", "취합본 보기 확대 (" + z0 + " → " + z1.label + ")");
+    await page.click("#packet-zoom-out"); await page.click("#packet-zoom-out"); await page.waitForTimeout(80);
+    c.ok(await page.evaluate(() => document.getElementById("packet-zoom-label").textContent) === "90%", "취합본 보기 축소");
+    await page.click("#packet-zoom-label"); await page.waitForTimeout(80);
+    c.ok(await page.evaluate(() => document.getElementById("packet-zoom-label").textContent) === "100%", "가운데를 눌러 100% 복귀");
+    await page.click("#packet-full"); await page.waitForTimeout(150);
+    const full = await page.evaluate(() => ({ on: document.getElementById("packet-modal").classList.contains("pk-full"), label: document.getElementById("packet-full").textContent.trim() }));
+    c.ok(full.on && /창으로/.test(full.label), "전체보기로 전환 (" + full.label + ")");
+    await page.click("#packet-full"); await page.waitForTimeout(150);
+    c.ok(await page.evaluate(() => !document.getElementById("packet-modal").classList.contains("pk-full")), "전체보기 해제");
     await page.click("#packet-download"); await page.waitForTimeout(120);
     const dl = await Promise.all([page.waitForEvent("download"), page.click('#packet-savemenu [data-fmt="doc"]')]).then(a => a[0]);
     const doc = fs.readFileSync(await dl.path(), "utf8");
     c.ok(/이프로/.test(doc) && /<table/.test(doc) && /<b>/.test(doc) && /@page/.test(doc), "취합본 .doc: 이름·표·굵게·A4 포함");
+
+    // 마크다운(.md) 저장 — AI·옵시디언 친화 형식(제목·굵게·표가 마크다운으로)
+    // (헤드리스에서는 blob 다운로드의 파일명이 노출되지 않아 .doc와 마찬가지로 내용만 검사)
+    await page.click("#packet-download"); await page.waitForTimeout(120);
+    const dlm = await Promise.all([page.waitForEvent("download"), page.click('#packet-savemenu [data-fmt="md"]')]).then(a => a[0]);
+    const md = fs.readFileSync(await dlm.path(), "utf8");
+    c.ok(/^# 주간회의 자료/m.test(md), "md: 문서 제목이 # 제목으로");
+    c.ok(/#{3,4} \[1\] 이프로/.test(md), "md: 단원 소제목이 마크다운 제목으로");
+    c.ok(/\*\*실적\*\*/.test(md), "md: 굵게가 **강조**로");
+    c.ok(/\|\s*가\s*\|\s*나\s*\|/.test(md) && /\| --- \|/.test(md), "md: 표가 마크다운 표로");
+    c.ok(!/<table|<b>|<h4/.test(md), "md: HTML 태그가 남지 않음");
     await page.close();
   }
 
