@@ -298,6 +298,37 @@ const daysAgo = n => { const d = new Date(); d.setDate(d.getDate() - n); return 
     await page.close();
   }
 
+  // I. 작성자 표기 통일 — 게시판·댓글의 필명/이메일이 호칭으로 뜨고, 본문과 구별되는 색(관악 블루)
+  {
+    const page = await H.newPage(browser, { viewport: { width: 900, height: 1100 } });
+    const { user, session } = H.mkSession("twopro@hanmail.net", "two");
+    const posts = [
+      { id: 1, author_id: "u-two",   author_name: "twopro",    title: "연구 글",   body: "본문", pinned: false, created_at: "2026-08-30T00:00:00Z" },
+      { id: 2, author_id: "u-boss",  author_name: "hanpro",    title: "단장 글",   body: "본문", pinned: false, created_at: "2026-08-29T00:00:00Z" },
+      { id: 3, author_id: "u-agent", author_name: "한뱀",      title: "에이전트 글", body: "본문", pinned: false, created_at: "2026-08-28T00:00:00Z" },
+      { id: 4, author_id: "u-x",     author_name: "randomguy", title: "손님 글",   body: "본문", pinned: false, created_at: "2026-08-27T00:00:00Z" }
+    ];
+    const comments = [{ id: 1, post_id: 1, author_id: "u-song", author_name: "syho99", body: "댓글", created_at: "2026-08-30T01:00:00Z" }];
+    await H.setupPage(page, { user, session, routes: (p) => {
+      if (p === "/rest/v1/free_posts") return posts;
+      if (p === "/rest/v1/free_comments") return comments;
+      return H.defaultBriefingRoutes(p);
+    }});
+    await H.login(page, port, "twopro@hanmail.net");
+    await page.click('nav button[data-panel="board"]'); await page.waitForTimeout(700);
+    const r = await page.evaluate(() => {
+      const authors = [...document.querySelectorAll("#fp-list .board-card .board-meta .author")].map(s => s.textContent);
+      const commentAuthor = (document.querySelector("#fp-list .comment .c-author") || {}).textContent || "";
+      const s = document.querySelector("#fp-list .board-meta .author");
+      return { authors, commentAuthor, col: s ? getComputedStyle(s).color : "" };
+    });
+    c.ok(JSON.stringify(r.authors) === JSON.stringify(["오프로", "단장", "한뱀", "randomguy"]),
+      "게시판 작성자: 필명·이메일→호칭(오프로·단장), 한뱀/미상은 원본 (" + r.authors.join(",") + ")");
+    c.ok(r.commentAuthor === "송프로", "댓글 작성자도 호칭(송프로)으로 표시 (" + r.commentAuthor + ")");
+    c.ok(r.col === "rgb(14, 95, 168)", "작성자 호칭이 본문과 구별되는 관악 블루 (" + r.col + ")");
+    await page.close();
+  }
+
   server.close();
   await c.finish(browser);
 })().catch(e => { console.error("FAIL", e.message, e.stack); process.exit(1); });
