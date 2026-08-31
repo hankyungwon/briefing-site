@@ -73,13 +73,14 @@ const daysAgo = n => { const d = new Date(); d.setDate(d.getDate() - n); return 
 
     const row = await page.evaluate(() => {
       const r = document.querySelector(".pk-row");
-      return { by: (r.querySelector(".pk-by") || {}).textContent || "", latest: !!r.querySelector(".pk-latest"),
+      return { by: (r.querySelector(".pk-by") || {}).textContent || "",
                sum: (r.querySelector(".pk-sum") || {}).textContent || "",
+               kind: !!r.querySelector(".pk-kind"),
                del: !!r.querySelector("[data-pk-del]"), edit: !!r.querySelector("[data-pk-edit]") };
     });
     c.ok(/AI 교육 확대/.test(row.sum), "목록에 한 줄 요약 표시");
     c.ok(/송프로/.test(row.by), "목록에 '취합 송프로' 표시");
-    c.ok(row.latest, "최신 자료에 「최신」 배지");
+    c.ok(row.kind, "종류 배지 표시(주간/수시)");
     c.ok(row.del, "송프로는 이번 주(오늘) 자료 삭제 버튼 보임");
     c.ok(!row.edit, "게시본에 「수정」 버튼 없음(수정 불가)");
     await page.close();
