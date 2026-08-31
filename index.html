@@ -204,7 +204,7 @@
   .cfg-sec{font-family:'Noto Serif KR',serif;font-size:15px;font-weight:700;color:var(--gwanak-deep);
     margin:18px 0 10px;padding-bottom:6px;border-bottom:1px solid var(--line);}
   .post-meta{margin-top:12px;display:flex;gap:12px;flex-wrap:wrap;align-items:baseline;font-size:13px;color:var(--muted);}
-  .post-meta .author{font-weight:700;color:var(--slate);}
+  .post-meta .author{font-weight:700;color:var(--gwanak);}
   .checkbox-row{display:flex;align-items:center;gap:8px;margin-bottom:14px;font-size:14px;color:var(--slate);cursor:pointer;}
   .checkbox-row input{width:16px;height:16px;accent-color:var(--gwanak);cursor:pointer;}
   /* ── 연구단일정 ── */
@@ -320,7 +320,7 @@
   .board-card .body::-webkit-scrollbar-thumb{background:#CBD8E6;border-radius:3px;}
   .board-card .body::-webkit-scrollbar-track{background:transparent;}
   .board-meta{margin-top:13px;display:flex;gap:10px;flex-wrap:wrap;align-items:center;font-size:13px;color:var(--muted);}
-  .board-meta .author{font-weight:700;color:var(--slate);}
+  .board-meta .author{font-weight:700;color:var(--gwanak);}
   .board-meta .acts{margin-left:auto;display:flex;gap:6px;}
   .mini-btn{appearance:none;cursor:pointer;background:none;border:1px solid var(--line);border-radius:5px;
     font-size:12.5px;padding:3px 10px;font-family:inherit;color:var(--slate);}
@@ -332,7 +332,7 @@
   .comment .c-main{flex:1;min-width:0;}
   .comment .c-text{color:#3B4756;white-space:pre-wrap;line-height:1.6;}
   .comment .c-meta{font-size:12px;color:var(--muted);margin-top:3px;}
-  .comment .c-meta .c-author{font-weight:700;color:var(--slate);}
+  .comment .c-meta .c-author{font-weight:700;color:var(--gwanak);}
   .c-del{appearance:none;cursor:pointer;background:none;border:none;color:#BBA;font-size:12px;padding:2px 4px;flex:none;}
   .c-del:hover{color:#A33;}
   .c-toggle{appearance:none;cursor:pointer;background:none;border:none;color:var(--gwanak);
@@ -2388,7 +2388,7 @@
         html += '<p style="margin-top:8px;">' + linkify(p.comment) + '</p>';
       }
       html += renderAttachments(attMap[p.id]);
-      html += '<div class="post-meta"><span class="author">' + esc(p.author_name) + '</span>'
+      html += '<div class="post-meta"><span class="author">' + esc(authorName(p.author_name)) + '</span>'
         + timeMeta(p.created_at, p.updated_at);
       if (currentUser && p.author_id === currentUser.id) {
         html += '<span class="acts"><button type="button" class="mini-btn" data-editr="' + p.id + '">수정</button>'
@@ -2627,7 +2627,7 @@
     else inner = todays.map(ev => {
       const t = evType(ev.type);
       return '<span class="ev-pill"><span class="ev-dot" style="background:' + t.color + '"></span>'
-        + esc(ev.author_name) + ' · ' + t.label + ' · ' + esc(ev.title)
+        + esc(authorName(ev.author_name)) + ' · ' + t.label + ' · ' + esc(ev.title)
         + (ev.location ? ' (' + esc(ev.location) + ')' : '') + '</span>';
     }).join("");
     return '<div class="today-strip"><span class="ts-label">오늘의 현황</span>' + inner + '</div>';
@@ -2699,7 +2699,7 @@
         + '<div class="dmeta"><span class="type-tag" style="background:' + t.color + ';color:' + textOn(t.color) + '">' + t.label + '</span>'
         + '<span>' + fmtRange(ev) + '</span>'
         + (ev.location ? '<span>· ' + esc(ev.location) + '</span>' : '')
-        + '<span>· ' + esc(ev.author_name) + '</span>'
+        + '<span>· ' + esc(authorName(ev.author_name)) + '</span>'
         + '<span style="margin-left:auto;display:flex;gap:6px;">'
         + (mine ? '<button class="mini-btn" data-edit-ev="' + ev.id + '">수정</button>'
           + '<button class="mini-btn danger" data-del-ev="' + ev.id + '">삭제</button>'
@@ -2939,6 +2939,19 @@
     const k = Object.keys(MEMBER_EMAILS).find(x => (MEMBER_EMAILS[x] || "").toLowerCase() === e);
     const m = k && MEMBERS.find(x => x.key === k);
     return m ? m.name : email.split("@")[0];
+  }
+  // 작성자 표기 통일 — 게시판·댓글·자료·일정의 필명(이메일 앞부분)이나 이메일을 호칭으로 바꾼다.
+  // 예: happyrunto→백프로, hanpro→단장, admin→관리자. 이미 호칭(한뱀 등)이거나 모르면 원본 그대로.
+  function authorName(v) {
+    if (!v) return v;
+    const s = String(v).trim();
+    const lp = s.toLowerCase().split("@")[0];
+    const k = Object.keys(MEMBER_EMAILS).find(x => (MEMBER_EMAILS[x] || "").toLowerCase().split("@")[0] === lp);
+    const m = k && MEMBERS.find(x => x.key === k);
+    if (m) return m.name;
+    if (lp === "hanpro") return "단장";
+    if (lp === "admin") return "관리자";
+    return s;
   }
   function packetView(name) {
     ["doc", "edit"].forEach(v => { document.getElementById("packet-" + v + "-view").hidden = (v !== name); });
@@ -3663,7 +3676,7 @@
     h += '<h3>' + esc(p.title) + '</h3>';
     if (p.body) h += '<div class="body">' + linkify(p.body) + '</div>';
     h += renderAttachments(boardAtts[p.id]);
-    h += '<div class="board-meta"><span class="author">' + esc(p.author_name) + '</span>'
+    h += '<div class="board-meta"><span class="author">' + esc(authorName(p.author_name)) + '</span>'
       + timeMeta(p.created_at, p.updated_at);
     if (mine) h += '<span class="acts"><button class="mini-btn" data-edit="' + p.id + '">수정</button>'
       + '<button class="mini-btn danger" data-delp="' + p.id + '">삭제</button></span>';
@@ -3684,7 +3697,7 @@
       const mine = c.author_id === currentUser.id;
       const canDel = mine || isAdminUser;
       h += '<div class="comment"><div class="c-main"><div class="c-text">' + linkify(c.body) + '</div>'
-        + '<div class="c-meta"><span class="c-author">' + esc(c.author_name) + '</span> · <span title="' + fmtDateTime(c.created_at) + '">' + timeAgo(c.created_at) + '</span></div></div>'
+        + '<div class="c-meta"><span class="c-author">' + esc(authorName(c.author_name)) + '</span> · <span title="' + fmtDateTime(c.created_at) + '">' + timeAgo(c.created_at) + '</span></div></div>'
         + (canDel ? '<button class="c-del" data-delc="' + c.id + '" title="' + (mine ? '댓글 삭제' : '관리자 삭제') + '">✕</button>' : '') + '</div>';
     }
     if (list.length > 2 && expanded) {
