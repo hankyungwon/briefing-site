@@ -151,6 +151,108 @@ const daysAgo = n => { const d = new Date(); d.setDate(d.getDate() - n); return 
     await page.close();
   }
 
+  // F. 단장 지시사항 — 관리자만 작성. 저장 시 directives에 기록되고 맨 위 강조 박스에 표시.
+  {
+    const page = await H.newPage(browser, { viewport: { width: 900, height: 1100 } });
+    const { user, session } = H.mkSession("hanpro@hanmail.net", "boss");
+    let dirs = [], nid = 1;
+    await H.setupPage(page, { user, session, routes: (p, m, req) => {
+      if (p === "/rest/v1/admin_emails") return [{ email: "hanpro@hanmail.net" }];
+      if (p === "/rest/v1/directives") {
+        if (m === "POST") { const row = JSON.parse(req.postData()); row.id = nid++; dirs.push(row); return [row]; }
+        return [...dirs].sort((a, b) => b.id - a.id);
+      }
+      return H.defaultBriefingRoutes(p);
+    }});
+    await H.login(page, port, "hanpro@hanmail.net");
+    await page.click('nav button[data-panel="about"]'); await page.waitForTimeout(500);
+    c.ok(await page.evaluate(() => { const hd = document.getElementById("head-directive"); return hd && !hd.hidden && !!hd.querySelector("[data-directive-edit]"); }), "지시사항: 관리자에게 작성 버튼 노출");
+    await page.click("#head-directive [data-directive-edit]"); await page.waitForTimeout(300);
+    await page.fill("#directive-body", "· 공모사업 마감 준수\n· AI 교육 확대");
+    await page.click("#directive-submit"); await page.waitForTimeout(400);
+    c.ok(dirs.length === 1 && /공모사업/.test(dirs[0].body), "지시사항 저장(directives insert)");
+    c.ok(await page.evaluate(() => /공모사업 마감 준수/.test((document.querySelector("#head-directive .hd-body") || {}).textContent || "")), "저장한 지시사항이 강조 박스에 표시");
+    await page.close();
+  }
+
+  // F2. 일반 단원은 지시사항을 열람만 — 작성/수정 버튼이 없다.
+  {
+    const page = await H.newPage(browser, { viewport: { width: 900, height: 1100 } });
+    const { user, session } = H.mkSession("twopro@hanmail.net", "two");
+    await H.setupPage(page, { user, session, routes: (p) => {
+      if (p === "/rest/v1/directives") return [{ id: 5, body: "· 지시 내용", author_email: "hanpro@hanmail.net" }];
+      return H.defaultBriefingRoutes(p);
+    }});
+    await H.login(page, port, "twopro@hanmail.net");
+    await page.click('nav button[data-panel="about"]'); await page.waitForTimeout(500);
+    const v = await page.evaluate(() => {
+      const hd = document.getElementById("head-directive");
+      return { shown: hd && !hd.hidden, body: (hd.querySelector(".hd-body") || {}).textContent || "", edit: !!hd.querySelector("[data-directive-edit]") };
+    });
+    c.ok(v.shown && /지시 내용/.test(v.body), "일반 단원도 지시사항 열람 가능");
+    c.ok(!v.edit, "일반 단원에겐 지시사항 작성/수정 버튼 없음");
+    await page.close();
+  }
+
+  // G. 회의록 — 로그인 단원 누구나 새로 올린다(대직). 기록자·구분 표시, 수정/삭제 버튼 없음(일반 단원).
+  {
+    const page = await H.newPage(browser, { viewport: { width: 900, height: 1100 } });
+    const { user, session } = H.mkSession("twopro@hanmail.net", "two");
+    let notes = [], nid = 1;
+    await H.setupPage(page, { user, session, routes: (p, m, req) => {
+      if (p === "/rest/v1/meeting_notes") {
+        if (m === "POST") { const row = JSON.parse(req.postData()); row.id = nid++; notes.push(row); return [row]; }
+        return [...notes].sort((a, b) => (b.meeting_date || "").localeCompare(a.meeting_date || "") || b.id - a.id);
+      }
+      return H.defaultBriefingRoutes(p);
+    }});
+    await H.login(page, port, "twopro@hanmail.net");
+    await page.click('nav button[data-panel="about"]'); await page.waitForTimeout(500);
+    c.ok(await page.evaluate(() => { const mb = document.getElementById("mboard"); return mb && !mb.hidden && !!mb.querySelector("[data-meeting-new]"); }), "회의록: 일반 단원에게도 「새 회의록」 노출(대직)");
+    await page.click("#mboard [data-meeting-new]"); await page.waitForTimeout(300);
+    await page.fill("#meeting-result", "· 안건: 예산\n· 결정: 승인");
+    await page.selectOption("#meeting-kind", "수시");
+    await page.click("#meeting-submit"); await page.waitForTimeout(400);
+    c.ok(notes.length === 1 && notes[0].author_email === "twopro@hanmail.net", "회의록 올리기 + 기록자(author_email) 기록");
+    c.ok(notes[0].kind === "수시" && /예산/.test(notes[0].result), "구분·개요·결과 저장");
+    const g = await page.evaluate(() => {
+      const mb = document.getElementById("mboard");
+      return { by: (mb.querySelector(".mb-by") || {}).textContent || "", kind: (mb.querySelector(".mb-kind") || {}).textContent || "",
+               del: !!mb.querySelector("[data-meeting-del]"), edit: !!mb.querySelector("[data-meeting-edit]") };
+    });
+    c.ok(/오프로/.test(g.by), "목록에 '기록 오프로' 표시");
+    c.ok(/수시/.test(g.kind), "구분 배지 표시");
+    c.ok(!g.del, "일반 단원은 회의록 삭제 버튼 없음");
+    c.ok(!g.edit, "회의록에 수정 버튼 없음(수정 불가)");
+    // 단장 카드에는 더 이상 회의 기록이 들어가지 않는다(분리 확인)
+    c.ok(await page.evaluate(() => !document.querySelector('#about .member[data-member="lead"] .wb-meeting')), "단장 카드에서 회의 기록 분리됨");
+    await page.close();
+  }
+
+  // H. 회의록 삭제 권한 — 송프로는 이번 주(7일)만, 관리자는 오래된 것도.
+  {
+    const page = await H.newPage(browser, { viewport: { width: 900, height: 1100 } });
+    const { user, session } = H.mkSession("syho99@naver.com", "song");
+    const notes = [
+      { id: 2, meeting_date: today(), kind: "주간", result: "이번 주", author_email: "syho99@naver.com" },
+      { id: 1, meeting_date: daysAgo(10), kind: "주간", result: "지난주 이전", author_email: "syho99@naver.com" }
+    ];
+    await H.setupPage(page, { user, session, routes: (p) => {
+      if (p === "/rest/v1/meeting_notes") return notes;
+      return H.defaultBriefingRoutes(p);
+    }});
+    await H.login(page, port, "syho99@naver.com");
+    await page.click('nav button[data-panel="about"]'); await page.waitForTimeout(500);
+    // 최신(오늘)은 본문 클램프 영역, 지난 회의록은 details 안 — 둘 다 삭제 버튼 유무만 본다
+    await page.evaluate(() => { const d = document.querySelector("#mboard details"); if (d) d.open = true; });
+    const del = await page.evaluate(() => [...document.querySelectorAll("#mboard .mb-note")].map(n => ({
+      txt: (n.querySelector(".mb-text") || {}).textContent || "", del: !!n.querySelector("[data-meeting-del]") })));
+    const recent = del.find(x => /이번 주/.test(x.txt)), old = del.find(x => /지난주/.test(x.txt));
+    c.ok(recent && recent.del, "송프로: 이번 주 회의록 삭제 버튼 보임");
+    c.ok(old && !old.del, "송프로: 지난주 이전 회의록 삭제 버튼 없음");
+    await page.close();
+  }
+
   server.close();
   await c.finish(browser);
 })().catch(e => { console.error("FAIL", e.message, e.stack); process.exit(1); });
