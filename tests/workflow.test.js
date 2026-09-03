@@ -122,7 +122,8 @@ const daysAgo = n => { const d = new Date(); d.setDate(d.getDate() - n); return 
     // (머리글 자체의 크기 지정은 정상이므로, 원고에서 온 값만 본다)
     c.ok(!/26px/.test(draftHasFmt) && !/굴림/.test(draftHasFmt) && !/line-height:\s*2\.4/.test(draftHasFmt),
       "취합 초안에서 원고의 글자 크기·서체·줄간격 지정이 정리됨");
-    c.ok(/color:\s*#?C00|rgb\(204, 0, 0\)/i.test(draftHasFmt), "글자색 같은 강조는 그대로 유지");
+    c.ok(!/#C00|rgb\(204, 0, 0\)/i.test(draftHasFmt), "제각각인 글자색도 표준으로 정리됨");
+    c.ok(/<b>|font-weight/i.test(draftHasFmt), "굵게 같은 강조는 그대로 유지");
 
     await page.fill("#packet-edit-summary", "AI 교육 확대·공모사업 마감 대응");
     await page.click("#packet-save"); await page.waitForTimeout(500);
