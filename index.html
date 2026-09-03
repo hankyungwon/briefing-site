@@ -3002,7 +3002,35 @@
         else if (name === "src" && el.tagName === "IMG" && !/^data:image\//i.test(val) && !/^https:\/\//i.test(val)) el.removeAttribute(a.name);
       });
     });
+    doc.querySelectorAll("img[data-sb]").forEach(i => i.removeAttribute("src"));   // 보관함 그림은 주소만 저장(서명 주소는 1시간짜리)
     return doc.body.firstChild ? doc.body.firstChild.innerHTML : "";
+  }
+  // 본문 속 보관함 그림(data-sb)에 서명 주소(1시간)를 붙여 보이게 한다 — 카드·편집기·취합본 보기 공통
+  async function resolveInlineImages(root) {
+    const imgs = [...root.querySelectorAll("img[data-sb]")].filter(i => !i.getAttribute("src"));
+    if (!imgs.length) return;
+    const paths = [...new Set(imgs.map(i => i.dataset.sb))];
+    const { data } = await sb.storage.from("attachments").createSignedUrls(paths, 3600);
+    const byPath = {}; (data || []).forEach(x => { if (x.signedUrl) byPath[x.path] = x.signedUrl; });
+    imgs.forEach(i => { if (byPath[i.dataset.sb]) i.src = byPath[i.dataset.sb]; });
+  }
+  // 파일로 저장·인쇄할 때는 보관함 그림을 문서 안에 담는다 — 나중에 인터넷 없이 열어도 보이도록
+  async function embedInlineImages(fullHtml) {
+    if (!/data-sb=/.test(fullHtml)) return fullHtml;
+    const doc = new DOMParser().parseFromString(fullHtml, "text/html");
+    const imgs = [...doc.querySelectorAll("img[data-sb]")];
+    const paths = [...new Set(imgs.map(i => i.dataset.sb))];
+    const { data } = await sb.storage.from("attachments").createSignedUrls(paths, 600);
+    const byPath = {};
+    await Promise.all((data || []).map(async x => {
+      if (!x.signedUrl) return;
+      try {
+        const b = await (await fetch(x.signedUrl)).blob();
+        byPath[x.path] = await new Promise(r => { const fr = new FileReader(); fr.onload = () => r(fr.result); fr.readAsDataURL(b); });
+      } catch (e) { /* 못 가져온 그림은 빈 자리로 둔다 */ }
+    }));
+    imgs.forEach(i => { if (byPath[i.dataset.sb]) i.src = byPath[i.dataset.sb]; });
+    return "<!DOCTYPE html>" + doc.documentElement.outerHTML;
   }
   async function loadPackets() {
     const list = document.getElementById("res-packet-list");
@@ -3061,6 +3089,7 @@
     document.getElementById("packet-edit-summary").value = "";
     const pe = document.getElementById("packet-edit-body");
     pe.innerHTML = sanitizePacketHtml(content);
+    resolveInlineImages(pe);
     if (pe._updCount) pe._updCount();
     packetView("edit");
   }
@@ -3099,6 +3128,7 @@
     ensureEditorFonts();
     document.getElementById("packet-title").textContent = p.title || "회의 자료";
     document.getElementById("packet-doc").innerHTML = '<div class="packet-body">' + normalizePacketHeader(sanitizePacketHtml(p.content || "")) + '</div>';
+    resolveInlineImages(document.getElementById("packet-doc"));
     packetView("doc");
   }
   // 취합본은 항상 '새 글'로 게시된다(수정 없음). 누가 올렸는지 created_by에 남긴다.
@@ -3247,13 +3277,14 @@
     const title = document.getElementById("packet-title").textContent || "회의 자료";
     return { title: title, html: buildStandaloneHtml(title, '<h1>' + esc(title) + '</h1>' + document.getElementById("packet-doc").innerHTML) };
   }
-  document.getElementById("packet-print").addEventListener("click", () => printHtml(packetDocHtml().html));
-  wireSaveMenu("packet-download", "packet-savemenu", fmt => {
+  document.getElementById("packet-print").addEventListener("click", async () => printHtml(await embedInlineImages(packetDocHtml().html)));
+  wireSaveMenu("packet-download", "packet-savemenu", async fmt => {
     const r = packetDocHtml();
-    if (fmt === "pdf") printHtml(r.html);
-    else if (fmt === "md") downloadText(safeFileName(r.title) + ".md", "# " + r.title + "\n\n" + htmlToMarkdown(document.getElementById("packet-doc").innerHTML));
-    else if (fmt === "html") downloadText(safeFileName(r.title) + ".html", r.html, "text/html", "웹 문서");
-    else downloadDoc(safeFileName(r.title) + ".doc", r.html);
+    if (fmt === "md") { downloadText(safeFileName(r.title) + ".md", "# " + r.title + "\n\n" + htmlToMarkdown(document.getElementById("packet-doc").innerHTML)); return; }
+    const html = await embedInlineImages(r.html);
+    if (fmt === "pdf") printHtml(html);
+    else if (fmt === "html") downloadText(safeFileName(r.title) + ".html", html, "text/html", "웹 문서");
+    else downloadDoc(safeFileName(r.title) + ".doc", html);
   });
   document.getElementById("packet-save").addEventListener("click", savePacket);
   document.getElementById("packet-edit-cancel").addEventListener("click", closePacketModal);
@@ -3289,12 +3320,23 @@
     img.onerror = () => cb(null);
     const fr = new FileReader(); fr.onload = () => { img.src = fr.result; }; fr.readAsDataURL(file);
   }
+  // 원고·취합본에 넣는 그림 — 폭 1200px로 줄여 보관함(attachments/inline)에 올리고, 본문에는 주소(data-sb)만 남긴다.
+  // 원고 글자와 함께 그림 데이터를 통째로 저장하면 원고가 무거워져 화면이 느려지므로, 자료마당 첨부와 같은 보관함을 쓴다.
+  const INLINE_IMG_MAX = 10;   // 글 하나에 넣을 수 있는 그림 수 (원본은 자료마당과 같이 20MB 이하)
   function insertImageInto(ed, file) {
     if (!file || !/^image\//.test(file.type)) return;
-    fileToScaledDataUrl(file, 1200, url => {
+    if (file.size > MAX_IMG) { alert("이미지가 20MB를 초과합니다. (" + fmtSize(file.size) + ")"); return; }
+    if (ed.querySelectorAll("img").length >= INLINE_IMG_MAX) { alert("그림은 글 하나에 최대 " + INLINE_IMG_MAX + "장까지 넣을 수 있습니다."); return; }
+    if (!currentUser) { alert("로그인 후 그림을 넣을 수 있습니다."); return; }
+    fileToScaledDataUrl(file, 1200, async url => {
       if (!url) { alert("이미지를 불러오지 못했습니다."); return; }
+      const path = "inline/" + currentUser.id + "/" + Date.now() + "_" + Math.random().toString(36).slice(2, 8) + ".jpg";
+      const blob = await (await fetch(url)).blob();
+      const { error } = await sb.storage.from("attachments").upload(path, blob, { contentType: "image/jpeg" });
+      if (error) { alert("그림을 올리지 못했습니다. (" + error.message + ")"); return; }
       ed.focus();
-      document.execCommand("insertHTML", false, '<img src="' + url + '" style="max-width:100%;"><p><br></p>');
+      document.execCommand("insertHTML", false, '<img data-sb="' + esc(path) + '" src="' + url + '" style="max-width:100%;"><p><br></p>');
+      ed.dispatchEvent(new Event("input"));
     });
   }
   function buildTableHtml() {
@@ -4143,6 +4185,7 @@
       wb.hidden = false;
       wb.innerHTML = staffBoardHtml(byEmail[email] || [], isOwner, key);
     });
+    resolveInlineImages(grid || document.getElementById('about'));
   }
 
   // 편집 버튼 위임
@@ -4197,9 +4240,10 @@
     document.getElementById('memo-kind').value = (note && note.kind === "수시") ? "수시" : "주간";
     document.getElementById('memo-sub').textContent = note
       ? "이 원고를 고쳐 다시 저장합니다. 글자 크기·서체는 회의 자료로 모을 때 표준 서식으로 정리됩니다."
-      : "회의 자료로 취합될 원고를 새로 작성합니다. 저장하면 카드 맨 위에 쌓이고, 취합 때는 구분별 최신 원고가 사용됩니다. 글자 크기·서체는 표준 서식으로 정리되니 내용에 집중하세요.";
+      : "회의 자료로 취합될 원고를 새로 작성합니다. 저장하면 카드 맨 위에 쌓이고, 취합 때는 구분별 최신 원고가 사용됩니다. 글자 크기·서체는 표준 서식으로 정리되니 내용에 집중하세요. 사진·그림은 20MB 이하, 글 하나에 10장까지 넣을 수 있습니다.";
     const bodyEl = document.getElementById('memo-body');
     bodyEl.innerHTML = note && note.body ? richToHtml(note.body) : "";
+    resolveInlineImages(bodyEl);
     if (bodyEl._updCount) bodyEl._updCount();
     memoModal.classList.add('open');
   }
@@ -4230,13 +4274,14 @@
     memoModal.classList.remove('open');
     await renderAboutBoards();
   });
-  document.getElementById('memo-print').addEventListener('click', () => { printHtml(memoExportDoc().html); });
-  wireSaveMenu('memo-download', 'memo-savemenu', fmt => {
+  document.getElementById('memo-print').addEventListener('click', async () => { printHtml(await embedInlineImages(memoExportDoc().html)); });
+  wireSaveMenu('memo-download', 'memo-savemenu', async fmt => {
     const r = memoExportDoc();
-    if (fmt === 'pdf') printHtml(r.html);
-    else if (fmt === 'md') downloadText(safeFileName(r.title) + ".md", "# " + r.title + "\n\n" + htmlToMarkdown(r.raw));
-    else if (fmt === 'html') downloadText(safeFileName(r.title) + ".html", r.html, "text/html", "웹 문서");
-    else downloadDoc(safeFileName(r.title) + ".doc", r.html);
+    if (fmt === 'md') { downloadText(safeFileName(r.title) + ".md", "# " + r.title + "\n\n" + htmlToMarkdown(r.raw)); return; }
+    const html = await embedInlineImages(r.html);
+    if (fmt === 'pdf') printHtml(html);
+    else if (fmt === 'html') downloadText(safeFileName(r.title) + ".html", html, "text/html", "웹 문서");
+    else downloadDoc(safeFileName(r.title) + ".doc", html);
   });
   makeRichEditor("memo-toolbar", "memo-img-input", [document.getElementById("memo-body")]);
 
