@@ -123,6 +123,8 @@ const daysAgo = n => { const d = new Date(); d.setDate(d.getDate() - n); return 
         html: one.innerHTML, twoWeights: [...two.querySelectorAll("*")].filter(e => e.textContent.trim())
           .map(e => getComputedStyle(e).fontWeight),
         name: getComputedStyle(document.querySelector('#about .member[data-member="four"] h4')).fontWeight,
+        namePx: parseFloat(getComputedStyle(document.querySelector('#about .member[data-member="four"] h4')).fontSize),
+        rolePx: parseFloat(getComputedStyle(document.querySelector('#about .member[data-member="four"] .role-tag')).fontSize),
         kindPx: parseFloat(getComputedStyle(notes[0].querySelector(".board-kind")).fontSize),
         timePx: parseFloat(getComputedStyle(notes[0].querySelector(".board-time")).fontSize),
         bodyPx: parseFloat(base.fontSize) };
@@ -133,6 +135,8 @@ const daysAgo = n => { const d = new Date(); d.setDate(d.getDate() - n); return 
     c.ok(!/StartFragment|EndFragment/.test(st.html) && !/data-start|data-end/.test(st.html), "\ubd99\uc5ec\ub123\uae30 \uc8fc\uc11d\u00b7\ud45c\uc9c0 \uc18d\uc131 \uc81c\uac70");
     c.ok(st.twoWeights.some(w => w === "700" || w === "bold"), "\uc77c\ubd80\ub9cc \uad75\uc740 \uc6d0\uace0\ub294 \uc18c\uc81c\ubaa9 \uac15\uc870\uac00 \uc0b4\uc544 \uc788\ub2e4");
     c.ok(parseFloat(st.name) >= 700, "\ub2e8\uc6d0 \uc774\ub984\uc774 \ub3cb\ubcf4\uc774\uac8c \uc9c4\ud558\ub2e4 (" + st.name + ")");
+    c.ok(st.namePx >= st.bodyPx + 4 && st.rolePx >= st.bodyPx,
+      "직함·이름이 본문(16px)에 묻히지 않고 확실히 크다 (직함 " + st.rolePx + "px / 이름 " + st.namePx + "px / 본문 " + st.bodyPx + "px)");
     c.ok(st.kindPx >= 12 && st.timePx >= 14, "\uc6d0\uace0 \ubc30\uc9c0\u00b7\uc2dc\uac01\uc774 \ubcf8\ubb38\uc5d0 \ubab0\ub9ac\uc9c0 \uc54a\uc744 \ud3ec\uae30 (\ubc30\uc9c0 " + st.kindPx + "px / \uc2dc\uac01 " + st.timePx + "px)");
     await page.close();
   }
