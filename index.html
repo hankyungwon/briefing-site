@@ -588,9 +588,13 @@
     background:var(--card);border:1px solid var(--line);border-radius:10px;
     padding:18px 18px 16px;box-shadow:0 1px 3px rgba(14,95,168,.05);
   }
-  .member .role-tag{font-size:15px;font-weight:700;letter-spacing:.05em;color:var(--sky);margin-bottom:6px;}
+    /* 카드 머리띠 — 이름·직함을 한 줄에, 표 머리글처럼 바탕색을 깔아 각자의 영역을 구분 */
+  .member-head{display:flex;align-items:baseline;justify-content:flex-start;gap:4px 10px;flex-wrap:wrap;
+    margin:-18px -18px 12px;padding:11px 18px 10px;background:#EAF2FA;border-bottom:1px solid #CFDDEC;border-radius:10px 10px 0 0;}
+  .member.head .member-head{background:#E4EEF9;}
+  .member h4{font-family:'Noto Serif KR',serif;font-size:20px;font-weight:800;line-height:1.3;color:var(--gwanak-deep);min-width:0;}
+  .member .role-tag{font-size:14.5px;font-weight:700;letter-spacing:.04em;color:var(--sky);white-space:nowrap;}
   .member.head .role-tag{color:var(--gwanak);}
-  .member h4{font-family:'Noto Serif KR',serif;font-size:17px;font-weight:800;}
   .member p{font-size:14px;color:var(--muted);margin-top:6px;}
   /* 업무게시판 — 로그인 직원 전용 포스트잇 메모 */
   .wb{margin-top:10px;padding-top:9px;border-top:1px solid var(--line);}
@@ -1013,8 +1017,7 @@
     <p class="work-info" id="about-workinfo" hidden>💡 각 단원은 회의에 앞서 회의 자료 원고(주간/수시)를 <span class="hl">간략하게</span> 작성해 둡니다. 작성된 원고는 자료마당에서 종류별로 취합되어 회의 자료가 됩니다.</p>
     <div class="team-grid">
       <div class="member head" data-member="lead">
-        <div class="role-tag">단장</div>
-        <h4>한프로</h4>
+        <div class="member-head"><h4>한프로</h4><span class="role-tag">단장</span></div>
         <p>연구단 총괄 · 정책 방향 설계</p>
         <p class="member-credential">관악구 정책보좌관 · 도시계획학 박사(Ph.D. in Urban Planning)</p>
         <div class="head-message">
@@ -1024,8 +1027,7 @@
         </div>
       </div>
       <div class="member" data-member="two">
-        <div class="role-tag">AI혁신 선임연구관</div>
-        <h4>오프로</h4>
+        <div class="member-head"><h4>오프로</h4><span class="role-tag">AI혁신 선임연구관</span></div>
         <ul class="duties">
           <li><strong>혁신경제도시 및 AI스마트도시 연구</strong>관악구 맞춤형 혁신경제 정책 및 AI 기반의 스마트도시 조성을 위한 과제 연구</li>
           <li><strong>관악구의 AI 전환(AX) 지원</strong>부서별 맞춤형 AI 활용 컨설팅 제공 및 관악구청 내 인공지능 기반의 업무 혁신 방향 제시</li>
@@ -1035,8 +1037,7 @@
         <div class="wb wb-staff" hidden></div>
       </div>
       <div class="member" data-member="three">
-        <div class="role-tag">지역개발 연구관</div>
-        <h4>백프로</h4>
+        <div class="member-head"><h4>백프로</h4><span class="role-tag">지역개발 연구관</span></div>
         <ul class="duties">
           <li><strong>힐링정원도시 및 지역 활성화 연구</strong>민선 9기 핵심 목표인 힐링정원도시 조성 및 지역 활성화 추진과제 연구</li>
           <li><strong>융복합적 지역 활성화 정책 연구</strong>도시재생, 마을공동체 활성화, 지역 문화 진흥, 관광 콘텐츠 개발 등 융복합적 지역개발 정책 연구 추진</li>
@@ -1046,8 +1047,7 @@
         <div class="wb wb-staff" hidden></div>
       </div>
       <div class="member" data-member="four">
-        <div class="role-tag">도시행정 연구관</div>
-        <h4>박프로</h4>
+        <div class="member-head"><h4>박프로</h4><span class="role-tag">도시행정 연구관</span></div>
         <ul class="duties">
           <li><strong>청년친화도시 정책 연구</strong>민선 9기 핵심 목표인 청년친화도시 조성을 위한 맞춤형 청년 정책 연구 추진</li>
           <li><strong>협치 기반의 행정혁신 과제 연구</strong>시민단체, 대학, 구의회 등 주요 기관과의 긴밀한 소통을 바탕으로 행정혁신 과제 연구</li>
@@ -1057,8 +1057,7 @@
         <div class="wb wb-staff" hidden></div>
       </div>
       <div class="member" data-member="five">
-        <div class="role-tag">대외협력 연구관</div>
-        <h4>유프로</h4>
+        <div class="member-head"><h4>유프로</h4><span class="role-tag">대외협력 연구관</span></div>
         <ul class="duties">
           <li><strong>주민 의견 수렴 및 정책 수요 발굴</strong>정책포럼, 표적집단면접, 구민 설문조사 등의 기획과 운영을 통한 정책 수요 발굴</li>
           <li><strong>외부 전문가 네트워크 구축 및 자문회의 등 개최</strong>학계, 기업, 민간단체 등 전문가 네트워크 구축 및 각계 의견 수렴</li>
@@ -1068,8 +1067,7 @@
         <div class="wb wb-staff" hidden></div>
       </div>
       <div class="member" data-member="song">
-        <div class="role-tag">행정지원 주무관</div>
-        <h4>송프로</h4>
+        <div class="member-head"><h4>송프로</h4><span class="role-tag">행정지원 주무관</span></div>
         <ul class="duties">
           <li><strong>연구과제 발굴 및 연구계획 수립</strong>구정 현안과 연계한 연구과제를 발굴하고 연간 연구계획을 수립</li>
           <li><strong>연구과제 목록 및 연구사업비 관리</strong>과제 진행 현황을 총괄 관리하고 연구사업비를 집행·정산</li>
@@ -3004,7 +3002,35 @@
         else if (name === "src" && el.tagName === "IMG" && !/^data:image\//i.test(val) && !/^https:\/\//i.test(val)) el.removeAttribute(a.name);
       });
     });
+    doc.querySelectorAll("img[data-sb]").forEach(i => i.removeAttribute("src"));   // 보관함 그림은 주소만 저장(서명 주소는 1시간짜리)
     return doc.body.firstChild ? doc.body.firstChild.innerHTML : "";
+  }
+  // 본문 속 보관함 그림(data-sb)에 서명 주소(1시간)를 붙여 보이게 한다 — 카드·편집기·취합본 보기 공통
+  async function resolveInlineImages(root) {
+    const imgs = [...root.querySelectorAll("img[data-sb]")].filter(i => !i.getAttribute("src"));
+    if (!imgs.length) return;
+    const paths = [...new Set(imgs.map(i => i.dataset.sb))];
+    const { data } = await sb.storage.from("attachments").createSignedUrls(paths, 3600);
+    const byPath = {}; (data || []).forEach(x => { if (x.signedUrl) byPath[x.path] = x.signedUrl; });
+    imgs.forEach(i => { if (byPath[i.dataset.sb]) i.src = byPath[i.dataset.sb]; });
+  }
+  // 파일로 저장·인쇄할 때는 보관함 그림을 문서 안에 담는다 — 나중에 인터넷 없이 열어도 보이도록
+  async function embedInlineImages(fullHtml) {
+    if (!/data-sb=/.test(fullHtml)) return fullHtml;
+    const doc = new DOMParser().parseFromString(fullHtml, "text/html");
+    const imgs = [...doc.querySelectorAll("img[data-sb]")];
+    const paths = [...new Set(imgs.map(i => i.dataset.sb))];
+    const { data } = await sb.storage.from("attachments").createSignedUrls(paths, 600);
+    const byPath = {};
+    await Promise.all((data || []).map(async x => {
+      if (!x.signedUrl) return;
+      try {
+        const b = await (await fetch(x.signedUrl)).blob();
+        byPath[x.path] = await new Promise(r => { const fr = new FileReader(); fr.onload = () => r(fr.result); fr.readAsDataURL(b); });
+      } catch (e) { /* 못 가져온 그림은 빈 자리로 둔다 */ }
+    }));
+    imgs.forEach(i => { if (byPath[i.dataset.sb]) i.src = byPath[i.dataset.sb]; });
+    return "<!DOCTYPE html>" + doc.documentElement.outerHTML;
   }
   async function loadPackets() {
     const list = document.getElementById("res-packet-list");
@@ -3063,6 +3089,7 @@
     document.getElementById("packet-edit-summary").value = "";
     const pe = document.getElementById("packet-edit-body");
     pe.innerHTML = sanitizePacketHtml(content);
+    resolveInlineImages(pe);
     if (pe._updCount) pe._updCount();
     packetView("edit");
   }
@@ -3101,6 +3128,7 @@
     ensureEditorFonts();
     document.getElementById("packet-title").textContent = p.title || "회의 자료";
     document.getElementById("packet-doc").innerHTML = '<div class="packet-body">' + normalizePacketHeader(sanitizePacketHtml(p.content || "")) + '</div>';
+    resolveInlineImages(document.getElementById("packet-doc"));
     packetView("doc");
   }
   // 취합본은 항상 '새 글'로 게시된다(수정 없음). 누가 올렸는지 created_by에 남긴다.
@@ -3249,13 +3277,14 @@
     const title = document.getElementById("packet-title").textContent || "회의 자료";
     return { title: title, html: buildStandaloneHtml(title, '<h1>' + esc(title) + '</h1>' + document.getElementById("packet-doc").innerHTML) };
   }
-  document.getElementById("packet-print").addEventListener("click", () => printHtml(packetDocHtml().html));
-  wireSaveMenu("packet-download", "packet-savemenu", fmt => {
+  document.getElementById("packet-print").addEventListener("click", async () => printHtml(await embedInlineImages(packetDocHtml().html)));
+  wireSaveMenu("packet-download", "packet-savemenu", async fmt => {
     const r = packetDocHtml();
-    if (fmt === "pdf") printHtml(r.html);
-    else if (fmt === "md") downloadText(safeFileName(r.title) + ".md", "# " + r.title + "\n\n" + htmlToMarkdown(document.getElementById("packet-doc").innerHTML));
-    else if (fmt === "html") downloadText(safeFileName(r.title) + ".html", r.html, "text/html", "웹 문서");
-    else downloadDoc(safeFileName(r.title) + ".doc", r.html);
+    if (fmt === "md") { downloadText(safeFileName(r.title) + ".md", "# " + r.title + "\n\n" + htmlToMarkdown(document.getElementById("packet-doc").innerHTML)); return; }
+    const html = await embedInlineImages(r.html);
+    if (fmt === "pdf") printHtml(html);
+    else if (fmt === "html") downloadText(safeFileName(r.title) + ".html", html, "text/html", "웹 문서");
+    else downloadDoc(safeFileName(r.title) + ".doc", html);
   });
   document.getElementById("packet-save").addEventListener("click", savePacket);
   document.getElementById("packet-edit-cancel").addEventListener("click", closePacketModal);
@@ -3291,12 +3320,23 @@
     img.onerror = () => cb(null);
     const fr = new FileReader(); fr.onload = () => { img.src = fr.result; }; fr.readAsDataURL(file);
   }
+  // 원고·취합본에 넣는 그림 — 폭 1200px로 줄여 보관함(attachments/inline)에 올리고, 본문에는 주소(data-sb)만 남긴다.
+  // 원고 글자와 함께 그림 데이터를 통째로 저장하면 원고가 무거워져 화면이 느려지므로, 자료마당 첨부와 같은 보관함을 쓴다.
+  const INLINE_IMG_MAX = 10;   // 글 하나에 넣을 수 있는 그림 수 (원본은 자료마당과 같이 20MB 이하)
   function insertImageInto(ed, file) {
     if (!file || !/^image\//.test(file.type)) return;
-    fileToScaledDataUrl(file, 1200, url => {
+    if (file.size > MAX_IMG) { alert("이미지가 20MB를 초과합니다. (" + fmtSize(file.size) + ")"); return; }
+    if (ed.querySelectorAll("img").length >= INLINE_IMG_MAX) { alert("그림은 글 하나에 최대 " + INLINE_IMG_MAX + "장까지 넣을 수 있습니다."); return; }
+    if (!currentUser) { alert("로그인 후 그림을 넣을 수 있습니다."); return; }
+    fileToScaledDataUrl(file, 1200, async url => {
       if (!url) { alert("이미지를 불러오지 못했습니다."); return; }
+      const path = "inline/" + currentUser.id + "/" + Date.now() + "_" + Math.random().toString(36).slice(2, 8) + ".jpg";
+      const blob = await (await fetch(url)).blob();
+      const { error } = await sb.storage.from("attachments").upload(path, blob, { contentType: "image/jpeg" });
+      if (error) { alert("그림을 올리지 못했습니다. (" + error.message + ")"); return; }
       ed.focus();
-      document.execCommand("insertHTML", false, '<img src="' + url + '" style="max-width:100%;"><p><br></p>');
+      document.execCommand("insertHTML", false, '<img data-sb="' + esc(path) + '" src="' + url + '" style="max-width:100%;"><p><br></p>');
+      ed.dispatchEvent(new Event("input"));
     });
   }
   function buildTableHtml() {
@@ -4145,6 +4185,7 @@
       wb.hidden = false;
       wb.innerHTML = staffBoardHtml(byEmail[email] || [], isOwner, key);
     });
+    resolveInlineImages(grid || document.getElementById('about'));
   }
 
   // 편집 버튼 위임
@@ -4199,9 +4240,10 @@
     document.getElementById('memo-kind').value = (note && note.kind === "수시") ? "수시" : "주간";
     document.getElementById('memo-sub').textContent = note
       ? "이 원고를 고쳐 다시 저장합니다. 글자 크기·서체는 회의 자료로 모을 때 표준 서식으로 정리됩니다."
-      : "회의 자료로 취합될 원고를 새로 작성합니다. 저장하면 카드 맨 위에 쌓이고, 취합 때는 구분별 최신 원고가 사용됩니다. 글자 크기·서체는 표준 서식으로 정리되니 내용에 집중하세요.";
+      : "회의 자료로 취합될 원고를 새로 작성합니다. 저장하면 카드 맨 위에 쌓이고, 취합 때는 구분별 최신 원고가 사용됩니다. 글자 크기·서체는 표준 서식으로 정리되니 내용에 집중하세요. 사진·그림은 20MB 이하, 글 하나에 10장까지 넣을 수 있습니다.";
     const bodyEl = document.getElementById('memo-body');
     bodyEl.innerHTML = note && note.body ? richToHtml(note.body) : "";
+    resolveInlineImages(bodyEl);
     if (bodyEl._updCount) bodyEl._updCount();
     memoModal.classList.add('open');
   }
@@ -4232,13 +4274,14 @@
     memoModal.classList.remove('open');
     await renderAboutBoards();
   });
-  document.getElementById('memo-print').addEventListener('click', () => { printHtml(memoExportDoc().html); });
-  wireSaveMenu('memo-download', 'memo-savemenu', fmt => {
+  document.getElementById('memo-print').addEventListener('click', async () => { printHtml(await embedInlineImages(memoExportDoc().html)); });
+  wireSaveMenu('memo-download', 'memo-savemenu', async fmt => {
     const r = memoExportDoc();
-    if (fmt === 'pdf') printHtml(r.html);
-    else if (fmt === 'md') downloadText(safeFileName(r.title) + ".md", "# " + r.title + "\n\n" + htmlToMarkdown(r.raw));
-    else if (fmt === 'html') downloadText(safeFileName(r.title) + ".html", r.html, "text/html", "웹 문서");
-    else downloadDoc(safeFileName(r.title) + ".doc", r.html);
+    if (fmt === 'md') { downloadText(safeFileName(r.title) + ".md", "# " + r.title + "\n\n" + htmlToMarkdown(r.raw)); return; }
+    const html = await embedInlineImages(r.html);
+    if (fmt === 'pdf') printHtml(html);
+    else if (fmt === 'html') downloadText(safeFileName(r.title) + ".html", html, "text/html", "웹 문서");
+    else downloadDoc(safeFileName(r.title) + ".doc", html);
   });
   makeRichEditor("memo-toolbar", "memo-img-input", [document.getElementById("memo-body")]);
 

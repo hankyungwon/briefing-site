@@ -123,6 +123,12 @@ const daysAgo = n => { const d = new Date(); d.setDate(d.getDate() - n); return 
         html: one.innerHTML, twoWeights: [...two.querySelectorAll("*")].filter(e => e.textContent.trim())
           .map(e => getComputedStyle(e).fontWeight),
         name: getComputedStyle(document.querySelector('#about .member[data-member="four"] h4')).fontWeight,
+        namePx: parseFloat(getComputedStyle(document.querySelector('#about .member[data-member="four"] h4')).fontSize),
+        rolePx: parseFloat(getComputedStyle(document.querySelector('#about .member[data-member="four"] .role-tag')).fontSize),
+        headBg: getComputedStyle(document.querySelector('#about .member[data-member="four"] .member-head')).backgroundColor,
+        oneLine: (() => { const h = document.querySelector('#about .member[data-member="four"] .member-head');
+          const n = h.querySelector("h4").getBoundingClientRect(), r = h.querySelector(".role-tag").getBoundingClientRect();
+          return Math.abs(n.bottom - r.bottom) < 6 && r.left - n.right < 24 && r.left > n.right; })(),
         kindPx: parseFloat(getComputedStyle(notes[0].querySelector(".board-kind")).fontSize),
         timePx: parseFloat(getComputedStyle(notes[0].querySelector(".board-time")).fontSize),
         bodyPx: parseFloat(base.fontSize) };
@@ -133,7 +139,63 @@ const daysAgo = n => { const d = new Date(); d.setDate(d.getDate() - n); return 
     c.ok(!/StartFragment|EndFragment/.test(st.html) && !/data-start|data-end/.test(st.html), "\ubd99\uc5ec\ub123\uae30 \uc8fc\uc11d\u00b7\ud45c\uc9c0 \uc18d\uc131 \uc81c\uac70");
     c.ok(st.twoWeights.some(w => w === "700" || w === "bold"), "\uc77c\ubd80\ub9cc \uad75\uc740 \uc6d0\uace0\ub294 \uc18c\uc81c\ubaa9 \uac15\uc870\uac00 \uc0b4\uc544 \uc788\ub2e4");
     c.ok(parseFloat(st.name) >= 700, "\ub2e8\uc6d0 \uc774\ub984\uc774 \ub3cb\ubcf4\uc774\uac8c \uc9c4\ud558\ub2e4 (" + st.name + ")");
+    c.ok(st.namePx >= st.bodyPx + 4 && st.rolePx >= 14,
+      "이름은 본문(16px)보다 확실히 크고 직함도 묻히지 않는다 (직함 " + st.rolePx + "px / 이름 " + st.namePx + "px / 본문 " + st.bodyPx + "px)");
+    c.ok(!/rgba\(0, 0, 0, 0\)|transparent/.test(st.headBg), "카드 머리띠에 바탕색 (" + st.headBg + ")");
+    c.ok(st.oneLine, "이름 오른쪽에 직함이 바짝 붙어 한 줄");
     c.ok(st.kindPx >= 12 && st.timePx >= 14, "\uc6d0\uace0 \ubc30\uc9c0\u00b7\uc2dc\uac01\uc774 \ubcf8\ubb38\uc5d0 \ubab0\ub9ac\uc9c0 \uc54a\uc744 \ud3ec\uae30 (\ubc30\uc9c0 " + st.kindPx + "px / \uc2dc\uac01 " + st.timePx + "px)");
+    await page.close();
+  }
+
+  // A4. 원고 속 사진은 보관함(attachments/inline)에 두고 본문에는 주소만 — 원고가 무거워지지 않고, 화면·파일에는 그대로 보인다
+  {
+    const page = await H.newPage(browser, { viewport: { width: 1300, height: 1100 } });
+    await page.addInitScript(() => { try { delete window.showSaveFilePicker; } catch (e) { window.showSaveFilePicker = undefined; } });
+    const { user, session } = H.mkSession("fourpro@hanmail.net", "four");
+    const PNG = Buffer.from("iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNkYPhfDwAChwGA60e6kgAAAABJRU5ErkJggg==", "base64");
+    let staff = [], nid = 1, uploads = [], signed = [];
+    await H.setupPage(page, { user, session, routes: (p, m, req) => {
+      if (p === "/rest/v1/staff_notes") {
+        if (m === "POST") { const row = JSON.parse(req.postData()); row.id = nid++; staff.push(row); return [row]; }
+        if (m === "PATCH") { const row = JSON.parse(req.postData()); Object.assign(staff[0], row); return [staff[0]]; }
+        return [...staff].sort((a, b) => b.id - a.id);
+      }
+      if (p.startsWith("/storage/v1/object/attachments/")) { uploads.push(p.slice("/storage/v1/object/attachments/".length)); return { Id: "1", Key: "attachments/" + uploads[uploads.length - 1] }; }
+      if (p === "/storage/v1/object/sign/attachments") {
+        const paths = JSON.parse(req.postData()).paths; signed.push(...paths);
+        return paths.map(x => ({ path: x, signedURL: "/object/sign/attachments/" + x + "?token=t", error: null }));
+      }
+      return H.defaultBriefingRoutes(p);
+    }});
+    // 서명 주소로 실제 그림을 내려주는 척 (setupPage 뒤에 걸어 우선 적용)
+    await page.route("**/storage/v1/object/sign/attachments/inline/**", r => r.fulfill({ status: 200, contentType: "image/png", body: PNG }));
+    const dialogs = []; page.on("dialog", d => { dialogs.push(d.message()); d.dismiss().catch(() => {}); });
+    await H.login(page, port, "fourpro@hanmail.net");
+    await page.click('nav button[data-panel="about"]'); await page.waitForTimeout(600);
+    await page.click('#about .member[data-member="four"] [data-memo-new]'); await page.waitForTimeout(300);
+    await page.click("#memo-body"); await page.type("#memo-body", "현장 사진 첨부");
+    await page.setInputFiles("#memo-img-input", { name: "site.png", mimeType: "image/png", buffer: PNG }); await page.waitForTimeout(900);
+    const ed = await page.evaluate(() => { const i = document.querySelector("#memo-body img"); return i ? { sb: i.dataset.sb || "", src: (i.getAttribute("src") || "").slice(0, 22) } : null; });
+    c.ok(ed && /^inline\/four\//.test(ed.sb), "그림이 보관함 주소(data-sb)를 달고 편집기에 들어감 (" + (ed && ed.sb) + ")");
+    c.ok(ed && /^data:image\/jpeg/.test(ed.src), "넣자마자 편집기에 바로 보임(줄인 JPEG)");
+    c.ok(uploads.length === 1 && /^inline\/four\/.+\.jpg$/.test(uploads[0]), "보관함(attachments/inline/…)에 1장 업로드 (" + uploads[0] + ")");
+    await page.click("#memo-submit"); await page.waitForTimeout(900);
+    const body = staff[0] && staff[0].body || "";
+    c.ok(/data-sb="inline\/four\//.test(body) && !/src=/.test(body) && !/data:image/.test(body), "저장된 원고에는 그림 주소만 — 그림 데이터가 글에 섞이지 않음(" + body.length + "자)");
+    const card = await page.evaluate(() => { const i = document.querySelector('#about .member[data-member="four"] .wt img[data-sb]'); return i ? i.getAttribute("src") || "" : ""; });
+    c.ok(/\/object\/sign\/attachments\/inline\/four\//.test(card), "카드에서는 서명 주소로 그림이 보임");
+    // 한도: 글 하나에 10장까지
+    await page.click('#about .member[data-member="four"] .wb-note [data-memo-edit]'); await page.waitForTimeout(400);
+    await page.evaluate(() => { const e = document.getElementById("memo-body"); e.innerHTML = Array.from({ length: 10 }, (_, i) => '<img data-sb="inline/four/' + i + '.jpg" src="">').join("") + "<p>열 장</p>"; });
+    await page.setInputFiles("#memo-img-input", { name: "more.png", mimeType: "image/png", buffer: PNG }); await page.waitForTimeout(500);
+    c.ok(dialogs.some(d => /최대 10장/.test(d)) && uploads.length === 1, "11번째 그림은 안내와 함께 거절(업로드 없음)");
+    // 파일 저장(.html)에는 그림을 문서 안에 담는다 — 나중에 인터넷 없이 열어도 보이게
+    await page.evaluate(() => { document.getElementById("memo-body").innerHTML = '<p>사진</p><img data-sb="inline/four/keep.jpg" src="">'; });
+    await page.click("#memo-download"); await page.waitForTimeout(120);
+    const dl = await Promise.all([page.waitForEvent("download"), page.click('#memo-savemenu [data-fmt="html"]')]).then(a => a[0]);
+    const out = require("fs").readFileSync(await dl.path(), "utf8");
+    c.ok(/data-sb="inline\/four\/keep\.jpg"[^>]*src="data:image\/png;base64,/.test(out) || /src="data:image\/png;base64,[^"]+"[^>]*data-sb="inline\/four\/keep\.jpg"/.test(out),
+      "저장한 .html 파일 안에 그림이 담김(보관함에서 받아 넣음)");
     await page.close();
   }
 
