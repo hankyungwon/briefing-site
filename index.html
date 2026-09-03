@@ -89,7 +89,17 @@
     .nav-auth{width:100%;justify-content:flex-end;margin-left:0;padding:7px 4px 9px;border-top:1px solid var(--line);}
   }
   .nav-auth{margin-left:auto;align-self:center;display:flex;align-items:center;gap:10px;min-width:0;padding-left:12px;}
-  .auth-email{font-size:13px;color:var(--muted);max-width:160px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+  /* 로그인한 사람 — 초록 접속 표시등 + 진한 파랑 굵은 호칭. 내용 폭에 맞추고 왼쪽 정렬(「단장」처럼 짧아도 빈 자리 없음) */
+  .auth-email{display:inline-flex;align-items:center;justify-content:flex-start;gap:6px;text-align:left;
+    color:var(--gwanak-deep);font-weight:800;font-size:13.5px;max-width:160px;white-space:nowrap;}
+  /* 접속 표시등 — 켜진 초록 신호등(LED 구슬) 느낌: 가운데가 밝고 가장자리로 짙어지며, 바깥으로 은은히 빛나며 천천히 숨 쉰다 */
+  .auth-email::before{content:"";flex:none;width:10px;height:10px;border-radius:50%;
+    background:radial-gradient(circle at 35% 32%,#B9FFD6 0,#4ADE80 38%,#16A34A 70%,#0B6B32 100%);
+    box-shadow:0 0 0 2px rgba(34,197,94,.18),0 0 9px 2px rgba(34,197,94,.55),inset 0 -1px 2px rgba(0,0,0,.25);
+    animation:authGlow 2.6s ease-in-out infinite;}
+  @keyframes authGlow{0%,100%{box-shadow:0 0 0 2px rgba(34,197,94,.18),0 0 9px 2px rgba(34,197,94,.55),inset 0 -1px 2px rgba(0,0,0,.25);}
+    50%{box-shadow:0 0 0 3px rgba(34,197,94,.10),0 0 13px 4px rgba(34,197,94,.75),inset 0 -1px 2px rgba(0,0,0,.25);}}
+  @media(prefers-reduced-motion:reduce){.auth-email::before{animation:none;}}
   .auth-btn{
     appearance:none;cursor:pointer;font-family:'Noto Sans KR',sans-serif;
     font-size:13.5px;font-weight:500;color:var(--gwanak);
@@ -2091,7 +2101,7 @@
 
   function renderAuthNav() {
     if (currentUser) {
-      authEmailEl.textContent = authorName(currentUser.email);   // 이메일 대신 호칭(송프로·단장…)
+      authEmailEl.textContent = authorName(currentUser.email);   // 이메일 대신 호칭(송프로·단장…), 앞에 접속 표시등
       authEmailEl.title = currentUser.email;
       authEmailEl.hidden = false;
       authBtn.textContent = "로그아웃";
