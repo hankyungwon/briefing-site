@@ -92,7 +92,8 @@ const daysAgo = n => { const d = new Date(); d.setDate(d.getDate() - n); return 
   {
     const page = await H.newPage(browser, { viewport: { width: 900, height: 1100 } });
     const { user, session } = H.mkSession("syho99@naver.com", "song");
-    const staff = [{ id: 1, member_email: "twopro@hanmail.net", kind: "주간", body: "<b>굵은 원고</b>", updated_at: "2026-07-20T00:00:00Z" }];
+    const staff = [{ id: 1, member_email: "twopro@hanmail.net", kind: "주간",
+      body: '<span style="font-size:26px;font-family:굴림;line-height:2.4;color:#C00;"><b>굵은 원고</b></span>', updated_at: "2026-07-20T00:00:00Z" }];
     let packets = [], nid = 1;
     await H.setupPage(page, { user, session, routes: (p, m, req) => {
       if (p === "/rest/v1/staff_notes") return staff;
@@ -117,6 +118,11 @@ const daysAgo = n => { const d = new Date(); d.setDate(d.getDate() - n); return 
     c.ok(/〈[^〉]*7\.20[^〉]*〉/.test(draftHasFmt) && !/작성[)〉]/.test(draftHasFmt),
       "단원 작성 시각은 〈…〉 표기 — 괄호 중복·'작성' 꼬리말 없음");
     c.ok(!/<hr\s*\/?>/i.test(draftHasFmt), "취합 초안에 긴 가로선 없음");
+    // 사람마다 다른 글자 크기·서체·줄간격은 표준으로 정리하고, 굵게·색 같은 강조는 살린다
+    // (머리글 자체의 크기 지정은 정상이므로, 원고에서 온 값만 본다)
+    c.ok(!/26px/.test(draftHasFmt) && !/굴림/.test(draftHasFmt) && !/line-height:\s*2\.4/.test(draftHasFmt),
+      "취합 초안에서 원고의 글자 크기·서체·줄간격 지정이 정리됨");
+    c.ok(/color:\s*#?C00|rgb\(204, 0, 0\)/i.test(draftHasFmt), "글자색 같은 강조는 그대로 유지");
 
     await page.fill("#packet-edit-summary", "AI 교육 확대·공모사업 마감 대응");
     await page.click("#packet-save"); await page.waitForTimeout(500);
