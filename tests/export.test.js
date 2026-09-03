@@ -56,6 +56,12 @@ const fs = require("fs");
     await H.login(page, port, "syho99@naver.com");
     await page.click('nav button[data-panel="resources"]'); await page.waitForTimeout(400);
     await page.click('.res-subnav [data-ressec="packets"]'); await page.waitForTimeout(400);
+    // 안내문은 한 줄만 보이고, 「자세히」를 눌러야 긴 설명이 펼쳐진다
+    const noteBefore = await page.evaluate(() => { const d = document.querySelector(".note-detail"); return d && getComputedStyle(d).display; });
+    await page.click("[data-note-more]"); await page.waitForTimeout(100);
+    const noteAfter = await page.evaluate(() => { const d = document.querySelector(".note-detail"); return d && getComputedStyle(d).display; });
+    c.ok(noteBefore === "none" && noteAfter === "block", "회의 자료 안내문: 접힘(" + noteBefore + ") → 「자세히」로 펼침(" + noteAfter + ")");
+    c.ok(await page.evaluate(() => document.getElementById("auth-email").textContent) === "송프로", "메뉴줄 로그인 표시가 이메일 대신 호칭(송프로)");
     const rowTitle = await page.evaluate(() => (document.querySelector("#res-packet-list .pk-row .pk-title") || {}).textContent || "");
     c.ok(rowTitle === "주간회의 자료", "목록 제목에서 날짜 중복 제거 (" + rowTitle + ")");
     await page.click("#res-packet-list [data-pk-view]"); await page.waitForTimeout(300);
