@@ -590,7 +590,7 @@
   }
   .member .role-tag{font-size:15px;font-weight:700;letter-spacing:.05em;color:var(--sky);margin-bottom:6px;}
   .member.head .role-tag{color:var(--gwanak);}
-  .member h4{font-family:'Noto Serif KR',serif;font-size:17px;font-weight:600;}
+  .member h4{font-family:'Noto Serif KR',serif;font-size:17px;font-weight:800;}
   .member p{font-size:14px;color:var(--muted);margin-top:6px;}
   /* 업무게시판 — 로그인 직원 전용 포스트잇 메모 */
   .wb{margin-top:10px;padding-top:9px;border-top:1px solid var(--line);}
@@ -863,6 +863,10 @@
   .wt.rich p{margin:3px 0;} .wt.rich ul,.wt.rich ol{margin:3px 0 3px 2px;padding-left:20px;} .wt.rich li{margin:1px 0;}
   .wt.rich img{max-width:100%;height:auto;border-radius:4px;margin:3px 0;} .wt.rich hr{border:none;border-top:1px solid var(--line);margin:6px 0;}
   .wt.rich table{border-collapse:collapse;width:100%;margin:5px 0;} .wt.rich td,.wt.rich th{border:1px solid #B9C6D6;padding:4px 6px;font-size:12.5px;}
+  /* 붙여넣은 원고의 <p>·<div>·제목이 카드 글씨(.member p 등)에 물들지 않게 — 컨테이너 값을 그대로 따른다 */
+  .wt p,.wt div,.wt li,.wt h1,.wt h2,.wt h3,.wt h4,.wt h5,.wt h6,.wt blockquote{font-size:inherit;color:inherit;font-family:inherit;margin-top:0;}
+  .wb-sec .board-kind{font-size:12.5px;padding:2px 8px;}
+  .wb-sec .board-time{font-size:14px;}
   /* 편집기 안 빈 영역 안내문(placeholder) */
   .pk-editor:empty::before{content:attr(data-ph);color:var(--muted);}
   .wb-empty{font-size:13px;color:var(--muted);padding:4px 0;word-break:keep-all;}
@@ -3759,6 +3763,28 @@
   // 원고 표준화 — 사람마다 제각각인 글자 크기·서체·줄간격 지정을 걷어내고 표준 본문 서식으로 보여준다.
   // 굵게·기울임·밑줄·형광펜·글머리표·번호·표 같은 강조와 구조는 그대로 살린다.
   // 저장된 원문은 건드리지 않는다(본인이 「수정」으로 열면 쓰던 서식 그대로 나온다).
+  // 원고 전체가 굵게라면 강조가 아니라 붙여넣기 흔적 — 통째로 굵게는 지운다
+  function stripAllBold(wrap) {
+    const isB = el => el.tagName === "B" || el.tagName === "STRONG"
+      || /^(bold|bolder|[6-9]00)$/.test(((el.style && el.style.fontWeight) || "").trim());
+    let bold = 0, all = 0;
+    const walk = document.createTreeWalker(wrap, NodeFilter.SHOW_TEXT);
+    for (let n = walk.nextNode(); n; n = walk.nextNode()) {
+      const len = n.nodeValue.replace(/\s/g, "").length;
+      if (!len) continue;
+      all += len;
+      for (let el = n.parentElement; el && el !== wrap; el = el.parentElement) if (isB(el)) { bold += len; break; }
+    }
+    if (all < 40 || bold / all < 0.9) return;
+    wrap.querySelectorAll("[style]").forEach(el => {
+      el.style.removeProperty("font-weight");
+      if (!el.getAttribute("style")) el.removeAttribute("style");
+    });
+    wrap.querySelectorAll("b,strong").forEach(el => {
+      while (el.firstChild) el.parentNode.insertBefore(el.firstChild, el);
+      el.remove();
+    });
+  }
   function manuscriptHtml(val) {
     const html = richToHtml(val);
     if (!html) return "";
@@ -3771,6 +3797,12 @@
     wrap.querySelectorAll("font[size],font[face],font[color]").forEach(el => {
       el.removeAttribute("size"); el.removeAttribute("face"); el.removeAttribute("color");
     });
+    // 붙여넣기 흔적 지우기 — 워드/챗봇이 남기는 주석과 표시용 속성
+    wrap.querySelectorAll("[data-start],[data-end]").forEach(el => { el.removeAttribute("data-start"); el.removeAttribute("data-end"); });
+    const cw = document.createTreeWalker(wrap, NodeFilter.SHOW_COMMENT), cs = [];
+    for (let n = cw.nextNode(); n; n = cw.nextNode()) cs.push(n);
+    cs.forEach(n => n.remove());
+    stripAllBold(wrap);
     return wrap.innerHTML;
   }
   makeRichEditor("packet-toolbar", "packet-img-input", [document.getElementById("packet-edit-body")]);
