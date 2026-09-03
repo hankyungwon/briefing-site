@@ -72,14 +72,15 @@ const daysAgo = n => { const d = new Date(); d.setDate(d.getDate() - n); return 
     c.ok(view.count === 2, "카드에 원고 2건이 누적 표시");
     c.ok(/둘째 원고/.test(view.firstText), "최신 원고가 맨 위");
     c.ok(view.edit && view.del, "본인 원고에 수정·삭제 버튼(개인 게시판)");
-    // 원고 상자는 지시사항·회의록과 같은 문법(흰 바탕 + 왼쪽 파란 선) — 옛 노란 포스트잇 금지
+    // 원고 상자는 지시사항·회의록과 같은 문법(흰 바탕 + 사이 점선) — 옛 노란 포스트잇·세로선 금지
     const skin = await page.evaluate(() => {
-      const n = document.querySelector('#about .member[data-member="two"] .wb-note');
-      const cs = getComputedStyle(n);
-      return { bg: cs.backgroundColor, w: cs.borderLeftWidth, col: cs.borderLeftColor };
+      const notes = [...document.querySelectorAll('#about .member[data-member="two"] .wb-note')];
+      const cs = getComputedStyle(notes[0]), cs2 = getComputedStyle(notes[1]);
+      return { bg: cs.backgroundColor, left: cs.borderLeftWidth, sep: cs2.borderTopStyle };
     });
     c.ok(/rgba\(0, 0, 0, 0\)|transparent/.test(skin.bg), "원고에 노란 바탕 없음 (" + skin.bg + ")");
-    c.ok(skin.w === "3px" && skin.col === "rgb(14, 95, 168)", "원고 왼쪽에 파란 선 (" + skin.w + " " + skin.col + ")");
+    c.ok(skin.left === "0px", "원고 왼쪽에 세로선 없음 (" + skin.left + ")");
+    c.ok(skin.sep === "dashed", "원고 사이는 가로 점선으로 구분 (" + skin.sep + ")");
     // 수정 버튼 → 그 원고 내용이 실려 편집 모드로 열림
     await page.click('#about .member[data-member="two"] .wb-note [data-memo-edit]'); await page.waitForTimeout(300);
     c.ok(/둘째 원고/.test(await page.evaluate(() => document.getElementById("memo-body").innerText)), "「수정」은 그 원고 내용을 불러와 편집");
@@ -91,7 +92,8 @@ const daysAgo = n => { const d = new Date(); d.setDate(d.getDate() - n); return 
   {
     const page = await H.newPage(browser, { viewport: { width: 900, height: 1100 } });
     const { user, session } = H.mkSession("syho99@naver.com", "song");
-    const staff = [{ id: 1, member_email: "twopro@hanmail.net", kind: "주간", body: "<b>굵은 원고</b>", updated_at: "2026-07-20T00:00:00Z" }];
+    const staff = [{ id: 1, member_email: "twopro@hanmail.net", kind: "주간",
+      body: '<span style="font-size:26px;font-family:굴림;line-height:2.4;color:#C00;"><b>굵은 원고</b></span>', updated_at: "2026-07-20T00:00:00Z" }];
     let packets = [], nid = 1;
     await H.setupPage(page, { user, session, routes: (p, m, req) => {
       if (p === "/rest/v1/staff_notes") return staff;
@@ -116,6 +118,11 @@ const daysAgo = n => { const d = new Date(); d.setDate(d.getDate() - n); return 
     c.ok(/〈[^〉]*7\.20[^〉]*〉/.test(draftHasFmt) && !/작성[)〉]/.test(draftHasFmt),
       "단원 작성 시각은 〈…〉 표기 — 괄호 중복·'작성' 꼬리말 없음");
     c.ok(!/<hr\s*\/?>/i.test(draftHasFmt), "취합 초안에 긴 가로선 없음");
+    // 사람마다 다른 글자 크기·서체·줄간격은 표준으로 정리하고, 굵게·색 같은 강조는 살린다
+    // (머리글 자체의 크기 지정은 정상이므로, 원고에서 온 값만 본다)
+    c.ok(!/26px/.test(draftHasFmt) && !/굴림/.test(draftHasFmt) && !/line-height:\s*2\.4/.test(draftHasFmt),
+      "취합 초안에서 원고의 글자 크기·서체·줄간격 지정이 정리됨");
+    c.ok(/color:\s*#?C00|rgb\(204, 0, 0\)/i.test(draftHasFmt), "글자색 같은 강조는 그대로 유지");
 
     await page.fill("#packet-edit-summary", "AI 교육 확대·공모사업 마감 대응");
     await page.click("#packet-save"); await page.waitForTimeout(500);

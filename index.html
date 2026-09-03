@@ -598,9 +598,8 @@
   .wb-btn{border:1px solid var(--line);background:#fff;color:var(--gwanak);font-family:inherit;font-size:12px;font-weight:700;
     padding:4px 11px;border-radius:999px;cursor:pointer;white-space:nowrap;line-height:1;transition:background .15s,border-color .15s;}
   .wb-btn:hover{background:var(--gwanak);color:#fff;border-color:var(--gwanak);}
-  /* 단원 원고 — 지시사항·회의록과 같은 문법: 흰 바탕 + 왼쪽 파란 선 + 원고 사이 가로 점선 */
-  .wb-note{background:none;border:none;border-left:3px solid var(--gwanak);border-radius:0;
-    padding:9px 4px 9px 12px;position:relative;}
+  /* 단원 원고 — 지시사항·회의록과 같은 문법: 흰 바탕 + 원고 사이 가로 점선 */
+  .wb-note{background:none;border:none;border-radius:0;padding:9px 4px;position:relative;}
   .wb-note + .wb-note{margin-top:4px;padding-top:12px;border-top:1px dashed #D6DFE9;}
   .wb-actions{position:absolute;top:8px;right:0;display:flex;gap:6px;}
   .wb-mini{border:1px solid rgba(0,0,0,.12);background:rgba(255,255,255,.75);color:var(--slate);font-family:inherit;
@@ -2985,7 +2984,7 @@
       const n = byEmail[MEMBER_EMAILS[m.key]];
       const when = n && n.updated_at ? ' <span style="color:#889;font-size:13px;font-weight:400;">〈' + esc(fmtStamp(n.updated_at)) + '〉</span>' : '';
       h += '<h4>[' + (i + 1) + '] ' + esc(m.name) + ' · ' + esc(m.role) + when + '</h4>';
-      h += '<div>' + (n && n.body ? richToHtml(n.body) : '<span style="color:#B23;">(작성된 ' + esc(kind) + ' 원고 없음)</span>') + '</div>';
+      h += '<div>' + (n && n.body ? manuscriptHtml(n.body) : '<span style="color:#B23;">(작성된 ' + esc(kind) + ' 원고 없음)</span>') + '</div>';
     });
     return h;
   }
@@ -3757,6 +3756,21 @@
   }
   // 저장된 값이 서식(HTML)이면 정화해 사용하고, 예전 순수 텍스트면 줄바꿈만 반영
   function richToHtml(val) { return !val ? "" : (/<[a-z][\s\S]*>/i.test(val) ? sanitizePacketHtml(val) : NL2BR(val)); }
+  // 원고 표준화 — 사람마다 제각각인 글자 크기·서체·줄간격 지정을 걷어내고 표준 본문 서식으로 보여준다.
+  // 굵게·기울임·밑줄·색·글머리표·번호·표 같은 강조와 구조는 그대로 살린다.
+  // 저장된 원문은 건드리지 않는다(본인이 「수정」으로 열면 쓰던 서식 그대로 나온다).
+  function manuscriptHtml(val) {
+    const html = richToHtml(val);
+    if (!html) return "";
+    const wrap = document.createElement("div");
+    wrap.innerHTML = html;
+    wrap.querySelectorAll("[style]").forEach(el => {
+      ["font-size", "font-family", "line-height"].forEach(k => el.style.removeProperty(k));
+      if (!el.getAttribute("style")) el.removeAttribute("style");
+    });
+    wrap.querySelectorAll("font[size],font[face]").forEach(el => { el.removeAttribute("size"); el.removeAttribute("face"); });
+    return wrap.innerHTML;
+  }
   makeRichEditor("packet-toolbar", "packet-img-input", [document.getElementById("packet-edit-body")]);
 
   function toggleBoardForm(open) {
@@ -3967,7 +3981,7 @@
       + (acts ? '<div class="wb-actions">' + acts + '</div>' : '')
       + '<div class="wb-sec"><span class="board-kind ' + (kind === "수시" ? "k-soft" : "k-strong") + '">' + esc(kind) + '</span>'
       + (n.updated_at ? '<span class="board-time" style="margin-left:8px;">' + esc(fmtStamp(n.updated_at)) + '</span>' : '')
-      + '<div class="wt rich" style="margin-top:6px;">' + (n.body ? richToHtml(n.body) : "—") + '</div></div>'
+      + '<div class="wt rich" style="margin-top:6px;">' + (n.body ? manuscriptHtml(n.body) : "—") + '</div></div>'
       + '</div>';
   }
   function fmtMeetingWhen(m) { return fmtMDW(m.meeting_date) + (m.meeting_time ? " " + m.meeting_time.slice(0, 5) : ""); }
@@ -4150,8 +4164,8 @@
     memoModal.dataset.noteId = note ? String(note.id) : "";
     document.getElementById('memo-kind').value = (note && note.kind === "수시") ? "수시" : "주간";
     document.getElementById('memo-sub').textContent = note
-      ? "이 원고를 고쳐 다시 저장합니다."
-      : "회의 자료로 취합될 원고를 새로 작성합니다. 저장하면 카드 맨 위에 쌓이고, 취합 때는 구분별 최신 원고가 사용됩니다.";
+      ? "이 원고를 고쳐 다시 저장합니다. 글자 크기·서체는 회의 자료로 모을 때 표준 서식으로 정리됩니다."
+      : "회의 자료로 취합될 원고를 새로 작성합니다. 저장하면 카드 맨 위에 쌓이고, 취합 때는 구분별 최신 원고가 사용됩니다. 글자 크기·서체는 표준 서식으로 정리되니 내용에 집중하세요.";
     const bodyEl = document.getElementById('memo-body');
     bodyEl.innerHTML = note && note.body ? richToHtml(note.body) : "";
     if (bodyEl._updCount) bodyEl._updCount();
