@@ -125,6 +125,10 @@ const daysAgo = n => { const d = new Date(); d.setDate(d.getDate() - n); return 
         name: getComputedStyle(document.querySelector('#about .member[data-member="four"] h4')).fontWeight,
         namePx: parseFloat(getComputedStyle(document.querySelector('#about .member[data-member="four"] h4')).fontSize),
         rolePx: parseFloat(getComputedStyle(document.querySelector('#about .member[data-member="four"] .role-tag')).fontSize),
+        headBg: getComputedStyle(document.querySelector('#about .member[data-member="four"] .member-head')).backgroundColor,
+        oneLine: (() => { const h = document.querySelector('#about .member[data-member="four"] .member-head');
+          const n = h.querySelector("h4").getBoundingClientRect(), r = h.querySelector(".role-tag").getBoundingClientRect();
+          return Math.abs(n.bottom - r.bottom) < 6 && r.left - n.right < 24 && r.left > n.right; })(),
         kindPx: parseFloat(getComputedStyle(notes[0].querySelector(".board-kind")).fontSize),
         timePx: parseFloat(getComputedStyle(notes[0].querySelector(".board-time")).fontSize),
         bodyPx: parseFloat(base.fontSize) };
@@ -135,8 +139,10 @@ const daysAgo = n => { const d = new Date(); d.setDate(d.getDate() - n); return 
     c.ok(!/StartFragment|EndFragment/.test(st.html) && !/data-start|data-end/.test(st.html), "\ubd99\uc5ec\ub123\uae30 \uc8fc\uc11d\u00b7\ud45c\uc9c0 \uc18d\uc131 \uc81c\uac70");
     c.ok(st.twoWeights.some(w => w === "700" || w === "bold"), "\uc77c\ubd80\ub9cc \uad75\uc740 \uc6d0\uace0\ub294 \uc18c\uc81c\ubaa9 \uac15\uc870\uac00 \uc0b4\uc544 \uc788\ub2e4");
     c.ok(parseFloat(st.name) >= 700, "\ub2e8\uc6d0 \uc774\ub984\uc774 \ub3cb\ubcf4\uc774\uac8c \uc9c4\ud558\ub2e4 (" + st.name + ")");
-    c.ok(st.namePx >= st.bodyPx + 4 && st.rolePx >= st.bodyPx,
-      "직함·이름이 본문(16px)에 묻히지 않고 확실히 크다 (직함 " + st.rolePx + "px / 이름 " + st.namePx + "px / 본문 " + st.bodyPx + "px)");
+    c.ok(st.namePx >= st.bodyPx + 4 && st.rolePx >= 14,
+      "이름은 본문(16px)보다 확실히 크고 직함도 묻히지 않는다 (직함 " + st.rolePx + "px / 이름 " + st.namePx + "px / 본문 " + st.bodyPx + "px)");
+    c.ok(!/rgba\(0, 0, 0, 0\)|transparent/.test(st.headBg), "카드 머리띠에 바탕색 (" + st.headBg + ")");
+    c.ok(st.oneLine, "이름 오른쪽에 직함이 바짝 붙어 한 줄");
     c.ok(st.kindPx >= 12 && st.timePx >= 14, "\uc6d0\uace0 \ubc30\uc9c0\u00b7\uc2dc\uac01\uc774 \ubcf8\ubb38\uc5d0 \ubab0\ub9ac\uc9c0 \uc54a\uc744 \ud3ec\uae30 (\ubc30\uc9c0 " + st.kindPx + "px / \uc2dc\uac01 " + st.timePx + "px)");
     await page.close();
   }
