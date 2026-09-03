@@ -87,6 +87,56 @@ const daysAgo = n => { const d = new Date(); d.setDate(d.getDate() - n); return 
     await page.close();
   }
 
+  // A3. 외부(챗봇·워드)에서 붙여넣은 원고도 사이트 기본 스타일로 보인다 — 카드 CSS에 물들지 않고, 통째로 굵게·붙여넣기 흔적은 정리
+  {
+    const page = await H.newPage(browser, { viewport: { width: 1300, height: 1200 } });
+    const { user, session } = H.mkSession("fourpro@hanmail.net", "four");
+    // 실제 붙여넣기 흔적: <p>·중첩 div·전체 굵게·StartFragment 주석·data-start 속성
+    const pasted = '<font style="font-size: 13pt; font-weight: bold;">260902 \ub7a9\ud050\ubbf8\ud1c5</font>'
+      + '<div style="line-height: 1.5;"><span style="font-weight: bold; color: rgb(0, 0, 0);">'
+      + '<span data-start="10" data-end="20" style="">14.&nbsp;</span>\uacc4\uc57d \uc885\ub8cc \uc774\ud6c4\uc5d0\ub3c4 \uad00\uc545\uad6c\uc5d0\uc11c \uc9c0\uc18d\uc801\uc73c\ub85c \uc6b4\uc6a9\ud558\uac70\ub098 \uc774\uc804\ud560 \uc218 \uc788\ub294\uc9c0 \uad81\uae08\ud569\ub2c8\ub2e4.</span></div>'
+      + '<!--StartFragment--><!--EndFragment-->'
+      + '<p data-start="30" data-end="40" style="line-height: 1.5;"><span style="font-weight: bold; color: rgb(0, 0, 0);">'
+      + '15. 24\uc2dc\uac04 \uc11c\ubc84 \uc7a5\uc5d0 \ubc1c\uc0dd \uc2dc \ub300\uc0dd\ucc98\uacc4, \ubcf5\uad6c\uc2dc\uac04, \ubc31\uc5c5 \uae30\uc900\uc740 \uc5b4\ub5bb\uac8c \uacc4\ud68d\ud558\uace0 \uc788\ub294\uc9c0 \uc124\uba85 \ubd80\ud0c1\ub4dc\ub9bd\ub2c8\ub2e4.</span></p>';
+    // 일부만 굵은 원고(소제목) — 강조는 그대로 살아야 한다
+    const partly = '<div><span style="font-weight: bold;"><font style="font-size: 12pt;">1.\uc608\uc815\uc5f0\uad6c \uc8fc\uc81c</font></span></div>'
+      + '- \uad00\uc545\uad6c \uc0dd\ud65c\uad8c\ubcc4 \ub9de\ucda4\ud615 \ub3c4\uc2dc\uc815\ucc45 \uc5f0\uad6c\ub97c \uc9c4\ud589\ud558\uba70 \ubd80\uc11c\ubcc4 \uc804\uc218\uc870\uc0ac\ub97c \ubcd1\ud589\ud55c\ub2e4.';
+    await H.setupPage(page, { user, session, routes: p => {
+      if (p === "/rest/v1/staff_notes") return [
+        { id: 2, member_email: "fourpro@hanmail.net", kind: "\uc8fc\uac04", body: pasted, updated_at: "2026-09-02T01:39:00Z" },
+        { id: 1, member_email: "fourpro@hanmail.net", kind: "\uc218\uc2dc", body: partly, updated_at: "2026-09-01T01:00:00Z" }];
+      return H.defaultBriefingRoutes(p);
+    }});
+    await H.login(page, port, "fourpro@hanmail.net");
+    await page.click('nav button[data-panel="about"]'); await page.waitForTimeout(700);
+    const st = await page.evaluate(() => {
+      const notes = [...document.querySelectorAll('#about .member[data-member="four"] .wb-note')];
+      const one = notes[0].querySelector(".wt"), base = getComputedStyle(one);
+      const sizes = new Set(), colors = new Set(), weights = new Set();
+      one.querySelectorAll("p,div,span,font").forEach(e => {
+        if (!e.textContent.trim()) return;
+        const cs = getComputedStyle(e);
+        sizes.add(cs.fontSize); colors.add(cs.color); weights.add(cs.fontWeight);
+      });
+      const two = notes[1].querySelector(".wt");
+      return { base: base.fontSize + " " + base.color, sizes: [...sizes], colors: [...colors], weights: [...weights],
+        html: one.innerHTML, twoWeights: [...two.querySelectorAll("*")].filter(e => e.textContent.trim())
+          .map(e => getComputedStyle(e).fontWeight),
+        name: getComputedStyle(document.querySelector('#about .member[data-member="four"] h4')).fontWeight,
+        kindPx: parseFloat(getComputedStyle(notes[0].querySelector(".board-kind")).fontSize),
+        timePx: parseFloat(getComputedStyle(notes[0].querySelector(".board-time")).fontSize),
+        bodyPx: parseFloat(base.fontSize) };
+    });
+    c.ok(st.sizes.length === 1 && st.sizes[0] === "16px", "\ubd99\uc5ec\ub123\uc740 <p>\u00b7div\uc774 \ubaa8\ub450 \uae30\ubcf8 16px (" + st.sizes.join(",") + ")");
+    c.ok(st.colors.length === 1 && st.colors[0] === "rgb(28, 43, 58)", "\uae00\uc790\uc0c9\ub3c4 \uae30\ubcf8 \ubb35\uc0c1 \ud558\ub098\ub85c (" + st.colors.join(",") + ")");
+    c.ok(st.weights.every(w => w === "400"), "\ud1b5\uc9f8\ub85c \uad75\uac8c\uc778 \ubd99\uc5ec\ub123\uae30\ub294 \uad75\uae30\ub97c \ud574\uc81c (" + st.weights.join(",") + ")");
+    c.ok(!/StartFragment|EndFragment/.test(st.html) && !/data-start|data-end/.test(st.html), "\ubd99\uc5ec\ub123\uae30 \uc8fc\uc11d\u00b7\ud45c\uc9c0 \uc18d\uc131 \uc81c\uac70");
+    c.ok(st.twoWeights.some(w => w === "700" || w === "bold"), "\uc77c\ubd80\ub9cc \uad75\uc740 \uc6d0\uace0\ub294 \uc18c\uc81c\ubaa9 \uac15\uc870\uac00 \uc0b4\uc544 \uc788\ub2e4");
+    c.ok(parseFloat(st.name) >= 700, "\ub2e8\uc6d0 \uc774\ub984\uc774 \ub3cb\ubcf4\uc774\uac8c \uc9c4\ud558\ub2e4 (" + st.name + ")");
+    c.ok(st.kindPx >= 12 && st.timePx >= 14, "\uc6d0\uace0 \ubc30\uc9c0\u00b7\uc2dc\uac01\uc774 \ubcf8\ubb38\uc5d0 \ubab0\ub9ac\uc9c0 \uc54a\uc744 \ud3ec\uae30 (\ubc30\uc9c0 " + st.kindPx + "px / \uc2dc\uac01 " + st.timePx + "px)");
+    await page.close();
+  }
+
   // B. 송프로 취합 — 「취합」은 바로 저장이 아니라 편집기(초안)를 연다 → 다듬어 「올리기」 → 게시
   //    게시본에 취합자(created_by)·연구관 서식이 남고, 목록에 '취합 송프로'·'최신'이 보인다.
   {
