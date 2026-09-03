@@ -505,7 +505,7 @@
   .arch-head .edition-chip{margin-left:0;position:relative;top:calc(-1 * var(--badge-lift));}
   .brief-card{
     background:var(--card);border:1px solid var(--line);border-radius:16px;
-    height:300px;display:flex;flex-direction:column;
+    min-height:170px;max-height:300px;display:flex;flex-direction:column;   /* 내용만큼만, 길면 300px에서 안쪽 스크롤 */
     padding:18px 20px 0;box-shadow:0 2px 10px rgba(14,95,168,.05);
     position:relative;overflow:hidden;
     transition:box-shadow .18s,transform .18s;
@@ -518,7 +518,7 @@
   .brief-card:hover{transform:translateY(-3px);box-shadow:0 12px 28px rgba(14,95,168,.13);border-color:#C2D4E8;}
   .brief-card h3{flex:none;font-family:'Noto Serif KR',serif;font-size:17.5px;font-weight:600;line-height:1.5;
     margin-bottom:8px;padding-bottom:8px;color:var(--ink);border-bottom:1px solid var(--line);}
-  .bc-scroll{flex:1;overflow-y:auto;padding:0 6px 18px 0;scrollbar-width:thin;scrollbar-color:#CBD8E6 transparent;}
+  .bc-scroll{flex:1;min-height:0;overflow-y:auto;padding:0 6px 18px 0;scrollbar-width:thin;scrollbar-color:#CBD8E6 transparent;}
   .bc-scroll::-webkit-scrollbar{width:6px;}
   .bc-scroll::-webkit-scrollbar-thumb{background:#CBD8E6;border-radius:3px;}
   .bc-scroll::-webkit-scrollbar-track{background:transparent;}
@@ -702,6 +702,8 @@
   .rsub[aria-selected="true"]{color:var(--gwanak-deep);font-weight:800;border-bottom-color:var(--gwanak);background:#EEF4FB;}
   /* 안내 문단 — 모바일에서 폭이 0으로 붕괴해 글자가 세로로 쌓이지 않도록 최소폭 확보 + 데스크톱 최대폭 제한 */
   .res-packet-note{font-size:13.5px;color:var(--muted);line-height:1.6;word-break:keep-all;flex:1 1 300px;min-width:200px;max-width:600px;}
+  .note-more{appearance:none;border:none;background:none;padding:0;font:inherit;font-size:13px;color:var(--gwanak);cursor:pointer;white-space:nowrap;text-decoration:underline dotted;}
+  .note-detail:not([hidden]){display:block;margin-top:4px;}
   .packet-doc{max-height:72vh;overflow-y:auto;padding:6px 4px;}
   /* 보기 화면 좌상단 제목은 본문에 이미 큰 제목이 있으므로 화면에서만 감춘다(저장 파일명·접근성 라벨은 그대로) */
   #packet-doc-view .compile-bar{justify-content:flex-end;}
@@ -895,7 +897,8 @@
   @media(max-width:640px){
     .cal-week{grid-template-columns:1fr;}
     .cal-views{margin-left:0;}
-    .cal-spacer{display:none;}
+    .cal-spacer{flex:0 0 100%;height:0;}   /* 제목 뒤에서 줄을 바꿔 둘째 줄에 보기 전환·등록을 모은다 */
+    .cal-views{margin-left:auto;}
   }
 </style>
 </head>
@@ -1466,7 +1469,27 @@
     { t: "미래를 예측하는 가장 좋은 방법은 그것을 발명하는 것이다.", by: "앨런 케이" },
     { t: "우리는 앞을 조금밖에 못 보지만, 거기엔 해야 할 일이 산더미다.", by: "앨런 튜링" },
     { t: "AI가 당신을 대체하지는 않는다. AI를 잘 쓰는 사람이 대체할 것이다.", by: "AI 업계" },
-    { t: "데이터는 새로운 석유이고, AI는 그것을 태우는 엔진이다.", by: "디지털 시대" }
+    { t: "데이터는 새로운 석유다.", by: "클라이브 험비" },
+    { t: "충분히 발달한 기술은 마법과 구별할 수 없다.", by: "아서 C. 클라크" },
+    { t: "일단 잘 작동하면, 아무도 그것을 AI라고 부르지 않는다.", by: "존 매카시" },
+    { t: "로봇이 지구를 물려받을까? 그렇다. 하지만 그들은 우리의 아이들이다.", by: "마빈 민스키" },
+    { t: "기계에 목적을 넣으려면, 그것이 정말 우리가 원하는 목적인지 확실히 해야 한다.", by: "노버트 위너" },
+    { t: "정보의 풍요는 주의력의 빈곤을 낳는다.", by: "허버트 사이먼" },
+    { t: "컴퓨팅의 목적은 숫자가 아니라 통찰이다.", by: "리처드 해밍" },
+    { t: "컴퓨터가 생각할 수 있느냐는 질문은, 잠수함이 헤엄칠 수 있느냐는 질문만큼 흥미롭다.", by: "에츠허르 데이크스트라" },
+    { t: "컴퓨터는 쓸모없다. 답만 줄 뿐이다.", by: "파블로 피카소" },
+    { t: "오늘날 가장 슬픈 일은 과학이 지혜보다 빨리 지식을 모은다는 것이다.", by: "아이작 아시모프" },
+    { t: "우리는 과학기술에 전적으로 의존하는 사회를 만들었지만, 그것을 이해하는 사람은 거의 없다.", by: "칼 세이건" },
+    { t: "가장 심오한 기술은 사라지는 기술이다.", by: "마크 와이저" },
+    { t: "데이터는 소중하며, 그것을 다루는 시스템보다 오래 남는다.", by: "팀 버너스리" },
+    { t: "우리는 정보에 빠져 죽어가면서도 지식에 굶주려 있다.", by: "존 나이스비트" },
+    { t: "다음 1만 개 스타트업의 사업계획은 쉽게 예측된다. X를 가져다 AI를 더하라.", by: "케빈 켈리" },
+    { t: "컴퓨터는 마음을 위한 자전거다.", by: "스티브 잡스" },
+    { t: "신은 믿는다. 나머지는 모두 데이터를 가져오라.", by: "에드워즈 데밍" },
+    { t: "모든 모델은 틀렸다. 그러나 어떤 모델은 유용하다.", by: "조지 박스" },
+    { t: "21세기의 문맹은 배우고, 배운 것을 버리고, 다시 배우지 못하는 사람이다.", by: "앨빈 토플러" },
+    { t: "사람들은 컴퓨터가 너무 똑똑해질까 걱정하지만, 진짜 문제는 너무 멍청한데 이미 세상을 맡고 있다는 것이다.", by: "페드로 도밍고스" },
+    { t: "AI는 마음의 증기기관이다.", by: "리드 호프먼" }
   ];
   function todaysQuote() {
     const n = new Date();
@@ -2068,7 +2091,8 @@
 
   function renderAuthNav() {
     if (currentUser) {
-      authEmailEl.textContent = currentUser.email;
+      authEmailEl.textContent = authorName(currentUser.email);   // 이메일 대신 호칭(송프로·단장…)
+      authEmailEl.title = currentUser.email;
       authEmailEl.hidden = false;
       authBtn.textContent = "로그아웃";
       pwChangeBtn.hidden = false;
@@ -2086,7 +2110,7 @@
     currentUser = nextUser;
     renderAuthNav();
     // 관리자 여부를 먼저 확정한 뒤 화면을 그려야 모더레이션 버튼·삭제 이력이 올바르게 표시됨
-    if (!sameUser) { await checkAdmin(); renderResources(); renderCalendar(); renderBoard(); checkNewBadges(); }
+    if (!sameUser) { await checkAdmin(); renderAuthNav(); renderResources(); renderCalendar(); renderBoard(); checkNewBadges(); }
     // 초대/재설정 링크로 접속한 경우 비밀번호 설정 화면을 띄운다.
     if (!pwFlowHandled && session &&
         (event === "PASSWORD_RECOVERY" || authHashType === "invite" || authHashType === "recovery")) {
@@ -2272,7 +2296,8 @@
       + '</div>'
       + '<div id="res-packets" hidden>'
       + '<div class="list-toolbar">'
-      + '<span class="res-packet-note">주간회의·수시회의 자료를 취합해 보관합니다. 각 단원이 연구단마당에 올린 최신 원고(주간/수시)를 자동으로 모읍니다 — 버튼을 눌러 다듬은 뒤 올리면 됩니다. 취합은 로그인한 단원 누구나 할 수 있고(평소에는 행정지원 주무관 담당), 한 번 올린 자료는 수정할 수 없어 바로잡을 때는 새로 올립니다. 삭제는 관리자와 행정지원 주무관(최근 7일 내 자료)만 가능합니다.</span>'
+      + '<span class="res-packet-note">연구단마당의 최신 원고를 모아 회의 자료로 올립니다. <button type="button" class="note-more" data-note-more aria-expanded="false">자세히 ⓘ</button>'
+      + '<span class="note-detail" hidden>취합 버튼을 누르면 각 단원의 최신 원고(주간/수시)가 초안으로 모이고, 다듬어 올리면 됩니다. 취합은 로그인한 단원 누구나 할 수 있고(평소에는 행정지원 주무관 담당), 한 번 올린 자료는 수정할 수 없어 바로잡을 때는 새로 올립니다. 삭제는 관리자와 행정지원 주무관(최근 7일 내 자료)만 가능합니다.</span></span>'
       + '<span style="display:flex;gap:6px;flex-wrap:wrap;">'
       + '<button type="button" class="pk-genbtn gen-week" data-pkkind="주간">📋 주간회의 자료 취합</button>'
       + '<button type="button" class="pk-genbtn gen-adhoc" data-pkkind="수시">🗓 수시회의 자료 취합</button></span>'
@@ -2280,6 +2305,8 @@
       + '<div id="res-packet-list"><p class="status">불러오는 중입니다…</p></div>'
       + '</div>';
     document.getElementById("post-form").addEventListener("submit", submitPost);
+    const more = resourcesView.querySelector("[data-note-more]");
+    if (more) more.addEventListener("click", () => { const d = more.nextElementSibling; d.hidden = !d.hidden; more.setAttribute("aria-expanded", String(!d.hidden)); more.textContent = d.hidden ? "자세히 ⓘ" : "접기"; });
     document.getElementById("res-filter").addEventListener("input", paintPosts);
     bindFileField("post-file");
     document.getElementById("rt-link").addEventListener("click", () => setResMode("link"));
