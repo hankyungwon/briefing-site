@@ -143,6 +143,9 @@ const daysAgo = n => { const d = new Date(); d.setDate(d.getDate() - n); return 
       "이름은 본문(16px)보다 확실히 크고 직함도 묻히지 않는다 (직함 " + st.rolePx + "px / 이름 " + st.namePx + "px / 본문 " + st.bodyPx + "px)");
     c.ok(!/rgba\(0, 0, 0, 0\)|transparent/.test(st.headBg), "카드 머리띠에 바탕색 (" + st.headBg + ")");
     c.ok(st.oneLine, "이름 오른쪽에 직함이 바짝 붙어 한 줄");
+    // 카드 위 안내문은 아래 카드 머리띠(파랑)·위 게시판(흰색)과 다른 색이어야 한다
+    const info = await page.evaluate(() => { const cs = getComputedStyle(document.getElementById("about-workinfo")); return { bg: cs.backgroundColor, bd: cs.borderTopColor }; });
+    c.ok(info.bg !== st.headBg && !/255, 255, 255/.test(info.bg) && info.bg !== "rgba(0, 0, 0, 0)", "안내문 바탕이 머리띠·게시판과 다른 색 (" + info.bg + ")");
     c.ok(st.kindPx >= 12 && st.timePx >= 14, "\uc6d0\uace0 \ubc30\uc9c0\u00b7\uc2dc\uac01\uc774 \ubcf8\ubb38\uc5d0 \ubab0\ub9ac\uc9c0 \uc54a\uc744 \ud3ec\uae30 (\ubc30\uc9c0 " + st.kindPx + "px / \uc2dc\uac01 " + st.timePx + "px)");
     await page.close();
   }
