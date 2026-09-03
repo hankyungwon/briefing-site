@@ -72,14 +72,15 @@ const daysAgo = n => { const d = new Date(); d.setDate(d.getDate() - n); return 
     c.ok(view.count === 2, "카드에 원고 2건이 누적 표시");
     c.ok(/둘째 원고/.test(view.firstText), "최신 원고가 맨 위");
     c.ok(view.edit && view.del, "본인 원고에 수정·삭제 버튼(개인 게시판)");
-    // 원고 상자는 지시사항·회의록과 같은 문법(흰 바탕 + 왼쪽 파란 선) — 옛 노란 포스트잇 금지
+    // 원고 상자는 지시사항·회의록과 같은 문법(흰 바탕 + 사이 점선) — 옛 노란 포스트잇·세로선 금지
     const skin = await page.evaluate(() => {
-      const n = document.querySelector('#about .member[data-member="two"] .wb-note');
-      const cs = getComputedStyle(n);
-      return { bg: cs.backgroundColor, w: cs.borderLeftWidth, col: cs.borderLeftColor };
+      const notes = [...document.querySelectorAll('#about .member[data-member="two"] .wb-note')];
+      const cs = getComputedStyle(notes[0]), cs2 = getComputedStyle(notes[1]);
+      return { bg: cs.backgroundColor, left: cs.borderLeftWidth, sep: cs2.borderTopStyle };
     });
     c.ok(/rgba\(0, 0, 0, 0\)|transparent/.test(skin.bg), "원고에 노란 바탕 없음 (" + skin.bg + ")");
-    c.ok(skin.w === "3px" && skin.col === "rgb(14, 95, 168)", "원고 왼쪽에 파란 선 (" + skin.w + " " + skin.col + ")");
+    c.ok(skin.left === "0px", "원고 왼쪽에 세로선 없음 (" + skin.left + ")");
+    c.ok(skin.sep === "dashed", "원고 사이는 가로 점선으로 구분 (" + skin.sep + ")");
     // 수정 버튼 → 그 원고 내용이 실려 편집 모드로 열림
     await page.click('#about .member[data-member="two"] .wb-note [data-memo-edit]'); await page.waitForTimeout(300);
     c.ok(/둘째 원고/.test(await page.evaluate(() => document.getElementById("memo-body").innerText)), "「수정」은 그 원고 내용을 불러와 편집");
