@@ -1451,11 +1451,16 @@
     </div>
   </div>
 </footer>
-
 <!-- 이용 현황·속도 측정 (Vercel) — 쿠키를 쓰지 않고 개인을 추적하지 않는다.
      주소가 /_vercel/… 인 것은 우리 도메인이 직접 내려주기 때문이며, 외부로 나가는 요청이 아니다.
      Vercel 대시보드에서 Web Analytics·Speed Insights를 켜야 실제로 수집된다(끄면 이 줄은 아무 일도 하지 않음). -->
+<script>
+  window.va = window.va || function () { (window.vaq = window.vaq || []).push(arguments); };
+</script>
 <script defer src="/_vercel/insights/script.js"></script>
+<script>
+  window.si = window.si || function () { (window.siq = window.siq || []).push(arguments); };
+</script>
 <script defer src="/_vercel/speed-insights/script.js"></script>
 
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
