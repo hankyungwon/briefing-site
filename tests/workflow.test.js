@@ -389,6 +389,14 @@ const daysAgo = n => { const d = new Date(); d.setDate(d.getDate() - n); return 
                del: !!notes[0].querySelector("[data-directive-del]") };
     });
     c.ok(st.count === 2, "지시 2건이 세로로 누적");
+    // 수시 = 예정에 없이 갑자기 생긴 일 → 정기(파랑)보다 눈에 띄는 주황. 붉은색(삭제)과는 구분.
+    const kindColors = await page.evaluate(() => {
+      const out = {};
+      document.querySelectorAll("#head-directive .board-kind").forEach(b => { out[b.textContent.trim()] = getComputedStyle(b).backgroundColor; });
+      return out;
+    });
+    c.ok(kindColors["수시"] === "rgb(232, 132, 58)" && kindColors["정기"] === "rgb(14, 95, 168)",
+      "수시 배지는 주황·정기는 파랑 (수시 " + kindColors["수시"] + ")");
     c.ok(/공모사업 마감 준수/.test(st.firstBody), "새 지시가 맨 위에 표시");
     c.ok(/정기/.test(st.kind), "지시에 종류 배지(정기/수시) 표시");
     c.ok(/^by 단장/.test(st.by.trim()), "지시 기록자를 「by 호칭」으로 표시 (" + st.by.trim() + ")");
