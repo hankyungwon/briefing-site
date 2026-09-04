@@ -63,6 +63,8 @@ const fs = require("fs");
     c.ok(noteBefore === "none" && noteAfter === "block", "회의 자료 안내문: 접힘(" + noteBefore + ") → 「자세히」로 펼침(" + noteAfter + ")");
     const who = await page.evaluate(() => { const e = document.getElementById("auth-email"), cs = getComputedStyle(e), dot = getComputedStyle(e, "::before"); return { t: e.textContent, fw: cs.fontWeight, color: cs.color, dot: dot.backgroundColor, dotW: dot.width, glow: /radial-gradient/.test(dot.backgroundImage), noSpread: !/[^t] [1-9]\d*px [1-9]/.test(dot.boxShadow.replace(/inset[^,]*/g, "")) && dot.animationName === "none" }; });
     c.ok(who.t === "송프로", "메뉴줄 로그인 표시가 이메일 대신 호칭(송프로)");
+    const calm = await page.evaluate(() => { const b = document.getElementById("auth-btn"), cs = getComputedStyle(b); return { t: b.textContent, bg: cs.backgroundColor, bc: cs.borderTopColor }; });
+    c.ok(calm.t === "로그아웃" && /rgba\(0, 0, 0, 0\)|255, 255, 255/.test(calm.bg) && calm.bc !== "rgb(14, 95, 168)", "로그아웃은 「비밀번호 변경」과 같은 조용한 무게 (" + calm.bc + ")");
     c.ok(parseInt(who.fw) >= 700 && who.color === "rgb(11, 74, 134)" && who.dotW === "10px" && who.glow && who.noSpread, "로그인 표시는 청색 접속 표시등(빛 번짐·깜빡임 없음) + 진한 파랑 굵은 글자 — 본문과 구분 (" + who.color + ", 점 " + who.dot + ")");
     const rowTitle = await page.evaluate(() => (document.querySelector("#res-packet-list .pk-row .pk-title") || {}).textContent || "");
     c.ok(rowTitle === "주간회의 자료", "목록 제목에서 날짜 중복 제거 (" + rowTitle + ")");

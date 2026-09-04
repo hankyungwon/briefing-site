@@ -92,6 +92,7 @@
   /* 로그인한 사람 — 초록 접속 표시등 + 진한 파랑 굵은 호칭. 내용 폭에 맞추고 왼쪽 정렬(「단장」처럼 짧아도 빈 자리 없음) */
   .auth-email{display:inline-flex;align-items:center;justify-content:flex-start;gap:6px;text-align:left;
     color:var(--gwanak-deep);font-weight:800;font-size:13.5px;max-width:160px;white-space:nowrap;}
+  .auth-email[hidden]{display:none;}   /* display 지정이 hidden 속성을 이기므로 명시 — 로그아웃 상태에서 표시등이 남지 않게 */
   /* 접속 표시등 — 전원이 들어온 계기판 LED: 청색 구슬 하나. 빛이 밖으로 번지지 않고, 깜빡이지 않는다 */
   .auth-email::before{content:"";flex:none;width:10px;height:10px;border-radius:50%;
     background:radial-gradient(circle at 38% 34%,#D9F6FF 0,#38C8F0 40%,#0F8FBF 75%,#0A5C80 100%);
@@ -178,11 +179,11 @@
   .list-toolbar{display:flex;gap:10px;align-items:center;margin-bottom:14px;flex-wrap:wrap;}
   .list-toolbar .filter-input{flex:1;min-width:0;margin-bottom:0;}
   .write-toggle{appearance:none;cursor:pointer;flex:none;display:inline-flex;align-items:center;gap:6px;
-    background:var(--gwanak);color:#fff;border:1.5px solid var(--gwanak);border-radius:999px;padding:8px 18px;
-    font-family:inherit;font-size:14px;font-weight:700;white-space:nowrap;box-shadow:0 2px 8px rgba(14,95,168,.22);
-    transition:background .15s,box-shadow .15s;}
-  .write-toggle:hover{background:var(--gwanak-deep);border-color:var(--gwanak-deep);}
-  .write-toggle.open{background:#fff;color:var(--gwanak-deep);box-shadow:none;}
+    background:#fff;color:var(--gwanak);border:1px solid var(--gwanak);border-radius:999px;padding:8px 18px;
+    font-family:inherit;font-size:14px;font-weight:700;white-space:nowrap;
+    transition:background .15s,color .15s,border-color .15s;}
+  .write-toggle:hover{background:var(--gwanak);color:#fff;}
+  .write-toggle.open{background:#EAF2FA;color:var(--gwanak-deep);border-color:#CFDDEC;}
   @media(max-width:480px){.write-toggle{padding:8px 13px;font-size:13.5px;}}
   .form-wrap{display:none;}
   .form-wrap.open{display:block;}
@@ -384,10 +385,11 @@
   }
   .search-row input:focus{outline:2px solid var(--gwanak);outline-offset:-1px;border-color:var(--gwanak);}
   .search-row button{
-    appearance:none;cursor:pointer;border:none;background:var(--gwanak);color:#fff;
+    appearance:none;cursor:pointer;border:1px solid #CFDDEC;background:#EAF2FA;color:var(--gwanak-deep);
     border-radius:10px;padding:11px 20px;font-family:inherit;font-size:14.5px;font-weight:700;white-space:nowrap;
+    transition:background .15s,border-color .15s;
   }
-  .search-row button:hover{background:var(--gwanak-deep);}
+  .search-row button:hover{background:var(--gwanak);border-color:var(--gwanak);color:#fff;}
   .filter-input{
     width:100%;font-family:inherit;font-size:14px;color:var(--ink);
     background:#fff;border:1px solid var(--line);border-radius:9px;padding:9px 14px;margin-bottom:14px;
@@ -2101,10 +2103,12 @@
       authEmailEl.title = currentUser.email;
       authEmailEl.hidden = false;
       authBtn.textContent = "로그아웃";
+      authBtn.classList.add("auth-sm");        // 로그아웃은 주요 행동이 아니므로 조용하게(「비밀번호 변경」과 같은 무게)
       pwChangeBtn.hidden = false;
     } else {
       authEmailEl.hidden = true;
       authBtn.textContent = "로그인";
+      authBtn.classList.remove("auth-sm");     // 로그인은 로그아웃 상태의 주요 행동이므로 또렷하게
       pwChangeBtn.hidden = true;
     }
   }
