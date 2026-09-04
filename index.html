@@ -88,7 +88,9 @@
     nav button{flex:1 1 30%;padding:11px 2px 9px;font-size:13.5px;}
     .nav-auth{width:100%;justify-content:flex-end;margin-left:0;padding:7px 4px 9px;border-top:1px solid var(--line);}
   }
-  .nav-auth{margin-left:auto;align-self:center;display:flex;align-items:center;gap:10px;min-width:0;padding-left:12px;}
+  /* 탭 6개+로그인의 실폭이 872px을 넘어 이 줄은 항상 아래로 내려간다.
+     아래 여백이 없으면 버튼의 테두리가 nav의 아래 선에 딱 붙으므로 9px 띄운다(모바일 규칙과 같은 값). */
+  .nav-auth{margin-left:auto;align-self:center;display:flex;align-items:center;gap:10px;min-width:0;padding:0 0 9px 12px;}
   /* 로그인한 사람 — 초록 접속 표시등 + 진한 파랑 굵은 호칭. 내용 폭에 맞추고 왼쪽 정렬(「단장」처럼 짧아도 빈 자리 없음) */
   .auth-email{display:inline-flex;align-items:center;justify-content:flex-start;gap:6px;text-align:left;
     color:var(--gwanak-deep);font-weight:800;font-size:13.5px;max-width:160px;white-space:nowrap;}
