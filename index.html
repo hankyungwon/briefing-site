@@ -181,10 +181,10 @@
   .list-toolbar{display:flex;gap:10px;align-items:center;margin-bottom:14px;flex-wrap:wrap;}
   .list-toolbar .filter-input{flex:1;min-width:0;margin-bottom:0;}
   .write-toggle{appearance:none;cursor:pointer;flex:none;display:inline-flex;align-items:center;gap:6px;
-    background:#fff;color:var(--gwanak);border:1px solid var(--gwanak);border-radius:999px;padding:8px 18px;
+    background:#fff;color:var(--gwanak);border:1px solid #A6C6E2;border-radius:9px;padding:8px 16px;
     font-family:inherit;font-size:14px;font-weight:700;white-space:nowrap;
     transition:background .15s,color .15s,border-color .15s;}
-  .write-toggle:hover{background:var(--gwanak);color:#fff;}
+  .write-toggle:hover{background:var(--gwanak);color:#fff;border-color:var(--gwanak);}
   .write-toggle.open{background:#EAF2FA;color:var(--gwanak-deep);border-color:#CFDDEC;}
   @media(max-width:480px){.write-toggle{padding:8px 13px;font-size:13.5px;}}
   .form-wrap{display:none;}
@@ -2300,7 +2300,7 @@
       + '<div class="list-toolbar">'
       + '<input type="search" class="filter-input" id="res-filter" placeholder="🔎 자료 검색 — 제목·링크·코멘트·작성자">'
       + (isAdminUser ? '<button type="button" class="write-toggle modlog-toggle" id="res-modlog-btn">🛡 삭제 이력</button>' : '')
-      + '<button type="button" class="write-toggle" id="res-write-toggle" aria-expanded="false">📝 새 자료 올리기</button>'
+      + '<button type="button" class="write-toggle" id="res-write-toggle" aria-expanded="false">📝 자료 등록</button>'
       + '</div>'
       + '<p class="form-ok" id="post-ok" role="status"></p>'
       + '<div class="form-wrap" id="res-form-wrap"><div class="post-form">'
@@ -2372,7 +2372,7 @@
     wrap.classList.toggle("open", isOpen);
     btn.classList.toggle("open", isOpen);
     btn.setAttribute("aria-expanded", isOpen ? "true" : "false");
-    btn.textContent = isOpen ? "✕ 닫기" : "📝 새 자료 올리기";
+    btn.textContent = isOpen ? "✕ 닫기" : "📝 자료 등록";
     if (isOpen) document.getElementById("post-title").focus();
   }
 
