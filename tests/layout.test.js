@@ -180,6 +180,18 @@ const WIDTHS = [1400, 1280, 1024, 900, 820, 768, 640, 540, 430, 412, 390, 375, 3
   const rov = await overflow();
   c.ok(rov.length === 0, "자료마당(회의 자료): 가로 스크롤 없음" + (rov.length ? " — " + rov[0] : ""));
 
+  // 로그인 줄(비밀번호 변경·로그아웃)은 탭 아래로 내려가는데, 아래 여백이 없으면
+  // 버튼 테두리가 nav의 아래 선에 딱 붙어 두 선이 겹쳐 보인다. 데스크톱 전 구간에서 확인.
+  for (const w of [1400, 1300, 1024, 900, 800, 700]) {
+    await page.setViewportSize({ width: w, height: 900 });
+    await page.waitForTimeout(120);
+    const gap = await page.evaluate(() => {
+      const nav = document.querySelector("nav"), btn = document.getElementById("auth-btn");
+      return +(nav.getBoundingClientRect().bottom - btn.getBoundingClientRect().bottom).toFixed(1);
+    });
+    c.ok(gap >= 6, w + "px: 로그인 줄 버튼이 nav 아래 선에서 떨어짐 (" + gap + "px)");
+  }
+
   server.close();
   await c.finish(browser);
 })().catch(e => { console.error("FAIL", e.message, e.stack); process.exit(1); });
