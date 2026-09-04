@@ -192,6 +192,22 @@ const WIDTHS = [1400, 1280, 1024, 900, 820, 768, 640, 540, 430, 412, 390, 375, 3
     c.ok(gap >= 6, w + "px: 로그인 줄 버튼이 nav 아래 선에서 떨어짐 (" + gap + "px)");
   }
 
+  // 자료마당 도구줄 — 검색창·삭제 이력·자료 등록이 한 줄에서 같은 높이·같은 모서리로 정렬돼야 한다
+  await page.setViewportSize({ width: 1300, height: 900 });
+  await page.click('nav button[data-panel="resources"]'); await page.waitForTimeout(400);
+  await page.click('.res-subnav [data-ressec="general"]'); await page.waitForTimeout(400);
+  const tb = await page.evaluate(() => {
+    const ids = ["res-filter", "res-modlog-btn", "res-write-toggle"];
+    return ids.map(i => { const e = document.getElementById(i); if (!e) return null;
+      const b = e.getBoundingClientRect(), cs = getComputedStyle(e);
+      return { top: Math.round(b.top), h: Math.round(b.height), r: cs.borderTopLeftRadius, bw: cs.borderTopWidth }; });
+  });
+  const have = tb.filter(Boolean);
+  c.ok(have.length >= 2 && have.every(x => x.top === have[0].top), "도구줄 세 요소의 윗변이 같은 높이");
+  c.ok(have.every(x => x.h === have[0].h), "세 요소의 높이가 같음 (" + have.map(x => x.h).join("/") + ")");
+  c.ok(have.every(x => x.r === have[0].r), "세 요소의 모서리 곡률이 같음 (" + have.map(x => x.r).join("/") + ")");
+  c.ok(have.every(x => x.bw === "1px"), "세 요소의 테두리 두께가 모두 1px");
+
   server.close();
   await c.finish(browser);
 })().catch(e => { console.error("FAIL", e.message, e.stack); process.exit(1); });
