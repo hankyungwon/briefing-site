@@ -27,6 +27,10 @@ const H = require("./helper");
   await H.login(page, port, "twopro@hanmail.net");
   await page.click('nav button[data-panel="calendar"]'); await page.waitForTimeout(700);
 
+  // 「일정 등록」은 같은 줄의 다른 버튼과 어울리는 조용한 무게 — 채운 파랑으로 시선을 끌지 않는다
+  const addBtn = await page.evaluate(() => { const b = document.querySelector(".cal-add"); const cs = getComputedStyle(b); return { bg: cs.backgroundColor, bc: cs.borderTopColor, color: cs.color }; });
+  c.ok(/255, 255, 255/.test(addBtn.bg) && addBtn.color === "rgb(14, 95, 168)", "「일정 등록」은 흰 바탕 테두리형 — 시선을 끌지 않음 (" + addBtn.bg + ")");
+
   const pick = t => { const m = t.match(/(아침회의|점심약속|오후회의|종일행사)/); return m ? m[1] : ""; };
 
   const strip = await page.evaluate(() => [...document.querySelectorAll(".today-strip .ev-pill")].map(e => e.textContent));
