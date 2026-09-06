@@ -33,12 +33,22 @@ const WIDTHS = [1400, 1280, 1024, 900, 820, 768, 640, 540, 430, 412, 390, 375, 3
     { id: 2, type: "meal", title: "식사", start_date: today, end_date: null, start_time: "12:00", end_time: "13:00", author_name: "한프로", author_id: "x", location: null }
   ];
 
+  // 자료마당 본문 길이 회귀용 — 아주 긴 본문 1건, 한 줄짜리 1건
+  const posts = [
+    { id: 1, title: "긴 본문 자료", url: null, author_name: "twopro@hanmail.net", author_id: "two",
+      comment: "관악구 청년 1인가구 정주환경 진단 및 생활권별 맞춤형 도시정책 연구를 위한 기초조사 결과를 정리했습니다. ".repeat(12),
+      created_at: "2026-09-01T00:00:00Z" },
+    { id: 2, title: "짧은 본문 자료", url: null, author_name: "twopro@hanmail.net", author_id: "two",
+      comment: "한 줄 메모", created_at: "2026-08-31T00:00:00Z" }
+  ];
+
   const page = await H.newPage(browser);
   await H.setupPage(page, { user, session, routes: p => {
     if (p === "/rest/v1/briefings") return briefings;
     if (p === "/rest/v1/briefing_items") return items;
     if (p === "/rest/v1/events") return events;
     if (p === "/rest/v1/holidays") return [{ day: today, name: "부처님오신날" }];
+    if (p === "/rest/v1/posts") return posts;
     return [];
   }});
   await H.login(page, port, "twopro@hanmail.net");
@@ -207,6 +217,18 @@ const WIDTHS = [1400, 1280, 1024, 900, 820, 768, 640, 540, 430, 412, 390, 375, 3
   c.ok(have.every(x => x.h === have[0].h), "세 요소의 높이가 같음 (" + have.map(x => x.h).join("/") + ")");
   c.ok(have.every(x => x.r === have[0].r), "세 요소의 모서리 곡률이 같음 (" + have.map(x => x.r).join("/") + ")");
   c.ok(have.every(x => x.bw === "1px"), "세 요소의 테두리 두께가 모두 1px");
+
+  // 자료 본문은 아무리 길어도 6줄까지만 보이고, 넘치면 그 상자 안에서 굴려 본다
+  const texts = await page.evaluate(() => [...document.querySelectorAll("#post-list .post-text")].map(e => {
+    const cs = getComputedStyle(e), lh = parseFloat(cs.lineHeight);
+    return { lines: +(e.clientHeight / lh).toFixed(2), scrolls: e.scrollHeight > e.clientHeight + 1,
+             hidden: cs.overflowY, full: +(e.scrollHeight / lh).toFixed(1) };
+  }));
+  c.ok(texts.length === 2, "자료 2건이 목록에 표시됨 (" + texts.length + ")");
+  c.ok(texts[0] && texts[0].full > 6, "첫 자료의 본문은 6줄을 넘는 길이 (" + (texts[0] && texts[0].full) + "줄)");
+  c.ok(texts[0] && texts[0].lines <= 6.05, "그래도 보이는 높이는 6줄 이내 (" + (texts[0] && texts[0].lines) + "줄)");
+  c.ok(texts[0] && texts[0].scrolls && texts[0].hidden === "auto", "넘친 만큼은 상자 안에서 스크롤");
+  c.ok(texts[1] && !texts[1].scrolls, "짧은 본문에는 스크롤이 생기지 않음");
 
   server.close();
   await c.finish(browser);

@@ -555,6 +555,13 @@
   article.item h3{font-family:'Noto Serif KR',serif;font-size:18px;font-weight:600;line-height:1.5;margin-bottom:8px;}
   article.item p{font-size:16px;color:#3B4756;}
   article.item a.src{font-size:13.5px;color:var(--gwanak);}
+  /* 자료 본문 — 길어도 6줄까지만 보이고 그 이상은 안쪽에서 굴려 본다(목록이 세로로 늘어지지 않게).
+     16px × 줄간격 1.7 = 한 줄 1.7em이므로 6줄 = 10.2em. 짧은 글에는 스크롤막대가 뜨지 않는다. */
+  article.item .post-text{margin-top:8px;line-height:1.7;max-height:10.2em;overflow-y:auto;padding-right:10px;
+    scrollbar-width:thin;scrollbar-color:#CBD8E6 transparent;}
+  article.item .post-text::-webkit-scrollbar{width:6px;}
+  article.item .post-text::-webkit-scrollbar-thumb{background:#CBD8E6;border-radius:3px;}
+  article.item .post-text::-webkit-scrollbar-track{background:transparent;}
   .implication{
     margin-top:12px;padding:11px 14px;border-left:3px solid var(--gold);
     background:#FBF7EC;border-radius:8px;font-size:13.8px;line-height:1.62;
@@ -2462,7 +2469,7 @@
         html += '<p style="margin-top:2px;"><a class="src" href="' + esc(linkHref(p.url)) + '" target="_blank" rel="noopener">' + esc(p.url) + '</a></p>';
       }
       if (p.comment) {
-        html += '<p style="margin-top:8px;">' + linkify(p.comment) + '</p>';
+        html += '<p class="post-text">' + linkify(p.comment) + '</p>';
       }
       html += renderAttachments(attMap[p.id]);
       html += '<div class="post-meta"><span class="author">' + esc(authorName(p.author_name)) + '</span>'
