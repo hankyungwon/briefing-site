@@ -3948,7 +3948,6 @@
     const mine = p.author_id === currentUser.id;
     let h = '<article class="board-card' + (p.pinned?' pinned':'') + '" data-post="' + p.id + '">';
     if (p.pinned) h += '<span class="pin-badge">📌 공지</span>';
-    h += '<span class="post-no">No.' + p.id + '</span>';
     h += '<h3>' + esc(p.title) + '</h3>';
     if (p.body) h += '<div class="body">' + linkify(p.body) + '</div>';
     h += renderAttachments(boardAtts[p.id]);
