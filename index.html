@@ -38,7 +38,7 @@
     word-break:keep-all;overflow-wrap:break-word;}
   /* 한 줄로 유지돼야 하는 짧은 라벨(배지·태그·칩·버튼)은 서체·브라우저가 무엇이든 절대 갈라지지 않게 못 박는다.
      서체 폭이 넓어지면 담긴 상자가 눌리면서 '최'/'신'처럼 두 줄로 쪼개지는 사고가 실제로 있었다. */
-  .kind-tag,.type-tag,.pin-badge,.att-badge,.mlog-badge,.edition-chip,.ev-pill,
+  .type-tag,.pin-badge,.att-badge,.mlog-badge,.edition-chip,.ev-pill,
   .auth-btn,.link-btn,.btn-primary,.wi-btn,.cal-btn,.mini-btn,.bc-btn{white-space:nowrap;}
   .serif{font-family:'Noto Serif KR',serif;}
   .header-band{position:relative;overflow:hidden;color:#fff;
@@ -168,13 +168,9 @@
   .form-ok{display:none;margin-top:12px;background:#EAF7EF;border:1px solid #BFE3CC;color:#20713C;
     border-radius:8px;padding:11px 14px;font-size:14px;font-weight:600;}
   .form-ok.show{display:block;}
-  .kind-tag{display:inline-block;font-size:11.5px;font-weight:700;border-radius:5px;padding:2px 8px;margin-bottom:7px;}
   .post-no{display:inline-block;font-size:11px;font-weight:700;color:var(--muted);border:1px solid var(--line);
     border-radius:5px;padding:2px 7px;margin:0 0 7px 6px;letter-spacing:.02em;}
   .post-no:first-child{margin-left:0;}
-  .kind-tag.file{background:#EEF3F9;color:var(--gwanak-deep);border:1px solid #CFE0F0;}
-  .kind-tag.link{background:#EAF6F5;color:#0F6D66;border:1px solid #C3E4E1;}
-  .kind-tag.note{background:#F6F1E7;color:#7A6420;border:1px solid #E7DCC0;}
   .item.post.flash{animation:postFlash 2.5s ease;}
   @keyframes postFlash{0%,35%{background:#FFF6DC;}100%{background:transparent;}}
   /* ── 글쓰기 접기/펼치기 (목록 우선 배치) ── */
@@ -2459,11 +2455,7 @@
     }
     const attMap = resourceAtts;
     listEl.innerHTML = data.map(p => {
-      const hasFile = (attMap[p.id] || []).length > 0;
-      const kind = hasFile ? ['file', '📎 파일'] : (p.url ? ['link', '🔗 링크'] : ['note', '📝 메모']);
       let html = '<article class="item post" data-post="' + p.id + '">'
-        + '<span class="kind-tag ' + kind[0] + '">' + kind[1] + '</span>'
-        + '<span class="post-no">No.' + p.id + '</span>'
         + '<h3>' + esc(p.title) + '</h3>';
       if (p.url) {
         html += '<p style="margin-top:2px;"><a class="src" href="' + esc(linkHref(p.url)) + '" target="_blank" rel="noopener">' + esc(p.url) + '</a></p>';

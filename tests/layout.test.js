@@ -54,7 +54,7 @@ const WIDTHS = [1400, 1280, 1024, 900, 820, 768, 640, 540, 430, 412, 390, 375, 3
   await H.login(page, port, "twopro@hanmail.net");
 
   // 한 줄을 지켜야 하는 요소들 — 갈라지면 상자가 두 동강 나 눈에 바로 띈다
-  const ONELINE = ".arch-card .an, .edition-chip, .type-tag, .kind-tag, .pin-badge, .att-badge, .mlog-badge, .cat-label, .cd-label";
+  const ONELINE = ".arch-card .an, .edition-chip, .type-tag, .pin-badge, .att-badge, .mlog-badge, .cat-label, .cd-label";
 
   // 요소가 몇 줄을 차지하는지 = 실제 높이 ÷ 한 줄 높이. 1줄을 넘으면 갈라진 것.
   const measure = sel => page.evaluate(s => {
