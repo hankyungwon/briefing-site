@@ -168,6 +168,8 @@
   .form-ok{display:none;margin-top:12px;background:#EAF7EF;border:1px solid #BFE3CC;color:#20713C;
     border-radius:8px;padding:11px 14px;font-size:14px;font-weight:600;}
   .form-ok.show{display:block;}
+  .post-icon{margin-right:8px;font-size:21px;line-height:1;vertical-align:-2px;}
+  .post-icon + .post-icon{margin-left:-2px;}
   .post-no{display:inline-block;font-size:11px;font-weight:700;color:var(--muted);border:1px solid var(--line);
     border-radius:5px;padding:2px 7px;margin:0 0 7px 6px;letter-spacing:.02em;}
   .post-no:first-child{margin-left:0;}
@@ -2455,8 +2457,13 @@
     }
     const attMap = resourceAtts;
     listEl.innerHTML = data.map(p => {
+      const kinds = [];
+      if ((attMap[p.id] || []).length) kinds.push(["📎", "파일"]);
+      if (p.url) kinds.push(["🔗", "링크"]);
+      if (!kinds.length) kinds.push(["📝", "메모"]);
+      const icons = kinds.map(k => '<span class="post-icon" title="' + k[1] + ' 자료">' + k[0] + '</span>').join("");
       let html = '<article class="item post" data-post="' + p.id + '">'
-        + '<h3>' + esc(p.title) + '</h3>';
+        + '<h3>' + icons + esc(p.title) + '</h3>';
       if (p.url) {
         html += '<p style="margin-top:2px;"><a class="src" href="' + esc(linkHref(p.url)) + '" target="_blank" rel="noopener">' + esc(p.url) + '</a></p>';
       }

@@ -35,7 +35,7 @@ const WIDTHS = [1400, 1280, 1024, 900, 820, 768, 640, 540, 430, 412, 390, 375, 3
 
   // 자료마당 본문 길이 회귀용 — 아주 긴 본문 1건, 한 줄짜리 1건
   const posts = [
-    { id: 1, title: "긴 본문 자료", url: null, author_name: "twopro@hanmail.net", author_id: "two",
+    { id: 1, title: "긴 본문 자료", url: "https://example.com/notice", author_name: "twopro@hanmail.net", author_id: "two",
       comment: "관악구 청년 1인가구 정주환경 진단 및 생활권별 맞춤형 도시정책 연구를 위한 기초조사 결과를 정리했습니다. ".repeat(12),
       created_at: "2026-09-01T00:00:00Z" },
     { id: 2, title: "짧은 본문 자료", url: null, author_name: "twopro@hanmail.net", author_id: "two",
@@ -49,6 +49,7 @@ const WIDTHS = [1400, 1280, 1024, 900, 820, 768, 640, 540, 430, 412, 390, 375, 3
     if (p === "/rest/v1/events") return events;
     if (p === "/rest/v1/holidays") return [{ day: today, name: "부처님오신날" }];
     if (p === "/rest/v1/posts") return posts;
+    if (p === "/rest/v1/attachments") return [{ id: 1, parent_type: "resource", parent_id: 1, path: "resource/1/a.pdf", file_name: "요약본.pdf", file_size: 900000, mime: "application/pdf" }];
     return [];
   }});
   await H.login(page, port, "twopro@hanmail.net");
@@ -229,6 +230,19 @@ const WIDTHS = [1400, 1280, 1024, 900, 820, 768, 640, 540, 430, 412, 390, 375, 3
   c.ok(texts[0] && texts[0].lines <= 6.05, "그래도 보이는 높이는 6줄 이내 (" + (texts[0] && texts[0].lines) + "줄)");
   c.ok(texts[0] && texts[0].scrolls && texts[0].hidden === "auto", "넘친 만큼은 상자 안에서 스크롤");
   c.ok(texts[1] && !texts[1].scrolls, "짧은 본문에는 스크롤이 생기지 않음");
+
+  // 자료의 종류는 글자 배지가 아니라 제목 앞 그림으로 — 파일 📎 / 링크 🔗 / 둘 다 없으면 메모 📝.
+  // 파일과 링크가 함께 있으면 둘 다 보여준다(하나를 감추면 자료의 성격을 잘못 알린다).
+  const heads = await page.evaluate(() => [...document.querySelectorAll("#post-list .item.post")].map(a => ({
+    icons: [...a.querySelectorAll("h3 .post-icon")].map(s => s.textContent).join(""),
+    px: a.querySelector("h3 .post-icon") ? Math.round(parseFloat(getComputedStyle(a.querySelector("h3 .post-icon")).fontSize)) : 0,
+    titlePx: Math.round(parseFloat(getComputedStyle(a.querySelector("h3")).fontSize)),
+    badge: !!a.querySelector(".kind-tag"), no: !!a.querySelector(".post-no")
+  })));
+  c.ok(heads[0] && heads[0].icons === "📎🔗", "파일과 링크가 모두 있으면 그림 둘 다 (" + (heads[0] && heads[0].icons) + ")");
+  c.ok(heads[1] && heads[1].icons === "📝", "파일도 링크도 없으면 메모 그림 (" + (heads[1] && heads[1].icons) + ")");
+  c.ok(heads.every(h => h.px > h.titlePx), "종류 그림이 제목 글자보다 크다 (" + (heads[0] && heads[0].px) + "px > " + (heads[0] && heads[0].titlePx) + "px)");
+  c.ok(heads.every(h => !h.badge && !h.no), "종류 글자 배지·게시 번호는 없다");
 
   server.close();
   await c.finish(browser);
