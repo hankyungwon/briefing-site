@@ -507,7 +507,9 @@ const daysAgo = n => { const d = new Date(); d.setDate(d.getDate() - n); return 
       const pa = document.querySelector("#fp-list .board-meta .author");
       const ca = document.querySelector("#fp-list .comment .c-author");
       const px = el => parseFloat(getComputedStyle(el).fontSize);
-      return { authors, commentAuthor,
+      return { authors, commentAuthor, nos: document.querySelectorAll("#fp-list .post-no").length,
+        firstChild: (document.querySelector("#fp-list .board-card") || {}).firstElementChild ?
+          document.querySelector("#fp-list .board-card").firstElementChild.tagName : "",
         postCol: pa ? getComputedStyle(pa).color : "", postSize: pa ? px(pa) : 0,
         cmtCol: ca ? getComputedStyle(ca).color : "", cmtSize: ca ? px(ca) : 0 };
     });
@@ -516,6 +518,9 @@ const daysAgo = n => { const d = new Date(); d.setDate(d.getDate() - n); return 
     c.ok(r.commentAuthor === "송프로", "댓글 작성자도 호칭(송프로)으로 표시 (" + r.commentAuthor + ")");
     c.ok(r.postCol === "rgb(11, 74, 134)" && r.postSize === 15, "글쓴이는 진한 파랑·15px로 강조 (" + r.postCol + ", " + r.postSize + "px)");
     c.ok(r.cmtCol === "rgb(85, 106, 141)" && r.cmtSize < r.postSize, "댓글쓴이는 회색·더 작게 물러남 (" + r.cmtCol + ", " + r.cmtSize + "px)");
+    // 게시 번호(No.N)는 중간 글을 지우면 건너뛰어 보이므로 없앴다 — 글은 제목부터 시작한다
+    c.ok(r.nos === 0, "게시글에 게시 번호(No.N)가 없다 (" + r.nos + "개)");
+    c.ok(r.firstChild === "H3", "글이 제목(h3)부터 시작한다 (" + r.firstChild + ")");
     await page.close();
   }
 
