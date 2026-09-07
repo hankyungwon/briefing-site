@@ -1589,7 +1589,7 @@
       <div class="sp-lab">단원 전체 공지
         <button type="button" class="sp-add" id="sp-new">＋ 게시</button></div>
       <div class="sp-form" id="sp-form" hidden>
-        <div id="sp-text" class="sp-edit" contenteditable="true" data-ph="단원 모두에게 알릴 급한 내용을 짧게 적어 주세요."></div>
+        <div id="sp-text" class="sp-edit" contenteditable="true" spellcheck="false" autocapitalize="off" autocorrect="off" data-ph="단원 모두에게 알릴 급한 내용을 짧게 적어 주세요."></div>
         <div class="sp-formrow">
           <span id="sp-daysrow"><label for="sp-days">표시 기간</label>
             <select id="sp-days"><option value="3">3일</option><option value="7" selected>7일</option><option value="14">14일</option></select></span>
@@ -1602,7 +1602,7 @@
     </div>
     <div class="sp-sec sp-memosec">
       <div class="sp-lab">내 메모 <span class="sp-state" id="sp-memo-state"></span></div>
-      <div id="sp-memo" class="sp-edit sp-memoedit" contenteditable="true" data-ph="오늘 할 일, 떠오른 생각을 적어 두세요. 나만 볼 수 있고 자동으로 저장됩니다."></div>
+      <div id="sp-memo" class="sp-edit sp-memoedit" contenteditable="true" spellcheck="false" autocapitalize="off" autocorrect="off" data-ph="오늘 할 일, 떠오른 생각을 적어 두세요. 나만 볼 수 있고 자동으로 저장됩니다."></div>
     </div>
   </div>
 </div>
@@ -4896,16 +4896,18 @@
   function spClose() { spSavePos(); spPanel.hidden = true; }
 
   // 공지만 다시 불러온다 — 남이 올린 공지가 곧바로 맨 위에 쌓이게 하는 길
-  async function spLoadNotices() {
+  //   first=true : 로그인 직후. 공지가 한 장이라도 있으면 무조건 띄운다(포스트잇의 본래 뜻).
+  //   first=false: 화면을 보고 있는 중. 아직 못 본 새 공지가 왔을 때만 띄운다.
+  async function spLoadNotices(first) {
     if (!currentUser) return;
     const { data } = await sb.from("sticky_notices").select("*")
       .gt("expires_at", new Date().toISOString()).order("id", { ascending: false }).limit(10);
     spNotices = data || [];
     spPaint();
     if (SP_WINDOW) { spPanel.hidden = false; spMarkSeen(); return; }
-    // 아직 못 본 공지가 있으면 판을 띄워 알린다. 닫아 두었어도 새 공지는 스스로 뜬다.
-    if (spUnread()) { spOpen(); spBtn.classList.add("has-new"); }
-    else spBtn.classList.remove("has-new");
+    const fresh = spUnread();
+    if (first ? spNotices.length > 0 : fresh) spOpen();
+    spBtn.classList.toggle("has-new", fresh && spPanel.hidden);
   }
   // 내 메모는 지금 쓰고 있는 중이면 건드리지 않는다(남의 공지 때문에 내 글이 지워지면 안 된다)
   async function spLoadMemo() {
@@ -4918,7 +4920,7 @@
     if (!currentUser) { spPanel.hidden = true; spBtn.hidden = true; spUnwatch(); return; }
     spBtn.hidden = false;
     await spLoadMemo();
-    await spLoadNotices();
+    await spLoadNotices(true);   // 로그인 직후 — 올라와 있는 공지가 있으면 띄운다
     spWatch();
   }
   // 실시간 — 누가 공지를 올리거나 고치거나 지우면 「바뀌었다」는 신호가 오고, 각 화면이 다시 조회한다.

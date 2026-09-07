@@ -616,7 +616,7 @@ const daysAgo = n => { const d = new Date(); d.setDate(d.getDate() - n); return 
       memo: document.getElementById("sp-memo").innerText.trim(),
       canResize: getComputedStyle(document.getElementById("sticky-panel")).resize
     }));
-    c.ok(first.open, "안 읽은 공지가 있으면 로그인 직후 포스트잇이 저절로 뜸");
+    c.ok(first.open, "올라와 있는 공지가 있으면 로그인 직후 포스트잇이 저절로 뜸");
     c.ok(first.notices === 1, "공지 1장 표시 (" + first.notices + ")");
     c.ok(first.memo === "지난 메모", "내 메모가 서버에서 복원됨 (" + first.memo + ")");
     c.ok(first.canResize === "both", "판 크기를 사용자가 조절할 수 있음 (resize:" + first.canResize + ")");
@@ -665,6 +665,9 @@ const daysAgo = n => { const d = new Date(); d.setDate(d.getDate() - n); return 
     c.ok(/background-color:\s*rgb\(255, 241, 118\)/.test(fx), "형광펜이 칠해짐");
     c.ok(/font-weight:\s*bold/.test(fx), "굵게가 적용됨");
     c.ok(/font-size:/.test(fx), "글자 크기(대·중·소)가 적용됨");
+    // 개조식·약어가 많은 메모에 빨간 물결줄이 온통 그어지지 않게 맞춤법 검사를 끈다
+    const sc = await page.evaluate(() => ["sp-memo", "sp-text"].map(i => document.getElementById(i).spellcheck));
+    c.ok(sc.every(x => x === false), "맞춤법 검사(빨간 물결줄) 꺼짐 (" + JSON.stringify(sc) + ")");
 
     // 눌렀을 때 테두리 색이 사이트의 다른 입력칸과 같아야 한다(브라우저 기본 검정 금지)
     await page.click("#sp-memo"); await page.waitForTimeout(120);
@@ -691,6 +694,28 @@ const daysAgo = n => { const d = new Date(); d.setDate(d.getDate() - n); return 
     c.ok(pushed.open, "남이 올린 공지가 오면 닫아 둔 판이 스스로 뜬다");
     c.ok(/정전 예고/.test(pushed.top), "새 공지가 맨 위에 쌓인다 (" + pushed.top.slice(0, 12) + ")");
     c.ok(pushed.count === 3, "공지는 최근 3장까지 보인다 (" + pushed.count + ")");
+
+    // 이미 읽은 공지라도 다시 로그인하면 무조건 뜬다(포스트잇의 본래 뜻).
+    // 「읽음」 표시를 미리 찍어 둔 채로 새 창을 열어 확인한다.
+    {
+      const p2 = await H.newPage(browser);
+      await p2.addInitScript(() => {
+        try { localStorage.setItem("gwanak_sticky_seen_two", "999"); } catch (e) {}
+      });
+      const s2 = H.mkSession("twopro@hanmail.net", "two");
+      await H.setupPage(p2, { user: s2.user, session: s2.session, routes: (p, m, req) => {
+        if (p === "/rest/v1/sticky_notices") return notices;
+        if (p === "/rest/v1/personal_memos") return { body: "" };
+        return H.defaultBriefingRoutes(p);
+      }});
+      await H.login(p2, port, "twopro@hanmail.net"); await p2.waitForTimeout(900);
+      const again = await p2.evaluate(() => ({
+        open: !document.getElementById("sticky-panel").hidden,
+        count: document.querySelectorAll("#sp-notices .sp-note").length }));
+      c.ok(again.open, "이미 읽은 공지라도 다시 로그인하면 포스트잇이 뜬다");
+      c.ok(again.count > 0, "그때 기존 공지가 그대로 실려 있다 (" + again.count + "장)");
+      await p2.close();
+    }
 
     // 닫았다가 📌 버튼으로 다시 연다
     await page.click("#sp-close"); await page.waitForTimeout(150);
