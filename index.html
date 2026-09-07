@@ -110,6 +110,14 @@
   .auth-btn.auth-sm{padding:5px 10px;font-size:12.5px;border-color:var(--line);color:var(--slate);}
   .auth-btn.auth-sm:hover{background:var(--slate);border-color:var(--slate);color:#fff;}
   .link-btn{background:none;border:none;padding:0;cursor:pointer;color:var(--gwanak);font-size:13px;font-family:inherit;text-decoration:underline;}
+  /* 임시저장한 글을 되살렸을 때 알리는 줄 */
+  .draft-note{display:none;align-items:center;gap:10px;flex-wrap:wrap;margin:10px 0 0;
+    background:#FFF8E1;border:1px solid #F0D98A;border-radius:8px;padding:8px 12px;
+    font-size:13.5px;color:#5A4300;word-break:keep-all;}
+  .draft-note.show{display:flex;}
+  .draft-note button{appearance:none;cursor:pointer;border:1px solid #D9B94A;background:#fff;color:#7A5E10;
+    border-radius:999px;padding:3px 11px;font-family:inherit;font-size:12.5px;font-weight:700;white-space:nowrap;}
+  .draft-note button:hover{background:#7A5E10;border-color:#7A5E10;color:#fff;}
   .form-ok{color:#1E8E5A;font-size:13.5px;margin-top:10px;display:none;}
   .form-ok.show{display:block;}
   .modal-backdrop{
@@ -662,6 +670,7 @@
   .board-note + .board-note{border-top:1px dashed var(--gb-div);}   /* 회차 구획 = 가로 점선 */
   .board-meta-row{display:flex;align-items:center;gap:8px;margin-bottom:4px;flex-wrap:wrap;}  /* 날짜·종류·기록자 왼쪽 정렬 */
   .board-time{font-size:12.5px;font-weight:700;white-space:nowrap;}
+  .board-edited{font-size:12px;color:var(--muted);white-space:nowrap;}
   .board-by{font-size:12px;color:var(--muted);font-weight:600;white-space:nowrap;}
   /* 종류 배지 — 바탕색은 오직 이 배지(정기·수시·주간 글자)에만. 정기·주간=진한 파랑 / 수시=연한 파랑 */
   .board-kind{font-size:11px;font-weight:800;border-radius:5px;padding:1px 7px;white-space:nowrap;}
@@ -1222,6 +1231,8 @@
         <label>원고</label>
         <div id="memo-body" class="pk-editor pk-editor-sm" contenteditable="true" data-ph="회의 자료로 취합될 내용을 자유롭게 작성하세요."></div>
       </div>
+      <p class="draft-note" id="memo-draft-note">✍️ 쓰다 만 원고를 되살렸습니다. 이어서 쓰시거나, 지우고 새로 시작할 수 있습니다.
+        <button type="button" id="memo-draft-new">새로 쓰기</button></p>
       <input type="file" id="memo-img-input" accept="image/*" multiple hidden>
       <div class="pk-export no-print">
         <button type="button" class="wb-mini" id="memo-print">🖨 인쇄</button>
@@ -2196,6 +2207,15 @@
       + (updated ? ' <em style="font-style:normal;color:var(--muted);">(수정: ' + timeAgo(updated) + ')</em>' : '') + '</span>';
   }
 
+  // 창 바깥을 눌러 닫을 때, 쓰던 글이 있으면 한 번 물어본다.
+  // hasText()는 「지금 이 창에 쓰다 만 글이 있나?」를 답하는 함수.
+  function guardBackdrop(modal, hasText) {
+    modal.addEventListener("click", e => {
+      if (e.target !== modal) return;
+      if (hasText() && !confirm("작성 중인 내용이 있습니다. 창을 닫을까요?\n(임시저장되어 다시 열면 이어서 쓸 수 있습니다)")) return;
+      modal.classList.remove("open");
+    });
+  }
   function linkHref(url) {
     return /^https?:\/\//i.test(url) ? url : "https://" + url;
   }
@@ -2207,6 +2227,21 @@
       return '<a class="src" href="' + href + '" target="_blank" rel="noopener">' + m + '</a>';
     });
   }
+
+  // ── 작성 중인 글 임시저장 ─────────────────────────────
+  // 글자를 칠 때마다 이 브라우저에 몰래 적어 둔다. 서버로 보내지 않으므로 남이 볼 수 없고,
+  // 창을 닫거나 다른 사이트에 다녀와도 다시 열면 이어서 쓸 수 있다. 등록에 성공하면 지운다.
+  const DIRTY = {};   // 지금 열려 있는 편집기: 이름 → 「저장 안 된 내용이 있나?」를 답하는 함수
+  const draftKey = name => "gwanak_draft_" + name + "_" + ((currentUser && currentUser.id) || "anon");
+  function draftSave(name, obj) { try { localStorage.setItem(draftKey(name), JSON.stringify(obj)); } catch (e) { /* 저장 공간이 없으면 임시저장만 건너뛴다 */ } }
+  function draftLoad(name) { try { return JSON.parse(localStorage.getItem(draftKey(name)) || "null"); } catch (e) { return null; } }
+  function draftClear(name) { try { localStorage.removeItem(draftKey(name)); } catch (e) {} }
+  // 창을 닫거나 다른 곳으로 갈 때, 저장하지 않은 글이 있으면 브라우저가 한 번 물어본다
+  window.addEventListener("beforeunload", e => {
+    if (Object.keys(DIRTY).some(k => { try { return DIRTY[k](); } catch (x) { return false; } })) {
+      e.preventDefault(); e.returnValue = "";
+    }
+  });
 
   // ── 파일 첨부 공용 ─────────────────────────────
   const IMG_EXT = ["jpg","jpeg","png","gif","webp","bmp","heic","heif"];
@@ -2976,6 +3011,8 @@
       + '<input id="fp-title" type="text" maxlength="200" required></div>'
       + '<div class="field"><label for="fp-body">내용 (선택)</label>'
       + '<textarea id="fp-body" style="min-height:96px;" placeholder="자유롭게 이야기를 남겨 주세요."></textarea></div>'
+      + '<p class="draft-note" id="fp-draft-note">✍️ 쓰다 만 글을 되살렸습니다. 이어서 쓰시거나, 지우고 새로 시작할 수 있습니다.'
+      + '<button type="button" id="fp-draft-new">새로 쓰기</button></p>'
       + fileFieldHtml("fp-file")
       + '<label class="checkbox-row"><input type="checkbox" id="fp-pin"> 공지로 상단 고정</label>'
       + '<button type="submit" class="btn-primary" id="fp-submit">등록하기</button>'
@@ -2985,6 +3022,7 @@
     document.getElementById("fp-filter").addEventListener("input", paintBoard);
     bindFileField("fp-file");
     document.getElementById("fp-write-toggle").addEventListener("click", () => toggleBoardForm());
+    bindBoardDraft();
     const mlBtn = document.getElementById("modlog-btn");
     if (mlBtn) mlBtn.addEventListener("click", openModlog);
     loadFreePosts();
@@ -3548,8 +3586,8 @@
     + '<button type="button" data-cmd="ul" title="글머리표 (다단계: ● − ·)">• 글머리</button>'
     + '<button type="button" data-cmd="ol" title="번호 매기기 (다단계: 1. → 가. → 1) → 가) → (1))">1. 번호</button>'
     + '<select class="rt-liststyle" title="번호 스타일 바꾸기"><option value="">번호 스타일…</option><option value="ls-num">1. 2. 3.</option><option value="ls-roman">Ⅰ. Ⅱ. Ⅲ.</option><option value="ls-hangul">가. 나. 다.</option><option value="ls-pnum">1) 2) 3)</option><option value="ls-ppnum">(1) (2) (3)</option><option value="ls-circle">① ② ③</option></select>'
-    + '<button type="button" data-cmd="outdent" title="수준 올리기(내어쓰기)">⇤</button>'
-    + '<button type="button" data-cmd="indent" title="수준 내리기(들여쓰기)">⇥</button>'
+    + '<button type="button" data-cmd="outdent" title="수준 올리기(내어쓰기) — Shift+Tab">⇤</button>'
+    + '<button type="button" data-cmd="indent" title="수준 내리기(들여쓰기) — Tab&#10;번호: 1. → 가. → 1) → 가) → (1)&#10;글머리: ● → ‒ → ·">⇥</button>'
     + '<select class="rt-linespace" title="줄 간격"><option value="">줄간격</option><option value="1.3">1.3</option><option value="1.5">1.5</option><option value="1.6">1.6</option><option value="1.8">1.8</option><option value="2.0">2.0</option></select></span>'
     + '<span class="pk-grp">'
     + '<button type="button" data-cmd="left" title="왼쪽 정렬">◧</button>'
@@ -3770,6 +3808,22 @@
     return '<div class="rt-swrow">' + HILITE_COLORS.map(sw).join("") + '</div>'
       + '<div class="rt-palfoot"><button type="button" class="rt-swnone" data-color="transparent">형광펜 없음</button></div>';
   }
+  // 들여쓰기(execCommand indent)가 만든 중첩 목록을 정리한다.
+  //   ① 바로 위에 항목(<li>)이 있으면 그 안으로 넣는다 — 규격에 맞고 저장·불러오기에서 안 깨진다.
+  //      (항목이 하나뿐일 때 브라우저는 목록을 통째로 감싼다. 그때 빈 항목을 만들면 번호만 덩그러니
+  //       하나 더 생겨 보기 나쁘므로 그대로 둔다. 그래도 수준별 번호는 CSS가 제대로 매긴다.)
+  //   ② 맨 바깥 목록에만 표시를 달면 아래 수준은 CSS가 이어받는다.
+  //      번호: 1. → 가. → 1) → 가) → (1)      글머리: ● → ‒ → ·
+  function normalizeLists(ed) {
+    if (!ed) return;
+    ed.querySelectorAll("ol > ol, ol > ul, ul > ol, ul > ul").forEach(sub => {
+      const prev = sub.previousElementSibling;
+      if (prev && prev.tagName === "LI") prev.appendChild(sub);
+    });
+    const isRoot = el => !el.parentElement || !el.parentElement.closest("ol,ul");
+    ed.querySelectorAll("ol").forEach(ol => ol.classList.toggle("kout", isRoot(ol)));
+    ed.querySelectorAll("ul").forEach(ul => ul.classList.toggle("kbul", isRoot(ul)));
+  }
   function makeRichEditor(toolbarId, imgInputId, editorEls) {
     const bar = document.getElementById(toolbarId);
     bar.innerHTML = RICH_TOOLBAR_HTML;
@@ -3788,6 +3842,18 @@
       ["keyup", "mouseup", "input"].forEach(ev => ed.addEventListener(ev, saveSel));
       ed.addEventListener("click", e => { if (e.target.tagName === "IMG") { e.stopPropagation(); selectEditorImage(e.target, ed); } else deselectEditorImage(); });
       ed.addEventListener("keydown", () => { if (imgSel) deselectEditorImage(); });
+      // 목록 안에서 Tab은 수준 내리기(들여쓰기), Shift+Tab은 수준 올리기(내어쓰기).
+      // 목록 밖에서는 건드리지 않는다(칸 이동 등 원래 동작 그대로).
+      ed.addEventListener("keydown", e => {
+        if (e.key !== "Tab") return;
+        const s = window.getSelection();
+        let n = s && s.anchorNode; if (n && n.nodeType === 3) n = n.parentElement;
+        if (!n || !n.closest || !ed.contains(n) || !n.closest("li")) return;
+        e.preventDefault();
+        document.execCommand(e.shiftKey ? "outdent" : "indent");
+        normalizeLists(ed);
+        ed.dispatchEvent(new Event("input"));
+      });
       // 글자·쪽수 표시 (A4 기준 대략치)
       const cnt = document.createElement("div"); cnt.className = "pk-count"; ed.insertAdjacentElement("afterend", cnt);
       const updCount = () => { const chars = (ed.innerText || "").replace(/\s/g, "").length;
@@ -3806,7 +3872,8 @@
       const b = e.target.closest("button[data-cmd]"); if (!b) return;
       const c = b.dataset.cmd; active.focus();
       const exec = (cmd, val) => document.execCommand(cmd, false, val || null);
-      if (EXEC_MAP[c]) { exec(EXEC_MAP[c]); if (c === "ul") tagList("ul", "kbul"); else if (c === "ol") tagList("ol", "kout"); }
+      if (EXEC_MAP[c]) { exec(EXEC_MAP[c]); if (c === "ul") tagList("ul", "kbul"); else if (c === "ol") tagList("ol", "kout");
+        if (c === "ul" || c === "ol" || c === "indent" || c === "outdent") normalizeLists(active); }
       else if (c === "size-up" || c === "size-dn") { const inp = bar.querySelector(".rt-sizenum"); let v = (parseInt(inp.value, 10) || 11) + (c === "size-up" ? 1 : -1); v = Math.max(6, Math.min(96, v)); inp.value = v; bar._applyFontSizePt(v); }
       else if (c === "h") exec("formatBlock", "H4");
       else if (c === "p") exec("formatBlock", "P");
@@ -3918,6 +3985,40 @@
   }
   makeRichEditor("packet-toolbar", "packet-img-input", [document.getElementById("packet-edit-body")]);
 
+  // 자유게시판 글쓰기 — 칠 때마다 임시저장하고, 화면을 다시 열면 되살린다
+  function boardDraftNow() {
+    const t = document.getElementById("fp-title"), b = document.getElementById("fp-body");
+    if (!t || !b) return null;
+    return { t: t.value, b: b.value, p: !!document.getElementById("fp-pin").checked };
+  }
+  function bindBoardDraft() {
+    const note = document.getElementById("fp-draft-note");
+    const save = () => { const d = boardDraftNow(); if (d) draftSave("board", d); };
+    ["fp-title", "fp-body", "fp-pin"].forEach(id => {
+      const el = document.getElementById(id);
+      if (el) el.addEventListener(el.type === "checkbox" ? "change" : "input", save);
+    });
+    document.getElementById("fp-draft-new").addEventListener("click", () => {
+      document.getElementById("fp-form").reset();
+      document.getElementById("fp-file-chosen").innerHTML = "";
+      draftClear("board"); note.classList.remove("show");
+      document.getElementById("fp-title").focus();
+    });
+    // 열려 있는 동안 「저장 안 된 글이 있나?」를 창 닫기 경고가 물어본다
+    DIRTY.board = () => {
+      const wrap = document.getElementById("fp-form-wrap");
+      const d = boardDraftNow();
+      return !!(wrap && wrap.classList.contains("open") && d && (d.t.trim() || d.b.trim()));
+    };
+    const d = draftLoad("board");
+    if (d && (String(d.t || "").trim() || String(d.b || "").trim())) {
+      document.getElementById("fp-title").value = d.t || "";
+      document.getElementById("fp-body").value = d.b || "";
+      document.getElementById("fp-pin").checked = !!d.p;
+      note.classList.add("show");
+      toggleBoardForm(true);
+    }
+  }
   function toggleBoardForm(open) {
     const wrap = document.getElementById("fp-form-wrap"), btn = document.getElementById("fp-write-toggle");
     if (!wrap) return;
@@ -4036,6 +4137,8 @@
     if (failMsg) { err.textContent = "글을 올리지 못했습니다. 입력하신 내용은 그대로 남아 있으니 다시 시도해 주세요. (" + failMsg + ")"; err.classList.add("show"); return; }
     document.getElementById("fp-form").reset();
     document.getElementById("fp-file-chosen").innerHTML = "";
+    draftClear("board");
+    document.getElementById("fp-draft-note").classList.remove("show");
     toggleBoardForm(false);
     const okEl = document.getElementById("fp-ok");
     okEl.textContent = "✓ 「" + title + "」 글이 등록되었습니다.";
@@ -4142,12 +4245,20 @@
     const d = new Date(m.meeting_date + "T00:00:00"), now = stripTime(new Date());
     return (now - d) <= 7 * 86400000;
   }
-  function mNoteHtml(m) {
+  // 수정 권한: 맨 위 1건에 한해 작성자 본인·단장·행정지원 주무관 (DB의 RLS와 같은 기준)
+  function mCanEdit(m, isLatest) {
+    if (!isLatest || !currentUser || !m) return false;
+    const me = (currentUser.email || "").toLowerCase();
+    return me === (m.author_email || "").toLowerCase() || isAdminUser || isStaffManager();
+  }
+  function mNoteHtml(m, isLatest) {
     const kc = (m.kind === "주간") ? "k-strong" : "k-soft";   // 주간 배지=진한 파랑 / 수시 배지=주황
     return '<div class="board-note">'
       + '<div class="board-meta-row"><span class="board-kind ' + kc + '">' + esc(m.kind || "회의") + '</span>'
       + '<span class="board-time">' + fmtMeetingWhen(m) + '</span>'
       + '<span class="board-by">by ' + esc(packetAuthorName(m.author_email)) + '</span>'
+      + editedMark(m)
+      + (mCanEdit(m, isLatest) ? '<button type="button" class="wb-mini" data-meeting-edit="' + m.id + '">수정</button>' : '')
       + (mCanDelete(m) ? '<button type="button" class="wb-mini danger" data-meeting-del="' + m.id + '">삭제</button>' : '')
       + '</div>'
       + '<div class="board-body">' + (m.result ? plain2html(m.result) : "—") + '</div>'
@@ -4159,21 +4270,28 @@
     let h = '<div class="board-head"><span class="mb-label">🗒 연구단 회의록</span>'
       + '<button type="button" class="wb-btn" data-meeting-new="1" style="margin-left:auto;">📝 작성</button></div>';
     if (!latest) { h += '<p class="mb-empty">아직 기록된 회의가 없습니다. 회의 후 「작성」으로 안건·결론을 남겨 주세요.</p>'; return h; }
-    h += '<div class="board-list">' + meetings.map(mNoteHtml).join("") + '</div>';
+    h += '<div class="board-list">' + meetings.map((m, i) => mNoteHtml(m, i === 0)).join("") + '</div>';
     return h;
   }
   // 단장 지시사항 — 회의록처럼 회차별로 누적. 「새 지시」로 추가, 각 회차에 타임코드, 삭제는 관리자만.
+  // 고친 적이 있으면 「· 수정됨」을 덧붙인다. 언제 고쳤는지는 마우스를 올리면 보인다.
+  function editedMark(row) {
+    return row && row.edited_at
+      ? '<span class="board-edited" title="' + esc(fmtDateTime(row.edited_at)) + ' 수정">· 수정됨</span>' : '';
+  }
   function fmtStamp(iso) {
     const d = new Date(iso); if (isNaN(d)) return "";
     return (d.getMonth() + 1) + "." + d.getDate() + "(" + WEEKDAYS[d.getDay()] + ") " + pad2(d.getHours()) + ":" + pad2(d.getMinutes());
   }
-  function directiveNoteHtml(row) {
+  function directiveNoteHtml(row, isLatest) {
     const kind = row.kind || "수시";
     const kc = kind === "정기" ? "k-strong" : "k-soft";   // 정기 배지=진한 파랑 / 수시 배지=주황
     return '<div class="board-note"><div class="board-meta-row">'
       + '<span class="board-kind ' + kc + '">' + esc(kind) + '</span>'
       + '<span class="board-time">' + esc(fmtStamp(row.updated_at)) + '</span>'
       + '<span class="board-by">by ' + esc(packetAuthorName(row.author_email)) + '</span>'
+      + editedMark(row)
+      + (isAdminUser && isLatest ? '<button type="button" class="wb-mini" data-directive-edit="' + row.id + '">수정</button>' : '')
       + (isAdminUser ? '<button type="button" class="wb-mini danger" data-directive-del="' + row.id + '">삭제</button>' : '')
       + '</div><div class="board-body">' + (row.body ? plain2html(row.body) : "—") + '</div></div>';
   }
@@ -4181,7 +4299,7 @@
     rows = rows || [];
     let h = '<div class="board-head"><span class="hd-label">📢 단장 지시사항</span>'
       + (isAdminUser ? '<button type="button" class="wb-btn" data-directive-new="1" style="margin-left:auto;">📝 작성</button>' : '') + '</div>';
-    h += rows.length ? '<div class="board-list">' + rows.map(directiveNoteHtml).join("") + '</div>'
+    h += rows.length ? '<div class="board-list">' + rows.map((r, i) => directiveNoteHtml(r, i === 0)).join("") + '</div>'
                      : '<p class="hd-empty">' + (isAdminUser ? "아직 등록된 지시사항이 없습니다. 「작성」으로 남겨 주세요." : "등록된 지시사항이 없습니다.") + '</p>';
     return h;
   }
@@ -4267,9 +4385,13 @@
     const mb = e.target.closest('[data-memo-edit]');
     if (mb) { const note = staffNotesCache.find(n => String(n.id) === mb.dataset.memoEdit); if (note) openMemoModal(note.member_email, note); return; }
     if (e.target.closest('[data-directive-new]')) { openDirectiveModal(); return; }
+    const de = e.target.closest('[data-directive-edit]');
+    if (de) { const row = (directiveCache || []).find(r => String(r.id) === de.dataset.directiveEdit); if (row) openDirectiveModal(row); return; }
     const dd = e.target.closest('[data-directive-del]');
     if (dd) { deleteDirective(dd.dataset.directiveDel); return; }
     if (e.target.closest('[data-meeting-new]')) { openMeetingModal(); return; }
+    const me2 = e.target.closest('[data-meeting-edit]');
+    if (me2) { const m = (meetingNotesCache || []).find(x => String(x.id) === me2.dataset.meetingEdit); if (m) openMeetingModal(m); return; }
     const md = e.target.closest('[data-meeting-del]');
     if (md) { deleteMeeting(md.dataset.meetingDel); return; }
     const sd = e.target.closest('[data-staff-del]');
@@ -4302,6 +4424,17 @@
     body += isEmpty(raw) ? none : raw;
     return { title: title, html: buildStandaloneHtml(title, body), raw: raw };
   }
+  // 원고 창에 쓰다 만 글이 있나 — 빈 태그(<br>·&nbsp;)만 남은 것은 없는 것으로 본다
+  function memoIsEmpty() {
+    const el = document.getElementById('memo-body');
+    return !el || !el.innerHTML.replace(/<br\s*\/?>|<p>|<\/p>|<div>|<\/div>|&nbsp;|\s/gi, "").length;
+  }
+  // 원고는 사람·구분·회차마다 따로 임시저장한다(새 원고와 고치던 원고가 섞이지 않게)
+  function memoDraftName() { return "memo_" + (memoModal.dataset.email || "") + "_" + (memoModal.dataset.noteId || "new"); }
+  function memoDraftSave() {
+    if (!memoModal.classList.contains('open')) return;
+    draftSave(memoDraftName(), { b: document.getElementById('memo-body').innerHTML, k: document.getElementById('memo-kind').value });
+  }
   // note가 있으면 그 원고를 고치는 모드, 없으면 빈 화면에서 새 원고를 쓰는 모드
   function openMemoModal(email, note) {
     if (!currentUser || !email || (currentUser.email || "").toLowerCase() !== String(email).toLowerCase()) return; // 본인만
@@ -4316,11 +4449,21 @@
     const bodyEl = document.getElementById('memo-body');
     bodyEl.innerHTML = note && note.body ? richToHtml(note.body) : "";
     resolveInlineImages(bodyEl);
+    // 쓰다 만 원고가 있으면 되살린다(등록에 성공하면 지워지므로, 남아 있다는 건 못 끝냈다는 뜻)
+    const note0 = document.getElementById('memo-draft-note');
+    note0.classList.remove('show');
+    const d = draftLoad(memoDraftName());
+    if (d && d.b && d.b.replace(/<br\s*\/?>|<p>|<\/p>|<div>|<\/div>|&nbsp;|\s/gi, "").length) {
+      bodyEl.innerHTML = sanitizePacketHtml(d.b);
+      resolveInlineImages(bodyEl);
+      if (d.k) document.getElementById('memo-kind').value = d.k;
+      note0.classList.add('show');
+    }
     if (bodyEl._updCount) bodyEl._updCount();
     memoModal.classList.add('open');
   }
   document.getElementById('memo-cancel').addEventListener('click', () => memoModal.classList.remove('open'));
-  memoModal.addEventListener('click', e => { if (e.target === memoModal) memoModal.classList.remove('open'); });
+  guardBackdrop(memoModal, () => memoModal.classList.contains('open') && !memoIsEmpty());
   memoForm.addEventListener('submit', async e => {
     e.preventDefault();
     const email = memoModal.dataset.email, kind = document.getElementById('memo-kind').value;
@@ -4343,6 +4486,8 @@
     }
     btn.disabled = false;
     if (error) { memoError.textContent = "저장하지 못했습니다. (" + error.message + ")"; memoError.classList.add('show'); return; }
+    draftClear(memoDraftName());
+    document.getElementById('memo-draft-note').classList.remove('show');
     memoModal.classList.remove('open');
     await renderAboutBoards();
   });
@@ -4356,18 +4501,31 @@
     else downloadDoc(safeFileName(r.title) + ".doc", html);
   });
   makeRichEditor("memo-toolbar", "memo-img-input", [document.getElementById("memo-body")]);
+  document.getElementById('memo-body').addEventListener('input', memoDraftSave);
+  document.getElementById('memo-kind').addEventListener('change', memoDraftSave);
+  document.getElementById('memo-draft-new').addEventListener('click', () => {
+    document.getElementById('memo-body').innerHTML = "";
+    draftClear(memoDraftName());
+    document.getElementById('memo-draft-note').classList.remove('show');
+    document.getElementById('memo-body').focus();
+  });
+  DIRTY.memo = () => memoModal.classList.contains('open') && !memoIsEmpty();
 
   // 회의록 모달 — 로그인한 단원 누구나 새로 올린다(대직). 올린 뒤 수정 불가, 항상 새 항목으로 추가.
   const meetingModal = document.getElementById('meeting-modal');
   const meetingForm = document.getElementById('meeting-form');
   const meetingError = document.getElementById('meeting-error');
-  function openMeetingModal() {
+  // m이 있으면 그 회의록을 고치는 모드, 없으면 새로 쓰는 모드
+  function openMeetingModal(m) {
     if (!currentUser) return;
     meetingError.classList.remove('show');
-    document.getElementById('meeting-date').value = ymd(stripTime(new Date()));
-    document.getElementById('meeting-kind').value = "주간";
-    document.getElementById('meeting-time').value = "";
-    document.getElementById('meeting-result').value = "";
+    meetingModal.dataset.editId = m ? String(m.id) : "";
+    document.getElementById('meeting-title').textContent = m ? "회의록 수정" : "연구단 회의록";
+    document.getElementById('meeting-submit').textContent = m ? "수정 저장" : "올리기";
+    document.getElementById('meeting-date').value = m ? m.meeting_date : ymd(stripTime(new Date()));
+    document.getElementById('meeting-kind').value = (m && m.kind) || "주간";
+    document.getElementById('meeting-time').value = m && m.meeting_time ? String(m.meeting_time).slice(0, 5) : "";
+    document.getElementById('meeting-result').value = (m && m.result) || "";
     meetingModal.classList.add('open');
   }
   // 삭제: 화면 버튼은 권한자에게만 뜨지만, 실제 허용 여부는 DB(RLS)가 최종 판단
@@ -4378,22 +4536,27 @@
     await renderAboutBoards();
   }
   document.getElementById('meeting-cancel').addEventListener('click', () => meetingModal.classList.remove('open'));
-  meetingModal.addEventListener('click', e => { if (e.target === meetingModal) meetingModal.classList.remove('open'); });
+  guardBackdrop(meetingModal, () => meetingModal.classList.contains('open')
+    && !!document.getElementById('meeting-result').value.trim());
   meetingForm.addEventListener('submit', async e => {
     e.preventDefault();
     const date = document.getElementById('meeting-date').value;
     if (!date) return;
     const btn = document.getElementById('meeting-submit'); btn.disabled = true;
-    const { error } = await sb.from('meeting_notes').insert({
+    const editId = meetingModal.dataset.editId;
+    const row = {
       meeting_date: date,
       kind: document.getElementById('meeting-kind').value || null,
       meeting_time: document.getElementById('meeting-time').value || null,
       result: document.getElementById('meeting-result').value.trim() || null,
-      author_email: currentUser ? currentUser.email : null,
       updated_at: new Date().toISOString()
-    });
+    };
+    // 고칠 때는 작성자를 그대로 두고 「수정됨」 시각만 남긴다
+    const { error } = editId
+      ? await sb.from('meeting_notes').update(Object.assign({}, row, { edited_at: new Date().toISOString() })).eq('id', Number(editId))
+      : await sb.from('meeting_notes').insert(Object.assign({}, row, { author_email: currentUser ? currentUser.email : null }));
     btn.disabled = false;
-    if (error) { meetingError.textContent = "올리지 못했습니다. (" + error.message + ")"; meetingError.classList.add('show'); return; }
+    if (error) { meetingError.textContent = (editId ? "수정하지 못했습니다. " : "올리지 못했습니다. ") + "(" + error.message + ")"; meetingError.classList.add('show'); return; }
     meetingModal.classList.remove('open');
     await renderAboutBoards();
   });
@@ -4402,11 +4565,15 @@
   const directiveModal = document.getElementById('directive-modal');
   const directiveForm = document.getElementById('directive-form');
   const directiveError = document.getElementById('directive-error');
-  function openDirectiveModal() {
+  // row가 있으면 그 지시를 고치는 모드, 없으면 새 지시(항상 빈칸에서)
+  function openDirectiveModal(row) {
     if (!isAdminUser) return;
     directiveError.classList.remove('show');
-    document.getElementById('directive-body').value = "";   // 새 지시는 항상 빈칸에서
-    document.getElementById('directive-kind').value = "수시";
+    directiveModal.dataset.editId = row ? String(row.id) : "";
+    document.getElementById('directive-title').textContent = row ? "지시사항 수정" : "새 지시사항";
+    document.getElementById('directive-submit').textContent = row ? "수정 저장" : "저장";
+    document.getElementById('directive-body').value = row ? (row.body || "") : "";
+    document.getElementById('directive-kind').value = (row && row.kind) || "수시";
     directiveModal.classList.add('open');
   }
   async function deleteDirective(id) {
@@ -4417,18 +4584,20 @@
     await renderAboutBoards();
   }
   document.getElementById('directive-cancel').addEventListener('click', () => directiveModal.classList.remove('open'));
-  directiveModal.addEventListener('click', e => { if (e.target === directiveModal) directiveModal.classList.remove('open'); });
+  guardBackdrop(directiveModal, () => directiveModal.classList.contains('open')
+    && !!document.getElementById('directive-body').value.trim());
   directiveForm.addEventListener('submit', async e => {
     e.preventDefault();
     const body = document.getElementById('directive-body').value.trim();
     if (!body) { directiveError.textContent = "내용을 입력해 주세요."; directiveError.classList.add('show'); return; }
     const btn = document.getElementById('directive-submit'); btn.disabled = true;
-    const { error } = await sb.from('directives').insert({
-      body, kind: document.getElementById('directive-kind').value || null,
-      author_email: currentUser ? currentUser.email : null, updated_at: new Date().toISOString()
-    });
+    const editId = directiveModal.dataset.editId;
+    const row = { body, kind: document.getElementById('directive-kind').value || null, updated_at: new Date().toISOString() };
+    const { error } = editId
+      ? await sb.from('directives').update(Object.assign({}, row, { edited_at: new Date().toISOString() })).eq('id', Number(editId))
+      : await sb.from('directives').insert(Object.assign({}, row, { author_email: currentUser ? currentUser.email : null }));
     btn.disabled = false;
-    if (error) { directiveError.textContent = "저장하지 못했습니다. (" + error.message + ")"; directiveError.classList.add('show'); return; }
+    if (error) { directiveError.textContent = (editId ? "수정하지 못했습니다. " : "저장하지 못했습니다. ") + "(" + error.message + ")"; directiveError.classList.add('show'); return; }
     directiveModal.classList.remove('open');
     await renderAboutBoards();
   });
