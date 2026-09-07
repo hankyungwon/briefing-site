@@ -2784,7 +2784,7 @@
     if (!dayEvents.length) return '<p class="empty-note">이 날 등록된 일정이 없습니다.</p>';
     const rows = dayEvents.map(ev => {
       const t = evType(ev.type), mine = ev.author_id === currentUser.id;
-      const canManage = mine || isStaffManager();
+      const canManage = mine || isStaffManager() || isAdminUser;
       return '<div class="cal-devt" style="border-left-color:' + t.color + '"><h4>' + esc(ev.title) + '</h4>'
         + '<div class="dmeta"><span class="type-tag" style="background:' + t.color + ';color:' + textOn(t.color) + '">' + t.label + '</span>'
         + '<span>' + fmtRange(ev) + '</span>'
@@ -2792,8 +2792,7 @@
         + '<span>· ' + esc(authorName(ev.author_name)) + '</span>'
         + '<span style="margin-left:auto;display:flex;gap:6px;">'
         + (canManage ? '<button class="mini-btn" data-edit-ev="' + ev.id + '">수정</button>'
-          + '<button class="mini-btn danger" data-del-ev="' + ev.id + '">삭제</button>'
-          : (isAdminUser ? '<button class="mini-btn danger" data-del-ev="' + ev.id + '" title="관리자 삭제">🛡 삭제</button>' : ''))
+          + '<button class="mini-btn danger" data-del-ev="' + ev.id + '">삭제</button>' : '')
         + '</span></div>'
         + (ev.memo ? '<div class="dmemo">' + linkify(ev.memo) + '</div>' : '') + '</div>';
     }).join("");

@@ -118,6 +118,8 @@ const H = require("./helper");
       await H.setupPage(pg, { user: s.user, session: s.session, routes: p => {
         if (p === "/rest/v1/events") return others;
         if (p === "/rest/v1/holidays") return [];
+        // 관리자 명단은 로그인한 사람이 단장일 때만 일치하도록 흉내낸다(목 라우팅은 필터를 적용하지 않으므로)
+        if (p === "/rest/v1/admin_emails") return email === "hanpro@hanmail.net" ? [{ email: email }] : [];
         return H.defaultBriefingRoutes(p);
       }});
       await H.login(pg, port, email);
@@ -131,8 +133,10 @@ const H = require("./helper");
       return r;
     };
     const song = await look("syho99@naver.com", "song-uid");
+    const lead = await look("hanpro@hanmail.net", "lead-uid");
     const other = await look("twopro@hanmail.net", "two-uid");
     c.ok(song.edit === 1 && song.del === 1, "송프로는 남의 일정에도 수정·삭제 버튼 (수정 " + song.edit + " / 삭제 " + song.del + ")");
+    c.ok(lead.edit === 1 && lead.del === 1, "단장도 남의 일정에 수정·삭제 버튼 (수정 " + lead.edit + " / 삭제 " + lead.del + ")");
     c.ok(other.edit === 0 && other.del === 0, "일반 연구관은 남의 일정에 버튼 없음 (수정 " + other.edit + " / 삭제 " + other.del + ")");
   }
 
