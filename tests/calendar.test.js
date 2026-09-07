@@ -107,6 +107,35 @@ const H = require("./helper");
     "회의와 식사 색이 서로 다름 (회의 " + look.byType.meeting + " / 식사 " + look.byType.meal + ")");
   c.ok(look.byType.meal === "rgb(126, 87, 194)", "식사는 주황과 헷갈리지 않는 보라");
 
+  // 행정지원 주무관(송프로)은 남이 올린 일정도 수정·삭제할 수 있어야 한다(일정 관리가 본업).
+  // 일반 연구관은 남의 일정에 아무 버튼도 보이지 않는다. 화면 버튼과 DB(RLS) 기준이 같다.
+  {
+    const others = [{ id: 9, type: "meeting", title: "남이 올린 회의", start_date: T, end_date: null,
+      start_time: "16:00", end_time: "17:00", author_name: "이프로", author_id: "someone-else", location: null }];
+    const look = async (email, uid) => {
+      const pg = await H.newPage(browser);
+      const s = H.mkSession(email, uid);
+      await H.setupPage(pg, { user: s.user, session: s.session, routes: p => {
+        if (p === "/rest/v1/events") return others;
+        if (p === "/rest/v1/holidays") return [];
+        return H.defaultBriefingRoutes(p);
+      }});
+      await H.login(pg, port, email);
+      await pg.click('nav button[data-panel="calendar"]'); await pg.waitForTimeout(600);
+      await pg.click('.cal-day[data-day="' + T + '"]'); await pg.waitForTimeout(400);
+      const r = await pg.evaluate(() => ({
+        edit: document.querySelectorAll(".cal-devt [data-edit-ev]").length,
+        del: document.querySelectorAll(".cal-devt [data-del-ev]").length
+      }));
+      await pg.close();
+      return r;
+    };
+    const song = await look("syho99@naver.com", "song-uid");
+    const other = await look("twopro@hanmail.net", "two-uid");
+    c.ok(song.edit === 1 && song.del === 1, "송프로는 남의 일정에도 수정·삭제 버튼 (수정 " + song.edit + " / 삭제 " + song.del + ")");
+    c.ok(other.edit === 0 && other.del === 0, "일반 연구관은 남의 일정에 버튼 없음 (수정 " + other.edit + " / 삭제 " + other.del + ")");
+  }
+
   server.close();
   await c.finish(browser);
 })().catch(e => { console.error("FAIL", e.message, e.stack); process.exit(1); });
