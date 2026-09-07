@@ -366,13 +366,20 @@ const daysAgo = n => { const d = new Date(); d.setDate(d.getDate() - n); return 
       if (p === "/rest/v1/admin_emails") return [{ email: "hanpro@hanmail.net" }];
       if (p === "/rest/v1/directives") {
         if (m === "POST") { const row = JSON.parse(req.postData()); row.id = nid++; dirs.push(row); return [row]; }
+        if (m === "PATCH") {
+          const patch = JSON.parse(req.postData());
+          const id = Number((req.url().match(/id=eq\.(\d+)/) || [])[1]);
+          const row = dirs.find(d => d.id === id);
+          if (row) Object.assign(row, patch);
+          return row ? [row] : [];
+        }
         return [...dirs].sort((a, b) => b.id - a.id);
       }
       return H.defaultBriefingRoutes(p);
     }});
     await H.login(page, port, "hanpro@hanmail.net");
     await page.click('nav button[data-panel="about"]'); await page.waitForTimeout(500);
-    c.ok(await page.evaluate(() => { const hd = document.getElementById("head-directive"); return hd && !hd.hidden && !!hd.querySelector("[data-directive-new]") && !hd.querySelector("[data-directive-edit]"); }), "지시사항: 「새 지시」 버튼(수정 아님) 노출");
+    c.ok(await page.evaluate(() => { const hd = document.getElementById("head-directive"); return hd && !hd.hidden && !!hd.querySelector("[data-directive-new]"); }), "지시사항: 「작성」 버튼 노출");
     c.ok(await page.evaluate(() => document.querySelectorAll("#head-directive .board-note").length === 1 && !!document.querySelector("#head-directive .board-time")), "기존 지시 1건 + 타임코드 표시");
     await page.click("#head-directive [data-directive-new]"); await page.waitForTimeout(300);
     c.ok(await page.evaluate(() => document.getElementById("directive-body").value === ""), "「새 지시」는 빈칸에서 시작(누적)");
@@ -398,6 +405,26 @@ const daysAgo = n => { const d = new Date(); d.setDate(d.getDate() - n); return 
     c.ok(kindColors["수시"] === "rgb(232, 132, 58)" && kindColors["정기"] === "rgb(14, 95, 168)",
       "수시 배지는 주황·정기는 파랑 (수시 " + kindColors["수시"] + ")");
     c.ok(/공모사업 마감 준수/.test(st.firstBody), "새 지시가 맨 위에 표시");
+
+    // 보존이 원칙이므로 지난 회차는 손대지 못하고, 맨 위 1건만 고칠 수 있다
+    const editBtns = await page.evaluate(() => [...document.querySelectorAll("#head-directive .board-note")]
+      .map(n => !!n.querySelector("[data-directive-edit]")));
+    c.ok(editBtns[0] === true && editBtns.slice(1).every(x => x === false),
+      "맨 위 지시에만 수정 버튼, 지난 회차에는 없음 (" + JSON.stringify(editBtns) + ")");
+
+    // 수정 → 새 회차가 생기지 않고 그 자리를 고치며, 고친 흔적이 남는다
+    await page.click("#head-directive [data-directive-edit]"); await page.waitForTimeout(300);
+    const pre = await page.evaluate(() => ({ body: document.getElementById("directive-body").value,
+      title: document.getElementById("directive-title").textContent,
+      btn: document.getElementById("directive-submit").textContent }));
+    c.ok(/공모사업 마감 준수/.test(pre.body), "「수정」은 그 지시 내용을 불러온다");
+    c.ok(/수정/.test(pre.title) && /수정/.test(pre.btn), "수정 모드임을 창 제목·버튼이 알린다 (" + pre.title + " / " + pre.btn + ")");
+    await page.fill("#directive-body", "· 공모사업 마감 준수(9.20까지)");
+    await page.click("#directive-submit"); await page.waitForTimeout(400);
+    c.ok(dirs.length === 2, "수정은 회차를 늘리지 않는다 (" + dirs.length + "건)");
+    c.ok(/9\.20까지/.test(dirs[1].body) && !!dirs[1].edited_at, "그 자리가 고쳐지고 수정 시각이 남는다");
+    c.ok(await page.evaluate(() => !!document.querySelector("#head-directive .board-note .board-edited")),
+      "화면에 「수정됨」 표시");
     c.ok(/정기/.test(st.kind), "지시에 종류 배지(정기/수시) 표시");
     c.ok(/^by 단장/.test(st.by.trim()), "지시 기록자를 「by 호칭」으로 표시 (" + st.by.trim() + ")");
     c.ok(st.del, "각 지시에 삭제 버튼(관리자)");
@@ -453,7 +480,7 @@ const daysAgo = n => { const d = new Date(); d.setDate(d.getDate() - n); return 
     c.ok(/^by 오프로/.test(g.by.trim()), "회의록에 'by 오프로' 표시 (" + g.by.trim() + ")");
     c.ok(/수시/.test(g.kind), "구분 배지 표시");
     c.ok(!g.del, "일반 단원은 회의록 삭제 버튼 없음");
-    c.ok(!g.edit, "회의록에 수정 버튼 없음(수정 불가)");
+    c.ok(g.edit, "방금 올린 최신 회의록에는 수정 버튼(작성자 본인)");
     // 단장 카드에는 더 이상 회의 기록이 들어가지 않는다(분리 확인)
     c.ok(await page.evaluate(() => !document.querySelector('#about .member[data-member="lead"] .wb-meeting')), "단장 카드에서 회의 기록 분리됨");
     await page.close();

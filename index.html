@@ -662,6 +662,7 @@
   .board-note + .board-note{border-top:1px dashed var(--gb-div);}   /* 회차 구획 = 가로 점선 */
   .board-meta-row{display:flex;align-items:center;gap:8px;margin-bottom:4px;flex-wrap:wrap;}  /* 날짜·종류·기록자 왼쪽 정렬 */
   .board-time{font-size:12.5px;font-weight:700;white-space:nowrap;}
+  .board-edited{font-size:12px;color:var(--muted);white-space:nowrap;}
   .board-by{font-size:12px;color:var(--muted);font-weight:600;white-space:nowrap;}
   /* 종류 배지 — 바탕색은 오직 이 배지(정기·수시·주간 글자)에만. 정기·주간=진한 파랑 / 수시=연한 파랑 */
   .board-kind{font-size:11px;font-weight:800;border-radius:5px;padding:1px 7px;white-space:nowrap;}
@@ -4142,12 +4143,20 @@
     const d = new Date(m.meeting_date + "T00:00:00"), now = stripTime(new Date());
     return (now - d) <= 7 * 86400000;
   }
-  function mNoteHtml(m) {
+  // 수정 권한: 맨 위 1건에 한해 작성자 본인·단장·행정지원 주무관 (DB의 RLS와 같은 기준)
+  function mCanEdit(m, isLatest) {
+    if (!isLatest || !currentUser || !m) return false;
+    const me = (currentUser.email || "").toLowerCase();
+    return me === (m.author_email || "").toLowerCase() || isAdminUser || isStaffManager();
+  }
+  function mNoteHtml(m, isLatest) {
     const kc = (m.kind === "주간") ? "k-strong" : "k-soft";   // 주간 배지=진한 파랑 / 수시 배지=주황
     return '<div class="board-note">'
       + '<div class="board-meta-row"><span class="board-kind ' + kc + '">' + esc(m.kind || "회의") + '</span>'
       + '<span class="board-time">' + fmtMeetingWhen(m) + '</span>'
       + '<span class="board-by">by ' + esc(packetAuthorName(m.author_email)) + '</span>'
+      + editedMark(m)
+      + (mCanEdit(m, isLatest) ? '<button type="button" class="wb-mini" data-meeting-edit="' + m.id + '">수정</button>' : '')
       + (mCanDelete(m) ? '<button type="button" class="wb-mini danger" data-meeting-del="' + m.id + '">삭제</button>' : '')
       + '</div>'
       + '<div class="board-body">' + (m.result ? plain2html(m.result) : "—") + '</div>'
@@ -4159,21 +4168,28 @@
     let h = '<div class="board-head"><span class="mb-label">🗒 연구단 회의록</span>'
       + '<button type="button" class="wb-btn" data-meeting-new="1" style="margin-left:auto;">📝 작성</button></div>';
     if (!latest) { h += '<p class="mb-empty">아직 기록된 회의가 없습니다. 회의 후 「작성」으로 안건·결론을 남겨 주세요.</p>'; return h; }
-    h += '<div class="board-list">' + meetings.map(mNoteHtml).join("") + '</div>';
+    h += '<div class="board-list">' + meetings.map((m, i) => mNoteHtml(m, i === 0)).join("") + '</div>';
     return h;
   }
   // 단장 지시사항 — 회의록처럼 회차별로 누적. 「새 지시」로 추가, 각 회차에 타임코드, 삭제는 관리자만.
+  // 고친 적이 있으면 「· 수정됨」을 덧붙인다. 언제 고쳤는지는 마우스를 올리면 보인다.
+  function editedMark(row) {
+    return row && row.edited_at
+      ? '<span class="board-edited" title="' + esc(fmtDateTime(row.edited_at)) + ' 수정">· 수정됨</span>' : '';
+  }
   function fmtStamp(iso) {
     const d = new Date(iso); if (isNaN(d)) return "";
     return (d.getMonth() + 1) + "." + d.getDate() + "(" + WEEKDAYS[d.getDay()] + ") " + pad2(d.getHours()) + ":" + pad2(d.getMinutes());
   }
-  function directiveNoteHtml(row) {
+  function directiveNoteHtml(row, isLatest) {
     const kind = row.kind || "수시";
     const kc = kind === "정기" ? "k-strong" : "k-soft";   // 정기 배지=진한 파랑 / 수시 배지=주황
     return '<div class="board-note"><div class="board-meta-row">'
       + '<span class="board-kind ' + kc + '">' + esc(kind) + '</span>'
       + '<span class="board-time">' + esc(fmtStamp(row.updated_at)) + '</span>'
       + '<span class="board-by">by ' + esc(packetAuthorName(row.author_email)) + '</span>'
+      + editedMark(row)
+      + (isAdminUser && isLatest ? '<button type="button" class="wb-mini" data-directive-edit="' + row.id + '">수정</button>' : '')
       + (isAdminUser ? '<button type="button" class="wb-mini danger" data-directive-del="' + row.id + '">삭제</button>' : '')
       + '</div><div class="board-body">' + (row.body ? plain2html(row.body) : "—") + '</div></div>';
   }
@@ -4181,7 +4197,7 @@
     rows = rows || [];
     let h = '<div class="board-head"><span class="hd-label">📢 단장 지시사항</span>'
       + (isAdminUser ? '<button type="button" class="wb-btn" data-directive-new="1" style="margin-left:auto;">📝 작성</button>' : '') + '</div>';
-    h += rows.length ? '<div class="board-list">' + rows.map(directiveNoteHtml).join("") + '</div>'
+    h += rows.length ? '<div class="board-list">' + rows.map((r, i) => directiveNoteHtml(r, i === 0)).join("") + '</div>'
                      : '<p class="hd-empty">' + (isAdminUser ? "아직 등록된 지시사항이 없습니다. 「작성」으로 남겨 주세요." : "등록된 지시사항이 없습니다.") + '</p>';
     return h;
   }
@@ -4267,9 +4283,13 @@
     const mb = e.target.closest('[data-memo-edit]');
     if (mb) { const note = staffNotesCache.find(n => String(n.id) === mb.dataset.memoEdit); if (note) openMemoModal(note.member_email, note); return; }
     if (e.target.closest('[data-directive-new]')) { openDirectiveModal(); return; }
+    const de = e.target.closest('[data-directive-edit]');
+    if (de) { const row = (directiveCache || []).find(r => String(r.id) === de.dataset.directiveEdit); if (row) openDirectiveModal(row); return; }
     const dd = e.target.closest('[data-directive-del]');
     if (dd) { deleteDirective(dd.dataset.directiveDel); return; }
     if (e.target.closest('[data-meeting-new]')) { openMeetingModal(); return; }
+    const me2 = e.target.closest('[data-meeting-edit]');
+    if (me2) { const m = (meetingNotesCache || []).find(x => String(x.id) === me2.dataset.meetingEdit); if (m) openMeetingModal(m); return; }
     const md = e.target.closest('[data-meeting-del]');
     if (md) { deleteMeeting(md.dataset.meetingDel); return; }
     const sd = e.target.closest('[data-staff-del]');
@@ -4361,13 +4381,17 @@
   const meetingModal = document.getElementById('meeting-modal');
   const meetingForm = document.getElementById('meeting-form');
   const meetingError = document.getElementById('meeting-error');
-  function openMeetingModal() {
+  // m이 있으면 그 회의록을 고치는 모드, 없으면 새로 쓰는 모드
+  function openMeetingModal(m) {
     if (!currentUser) return;
     meetingError.classList.remove('show');
-    document.getElementById('meeting-date').value = ymd(stripTime(new Date()));
-    document.getElementById('meeting-kind').value = "주간";
-    document.getElementById('meeting-time').value = "";
-    document.getElementById('meeting-result').value = "";
+    meetingModal.dataset.editId = m ? String(m.id) : "";
+    document.getElementById('meeting-title').textContent = m ? "회의록 수정" : "연구단 회의록";
+    document.getElementById('meeting-submit').textContent = m ? "수정 저장" : "올리기";
+    document.getElementById('meeting-date').value = m ? m.meeting_date : ymd(stripTime(new Date()));
+    document.getElementById('meeting-kind').value = (m && m.kind) || "주간";
+    document.getElementById('meeting-time').value = m && m.meeting_time ? String(m.meeting_time).slice(0, 5) : "";
+    document.getElementById('meeting-result').value = (m && m.result) || "";
     meetingModal.classList.add('open');
   }
   // 삭제: 화면 버튼은 권한자에게만 뜨지만, 실제 허용 여부는 DB(RLS)가 최종 판단
@@ -4384,16 +4408,20 @@
     const date = document.getElementById('meeting-date').value;
     if (!date) return;
     const btn = document.getElementById('meeting-submit'); btn.disabled = true;
-    const { error } = await sb.from('meeting_notes').insert({
+    const editId = meetingModal.dataset.editId;
+    const row = {
       meeting_date: date,
       kind: document.getElementById('meeting-kind').value || null,
       meeting_time: document.getElementById('meeting-time').value || null,
       result: document.getElementById('meeting-result').value.trim() || null,
-      author_email: currentUser ? currentUser.email : null,
       updated_at: new Date().toISOString()
-    });
+    };
+    // 고칠 때는 작성자를 그대로 두고 「수정됨」 시각만 남긴다
+    const { error } = editId
+      ? await sb.from('meeting_notes').update(Object.assign({}, row, { edited_at: new Date().toISOString() })).eq('id', Number(editId))
+      : await sb.from('meeting_notes').insert(Object.assign({}, row, { author_email: currentUser ? currentUser.email : null }));
     btn.disabled = false;
-    if (error) { meetingError.textContent = "올리지 못했습니다. (" + error.message + ")"; meetingError.classList.add('show'); return; }
+    if (error) { meetingError.textContent = (editId ? "수정하지 못했습니다. " : "올리지 못했습니다. ") + "(" + error.message + ")"; meetingError.classList.add('show'); return; }
     meetingModal.classList.remove('open');
     await renderAboutBoards();
   });
@@ -4402,11 +4430,15 @@
   const directiveModal = document.getElementById('directive-modal');
   const directiveForm = document.getElementById('directive-form');
   const directiveError = document.getElementById('directive-error');
-  function openDirectiveModal() {
+  // row가 있으면 그 지시를 고치는 모드, 없으면 새 지시(항상 빈칸에서)
+  function openDirectiveModal(row) {
     if (!isAdminUser) return;
     directiveError.classList.remove('show');
-    document.getElementById('directive-body').value = "";   // 새 지시는 항상 빈칸에서
-    document.getElementById('directive-kind').value = "수시";
+    directiveModal.dataset.editId = row ? String(row.id) : "";
+    document.getElementById('directive-title').textContent = row ? "지시사항 수정" : "새 지시사항";
+    document.getElementById('directive-submit').textContent = row ? "수정 저장" : "저장";
+    document.getElementById('directive-body').value = row ? (row.body || "") : "";
+    document.getElementById('directive-kind').value = (row && row.kind) || "수시";
     directiveModal.classList.add('open');
   }
   async function deleteDirective(id) {
@@ -4423,12 +4455,13 @@
     const body = document.getElementById('directive-body').value.trim();
     if (!body) { directiveError.textContent = "내용을 입력해 주세요."; directiveError.classList.add('show'); return; }
     const btn = document.getElementById('directive-submit'); btn.disabled = true;
-    const { error } = await sb.from('directives').insert({
-      body, kind: document.getElementById('directive-kind').value || null,
-      author_email: currentUser ? currentUser.email : null, updated_at: new Date().toISOString()
-    });
+    const editId = directiveModal.dataset.editId;
+    const row = { body, kind: document.getElementById('directive-kind').value || null, updated_at: new Date().toISOString() };
+    const { error } = editId
+      ? await sb.from('directives').update(Object.assign({}, row, { edited_at: new Date().toISOString() })).eq('id', Number(editId))
+      : await sb.from('directives').insert(Object.assign({}, row, { author_email: currentUser ? currentUser.email : null }));
     btn.disabled = false;
-    if (error) { directiveError.textContent = "저장하지 못했습니다. (" + error.message + ")"; directiveError.classList.add('show'); return; }
+    if (error) { directiveError.textContent = (editId ? "수정하지 못했습니다. " : "저장하지 못했습니다. ") + "(" + error.message + ")"; directiveError.classList.add('show'); return; }
     directiveModal.classList.remove('open');
     await renderAboutBoards();
   });
