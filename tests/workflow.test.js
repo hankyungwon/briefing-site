@@ -592,6 +592,13 @@ const daysAgo = n => { const d = new Date(); d.setDate(d.getDate() - n); return 
     await H.setupPage(page, { user, session, routes: (p, m, req) => {
       if (p === "/rest/v1/sticky_notices") {
         if (m === "POST") { const r = JSON.parse(req.postData()); r.id = 6; r.created_at = new Date().toISOString(); notices.unshift(r); return [r]; }
+        if (m === "PATCH") {
+          const patch = JSON.parse(req.postData());
+          const id = Number((req.url().match(/id=eq\.(\d+)/) || [])[1]);
+          const row = notices.find(n => n.id === id);
+          if (row) Object.assign(row, patch);
+          return row ? [row] : [];
+        }
         if (m === "DELETE") { notices = notices.slice(1); return []; }
         return notices;
       }
@@ -629,8 +636,27 @@ const daysAgo = n => { const d = new Date(); d.setDate(d.getDate() - n); return 
     await page.fill("#sp-text", "내일 오전 회의 30분 당겨졌습니다.");
     await page.selectOption("#sp-days", "3");
     await page.click("#sp-post"); await page.waitForTimeout(600);
-    c.ok(notices.length === 2 && notices[0].author_email === "twopro@hanmail.net", "공지 올리기 + 올린이 기록");
+    c.ok(notices.length === 2 && notices[0].author_email === "twopro@hanmail.net", "공지 게시 + 올린이 기록");
     c.ok(new Date(notices[0].expires_at) > new Date(), "표시 기한이 미래로 설정됨(기한이 지나면 저절로 사라짐)");
+
+    // 공지 수정 — 새 회차를 만들지 않고 그 자리를 고치며, 고친 흔적이 남는다.
+    // 공지는 기한이 지나면 사라지는 글이라 「맨 위 1건만」 같은 제한을 두지 않는다.
+    await page.click("#sp-notices [data-sp-edit]"); await page.waitForTimeout(200);
+    const em = await page.evaluate(() => ({ text: document.getElementById("sp-text").value,
+      btn: document.getElementById("sp-post").textContent,
+      daysHidden: document.getElementById("sp-daysrow").hidden }));
+    c.ok(/30분 당겨/.test(em.text), "「수정」은 그 공지 내용을 불러온다");
+    c.ok(/수정/.test(em.btn) && em.daysHidden, "수정 모드에서는 기한을 건드리지 않는다 (" + em.btn + ")");
+    await page.fill("#sp-text", "내일 오전 회의 9시 30분으로 당겨졌습니다.");
+    await page.click("#sp-post"); await page.waitForTimeout(600);
+    c.ok(notices.length === 2, "수정은 공지를 늘리지 않는다 (" + notices.length + "장)");
+    c.ok(/9시 30분/.test(notices[0].body) && !!notices[0].edited_at, "그 자리가 고쳐지고 수정 시각이 남는다");
+    c.ok(await page.evaluate(() => !!document.querySelector("#sp-notices .sp-edited")), "화면에 「수정됨」 표시");
+
+    // 눌렀을 때 테두리 색이 사이트의 다른 입력칸과 같아야 한다(브라우저 기본 검정 금지)
+    await page.click("#sp-memo"); await page.waitForTimeout(120);
+    const foc = await page.evaluate(() => { const cs = getComputedStyle(document.getElementById("sp-memo")); return cs.outlineColor; });
+    c.ok(foc === "rgb(14, 95, 168)", "메모칸을 누르면 관악 블루 테두리 (" + foc + ")");
 
     // 내 메모는 저장 버튼 없이 잠깐 멈추면 저절로 저장된다
     await page.fill("#sp-memo", "· 오늘 할 일: 로드맵 검토");

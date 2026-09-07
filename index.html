@@ -159,12 +159,19 @@
   .sp-note .t{font-size:13.5px;color:var(--ink);line-height:1.6;white-space:pre-wrap;word-break:keep-all;}
   .sp-note .m{display:flex;align-items:center;gap:7px;font-size:11.5px;color:var(--muted);}
   .sp-note .m .who{font-weight:700;color:#7A5E10;}
-  .sp-note .m button{margin-left:auto;appearance:none;cursor:pointer;border:1px solid #E3B7B0;background:#fff;
+  .sp-edited{font-size:11px;color:var(--muted);white-space:nowrap;}
+  .sp-acts{margin-left:auto;display:flex;gap:5px;}
+  .sp-note .m button{appearance:none;cursor:pointer;border:1px solid #E3B7B0;background:#fff;
     color:#A33;border-radius:999px;padding:1px 8px;font-family:inherit;font-size:11px;font-weight:700;white-space:nowrap;}
   .sp-note .m button:hover{background:#A33;border-color:#A33;color:#fff;}
+  .sp-note .m button.edit{border-color:#CFDDEC;color:var(--gwanak);}
+  .sp-note .m button.edit:hover{background:var(--gwanak);border-color:var(--gwanak);color:#fff;}
   .sp-empty{font-size:12.5px;color:var(--muted);padding:2px 0;}
   .sp-memosec textarea{flex:1;width:100%;min-height:110px;resize:none;font-family:inherit;font-size:14px;color:var(--ink);
     background:#fff;border:1px solid #E4CE86;border-radius:8px;padding:9px 11px;line-height:1.7;}
+  /* 눌렀을 때 테두리 — 브라우저 기본값(검정)은 이 화면과 겉돈다. 사이트 다른 입력칸과 같은 관악 블루로. */
+  .sp-memosec textarea:focus,.sp-form textarea:focus,.sp-formrow select:focus{
+    outline:2px solid var(--gwanak);outline-offset:-1px;border-color:var(--gwanak);}
   @media(max-width:640px){
     .sticky-panel{right:8px;left:8px;bottom:8px;width:auto;height:66vh;resize:none;}
     .sp-hint{display:none;}
@@ -1546,13 +1553,13 @@
   <div class="sp-body">
     <div class="sp-sec">
       <div class="sp-lab">단원 전체 공지
-        <button type="button" class="sp-add" id="sp-new">＋ 올리기</button></div>
+        <button type="button" class="sp-add" id="sp-new">＋ 게시</button></div>
       <div class="sp-form" id="sp-form" hidden>
         <textarea id="sp-text" maxlength="300" placeholder="단원 모두에게 알릴 급한 내용을 짧게 적어 주세요."></textarea>
         <div class="sp-formrow">
-          <label for="sp-days">표시 기간</label>
-          <select id="sp-days"><option value="3">3일</option><option value="7" selected>7일</option><option value="14">14일</option></select>
-          <button type="button" class="sp-btn" id="sp-post">올리기</button>
+          <span id="sp-daysrow"><label for="sp-days">표시 기간</label>
+            <select id="sp-days"><option value="3">3일</option><option value="7" selected>7일</option><option value="14">14일</option></select></span>
+          <button type="button" class="sp-btn" id="sp-post">게시</button>
           <button type="button" class="sp-btn ghost" id="sp-cancel">취소</button>
         </div>
         <p class="sp-err" id="sp-err"></p>
@@ -4736,10 +4743,13 @@
 
   function spNoticeHtml(n) {
     const mine = currentUser && (n.author_email || "").toLowerCase() === (currentUser.email || "").toLowerCase();
+    const can = mine || isAdminUser;
     return '<div class="sp-note"><div class="t">' + linkify(n.body || "") + '</div>'
       + '<div class="m"><span class="who">' + esc(authorName(n.author_email)) + '</span>'
       + '<span>' + esc(fmtStamp(n.created_at)) + '</span>'
-      + (mine || isAdminUser ? '<button type="button" data-sp-del="' + n.id + '">내리기</button>' : '')
+      + (n.edited_at ? '<span class="sp-edited" title="' + esc(fmtDateTime(n.edited_at)) + ' 수정">· 수정됨</span>' : '')
+      + (can ? '<span class="sp-acts"><button type="button" class="edit" data-sp-edit="' + n.id + '">수정</button>'
+             + '<button type="button" data-sp-del="' + n.id + '">삭제</button></span>' : '')
       + '</div></div>';
   }
   function spPaint() {
@@ -4749,7 +4759,7 @@
     box.innerHTML = show.length ? show.map(spNoticeHtml).join("")
       : '<p class="sp-empty">지금 올라온 공지가 없습니다.</p>';
     document.getElementById("sp-new").disabled = spNotices.length >= 3;
-    document.getElementById("sp-new").title = spNotices.length >= 3 ? "공지는 한 번에 3장까지입니다" : "";
+    document.getElementById("sp-new").title = spNotices.length >= 3 ? "공지는 한 번에 3장까지입니다(하나를 삭제한 뒤 게시)" : "";
   }
   function spMarkSeen() {
     const top = spNotices.length ? spNotices[0].id : 0;
@@ -4778,13 +4788,25 @@
 
   spBtn.addEventListener("click", () => { if (spPanel.hidden) spOpen(); else spClose(); });
   document.getElementById("sp-close").addEventListener("click", spClose);
+  // 공지 입력칸을 「새로 게시」 또는 「고치기」 모드로 연다
+  function spForm(notice) {
+    const f = document.getElementById("sp-form");
+    f.dataset.editId = notice ? String(notice.id) : "";
+    document.getElementById("sp-text").value = notice ? (notice.body || "") : "";
+    document.getElementById("sp-post").textContent = notice ? "수정 저장" : "게시";
+    document.getElementById("sp-daysrow").hidden = !!notice;   // 고칠 때는 기한을 건드리지 않는다
+    document.getElementById("sp-err").classList.remove("show");
+    f.hidden = false;
+    document.getElementById("sp-text").focus();
+  }
   document.getElementById("sp-new").addEventListener("click", () => {
     const f = document.getElementById("sp-form");
-    f.hidden = !f.hidden;
-    if (!f.hidden) document.getElementById("sp-text").focus();
+    if (!f.hidden && !f.dataset.editId) { f.hidden = true; return; }
+    spForm(null);
   });
   document.getElementById("sp-cancel").addEventListener("click", () => {
     document.getElementById("sp-form").hidden = true;
+    document.getElementById("sp-form").dataset.editId = "";
     document.getElementById("sp-text").value = "";
     document.getElementById("sp-err").classList.remove("show");
   });
@@ -4793,23 +4815,30 @@
     const body = ta.value.trim();
     err.classList.remove("show");
     if (!body) { err.textContent = "내용을 입력해 주세요."; err.classList.add("show"); return; }
-    if (spNotices.length >= 3) { err.textContent = "공지는 한 번에 3장까지입니다. 하나를 내린 뒤 올려 주세요."; err.classList.add("show"); return; }
+    if (!document.getElementById("sp-form").dataset.editId && spNotices.length >= 3) {
+      err.textContent = "공지는 한 번에 3장까지입니다. 하나를 삭제한 뒤 게시해 주세요."; err.classList.add("show"); return; }
+    const editId = document.getElementById("sp-form").dataset.editId;
     const days = parseInt(document.getElementById("sp-days").value, 10) || 7;
     const btn = document.getElementById("sp-post"); btn.disabled = true;
-    const { error } = await sb.from("sticky_notices").insert({
-      body, author_email: currentUser.email,
-      expires_at: new Date(Date.now() + days * 86400000).toISOString()
-    });
+    // 고칠 때는 기한과 올린이를 그대로 두고 내용과 「수정됨」 시각만 바꾼다
+    const { error } = editId
+      ? await sb.from("sticky_notices").update({ body, edited_at: new Date().toISOString() }).eq("id", Number(editId))
+      : await sb.from("sticky_notices").insert({
+          body, author_email: currentUser.email,
+          expires_at: new Date(Date.now() + days * 86400000).toISOString()
+        });
     btn.disabled = false;
-    if (error) { err.textContent = "올리지 못했습니다. (" + error.message + ")"; err.classList.add("show"); return; }
-    ta.value = ""; document.getElementById("sp-form").hidden = true;
+    if (error) { err.textContent = (editId ? "수정하지 못했습니다. " : "게시하지 못했습니다. ") + "(" + error.message + ")"; err.classList.add("show"); return; }
+    ta.value = ""; document.getElementById("sp-form").dataset.editId = ""; document.getElementById("sp-form").hidden = true;
     await spLoad(); spMarkSeen();
   });
   document.getElementById("sp-notices").addEventListener("click", async e => {
+    const ed = e.target.closest("[data-sp-edit]");
+    if (ed) { const n = spNotices.find(x => String(x.id) === ed.dataset.spEdit); if (n) spForm(n); return; }
     const b = e.target.closest("[data-sp-del]"); if (!b) return;
-    if (!confirm("이 공지를 내릴까요?")) return;
+    if (!confirm("이 공지를 삭제할까요? 되돌릴 수 없습니다.")) return;
     const { error } = await sb.from("sticky_notices").delete().eq("id", Number(b.dataset.spDel));
-    if (error) { alert("내리지 못했습니다. (" + error.message + ")"); return; }
+    if (error) { alert("삭제하지 못했습니다. (" + error.message + ")"); return; }
     await spLoad(); spMarkSeen();
   });
   // 메모는 저장 버튼 없이 잠깐 멈추면 저절로 저장된다
