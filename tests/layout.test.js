@@ -239,7 +239,7 @@ const WIDTHS = [1400, 1280, 1024, 900, 820, 768, 640, 540, 430, 412, 390, 375, 3
     titlePx: Math.round(parseFloat(getComputedStyle(a.querySelector("h3")).fontSize)),
     badge: !!a.querySelector(".kind-tag"), no: !!a.querySelector(".post-no")
   })));
-  c.ok(heads[0] && heads[0].icons === "📎🔗", "파일과 링크가 모두 있으면 그림 둘 다 (" + (heads[0] && heads[0].icons) + ")");
+  c.ok(heads[0] && heads[0].icons === "🗂️🔗", "파일과 링크가 모두 있으면 그림 둘 다 (" + (heads[0] && heads[0].icons) + ")");
   c.ok(heads[1] && heads[1].icons === "📝", "파일도 링크도 없으면 메모 그림 (" + (heads[1] && heads[1].icons) + ")");
   c.ok(heads.every(h => h.px > h.titlePx), "종류 그림이 제목 글자보다 크다 (" + (heads[0] && heads[0].px) + "px > " + (heads[0] && heads[0].titlePx) + "px)");
   c.ok(heads.every(h => !h.badge && !h.no), "종류 글자 배지·게시 번호는 없다");

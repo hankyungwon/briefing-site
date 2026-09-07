@@ -508,6 +508,7 @@ const daysAgo = n => { const d = new Date(); d.setDate(d.getDate() - n); return 
       const ca = document.querySelector("#fp-list .comment .c-author");
       const px = el => parseFloat(getComputedStyle(el).fontSize);
       return { authors, commentAuthor, nos: document.querySelectorAll("#fp-list .post-no").length,
+        icons: (document.querySelector("#fp-list .board-card h3 .post-icon") || {}).textContent || "",
         firstChild: (document.querySelector("#fp-list .board-card") || {}).firstElementChild ?
           document.querySelector("#fp-list .board-card").firstElementChild.tagName : "",
         postCol: pa ? getComputedStyle(pa).color : "", postSize: pa ? px(pa) : 0,
@@ -521,6 +522,7 @@ const daysAgo = n => { const d = new Date(); d.setDate(d.getDate() - n); return 
     // 게시 번호(No.N)는 중간 글을 지우면 건너뛰어 보이므로 없앴다 — 글은 제목부터 시작한다
     c.ok(r.nos === 0, "게시글에 게시 번호(No.N)가 없다 (" + r.nos + "개)");
     c.ok(r.firstChild === "H3", "글이 제목(h3)부터 시작한다 (" + r.firstChild + ")");
+    c.ok(r.icons === "💬", "첨부가 없는 글은 제목 앞에 말풍선 그림 (" + r.icons + ")");
     await page.close();
   }
 
