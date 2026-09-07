@@ -1231,6 +1231,8 @@
         <label>원고</label>
         <div id="memo-body" class="pk-editor pk-editor-sm" contenteditable="true" data-ph="회의 자료로 취합될 내용을 자유롭게 작성하세요."></div>
       </div>
+      <p class="draft-note" id="memo-draft-note">✍️ 쓰다 만 원고를 되살렸습니다. 이어서 쓰시거나, 지우고 새로 시작할 수 있습니다.
+        <button type="button" id="memo-draft-new">새로 쓰기</button></p>
       <input type="file" id="memo-img-input" accept="image/*" multiple hidden>
       <div class="pk-export no-print">
         <button type="button" class="wb-mini" id="memo-print">🖨 인쇄</button>
@@ -2205,6 +2207,15 @@
       + (updated ? ' <em style="font-style:normal;color:var(--muted);">(수정: ' + timeAgo(updated) + ')</em>' : '') + '</span>';
   }
 
+  // 창 바깥을 눌러 닫을 때, 쓰던 글이 있으면 한 번 물어본다.
+  // hasText()는 「지금 이 창에 쓰다 만 글이 있나?」를 답하는 함수.
+  function guardBackdrop(modal, hasText) {
+    modal.addEventListener("click", e => {
+      if (e.target !== modal) return;
+      if (hasText() && !confirm("작성 중인 내용이 있습니다. 창을 닫을까요?\n(임시저장되어 다시 열면 이어서 쓸 수 있습니다)")) return;
+      modal.classList.remove("open");
+    });
+  }
   function linkHref(url) {
     return /^https?:\/\//i.test(url) ? url : "https://" + url;
   }
@@ -3575,8 +3586,8 @@
     + '<button type="button" data-cmd="ul" title="글머리표 (다단계: ● − ·)">• 글머리</button>'
     + '<button type="button" data-cmd="ol" title="번호 매기기 (다단계: 1. → 가. → 1) → 가) → (1))">1. 번호</button>'
     + '<select class="rt-liststyle" title="번호 스타일 바꾸기"><option value="">번호 스타일…</option><option value="ls-num">1. 2. 3.</option><option value="ls-roman">Ⅰ. Ⅱ. Ⅲ.</option><option value="ls-hangul">가. 나. 다.</option><option value="ls-pnum">1) 2) 3)</option><option value="ls-ppnum">(1) (2) (3)</option><option value="ls-circle">① ② ③</option></select>'
-    + '<button type="button" data-cmd="outdent" title="수준 올리기(내어쓰기)">⇤</button>'
-    + '<button type="button" data-cmd="indent" title="수준 내리기(들여쓰기)">⇥</button>'
+    + '<button type="button" data-cmd="outdent" title="수준 올리기(내어쓰기) — Shift+Tab">⇤</button>'
+    + '<button type="button" data-cmd="indent" title="수준 내리기(들여쓰기) — Tab&#10;번호: 1. → 가. → 1) → 가) → (1)&#10;글머리: ● → ‒ → ·">⇥</button>'
     + '<select class="rt-linespace" title="줄 간격"><option value="">줄간격</option><option value="1.3">1.3</option><option value="1.5">1.5</option><option value="1.6">1.6</option><option value="1.8">1.8</option><option value="2.0">2.0</option></select></span>'
     + '<span class="pk-grp">'
     + '<button type="button" data-cmd="left" title="왼쪽 정렬">◧</button>'
@@ -3797,6 +3808,22 @@
     return '<div class="rt-swrow">' + HILITE_COLORS.map(sw).join("") + '</div>'
       + '<div class="rt-palfoot"><button type="button" class="rt-swnone" data-color="transparent">형광펜 없음</button></div>';
   }
+  // 들여쓰기(execCommand indent)가 만든 중첩 목록을 정리한다.
+  //   ① 바로 위에 항목(<li>)이 있으면 그 안으로 넣는다 — 규격에 맞고 저장·불러오기에서 안 깨진다.
+  //      (항목이 하나뿐일 때 브라우저는 목록을 통째로 감싼다. 그때 빈 항목을 만들면 번호만 덩그러니
+  //       하나 더 생겨 보기 나쁘므로 그대로 둔다. 그래도 수준별 번호는 CSS가 제대로 매긴다.)
+  //   ② 맨 바깥 목록에만 표시를 달면 아래 수준은 CSS가 이어받는다.
+  //      번호: 1. → 가. → 1) → 가) → (1)      글머리: ● → ‒ → ·
+  function normalizeLists(ed) {
+    if (!ed) return;
+    ed.querySelectorAll("ol > ol, ol > ul, ul > ol, ul > ul").forEach(sub => {
+      const prev = sub.previousElementSibling;
+      if (prev && prev.tagName === "LI") prev.appendChild(sub);
+    });
+    const isRoot = el => !el.parentElement || !el.parentElement.closest("ol,ul");
+    ed.querySelectorAll("ol").forEach(ol => ol.classList.toggle("kout", isRoot(ol)));
+    ed.querySelectorAll("ul").forEach(ul => ul.classList.toggle("kbul", isRoot(ul)));
+  }
   function makeRichEditor(toolbarId, imgInputId, editorEls) {
     const bar = document.getElementById(toolbarId);
     bar.innerHTML = RICH_TOOLBAR_HTML;
@@ -3815,6 +3842,18 @@
       ["keyup", "mouseup", "input"].forEach(ev => ed.addEventListener(ev, saveSel));
       ed.addEventListener("click", e => { if (e.target.tagName === "IMG") { e.stopPropagation(); selectEditorImage(e.target, ed); } else deselectEditorImage(); });
       ed.addEventListener("keydown", () => { if (imgSel) deselectEditorImage(); });
+      // 목록 안에서 Tab은 수준 내리기(들여쓰기), Shift+Tab은 수준 올리기(내어쓰기).
+      // 목록 밖에서는 건드리지 않는다(칸 이동 등 원래 동작 그대로).
+      ed.addEventListener("keydown", e => {
+        if (e.key !== "Tab") return;
+        const s = window.getSelection();
+        let n = s && s.anchorNode; if (n && n.nodeType === 3) n = n.parentElement;
+        if (!n || !n.closest || !ed.contains(n) || !n.closest("li")) return;
+        e.preventDefault();
+        document.execCommand(e.shiftKey ? "outdent" : "indent");
+        normalizeLists(ed);
+        ed.dispatchEvent(new Event("input"));
+      });
       // 글자·쪽수 표시 (A4 기준 대략치)
       const cnt = document.createElement("div"); cnt.className = "pk-count"; ed.insertAdjacentElement("afterend", cnt);
       const updCount = () => { const chars = (ed.innerText || "").replace(/\s/g, "").length;
@@ -3833,7 +3872,8 @@
       const b = e.target.closest("button[data-cmd]"); if (!b) return;
       const c = b.dataset.cmd; active.focus();
       const exec = (cmd, val) => document.execCommand(cmd, false, val || null);
-      if (EXEC_MAP[c]) { exec(EXEC_MAP[c]); if (c === "ul") tagList("ul", "kbul"); else if (c === "ol") tagList("ol", "kout"); }
+      if (EXEC_MAP[c]) { exec(EXEC_MAP[c]); if (c === "ul") tagList("ul", "kbul"); else if (c === "ol") tagList("ol", "kout");
+        if (c === "ul" || c === "ol" || c === "indent" || c === "outdent") normalizeLists(active); }
       else if (c === "size-up" || c === "size-dn") { const inp = bar.querySelector(".rt-sizenum"); let v = (parseInt(inp.value, 10) || 11) + (c === "size-up" ? 1 : -1); v = Math.max(6, Math.min(96, v)); inp.value = v; bar._applyFontSizePt(v); }
       else if (c === "h") exec("formatBlock", "H4");
       else if (c === "p") exec("formatBlock", "P");
@@ -4384,6 +4424,17 @@
     body += isEmpty(raw) ? none : raw;
     return { title: title, html: buildStandaloneHtml(title, body), raw: raw };
   }
+  // 원고 창에 쓰다 만 글이 있나 — 빈 태그(<br>·&nbsp;)만 남은 것은 없는 것으로 본다
+  function memoIsEmpty() {
+    const el = document.getElementById('memo-body');
+    return !el || !el.innerHTML.replace(/<br\s*\/?>|<p>|<\/p>|<div>|<\/div>|&nbsp;|\s/gi, "").length;
+  }
+  // 원고는 사람·구분·회차마다 따로 임시저장한다(새 원고와 고치던 원고가 섞이지 않게)
+  function memoDraftName() { return "memo_" + (memoModal.dataset.email || "") + "_" + (memoModal.dataset.noteId || "new"); }
+  function memoDraftSave() {
+    if (!memoModal.classList.contains('open')) return;
+    draftSave(memoDraftName(), { b: document.getElementById('memo-body').innerHTML, k: document.getElementById('memo-kind').value });
+  }
   // note가 있으면 그 원고를 고치는 모드, 없으면 빈 화면에서 새 원고를 쓰는 모드
   function openMemoModal(email, note) {
     if (!currentUser || !email || (currentUser.email || "").toLowerCase() !== String(email).toLowerCase()) return; // 본인만
@@ -4398,11 +4449,21 @@
     const bodyEl = document.getElementById('memo-body');
     bodyEl.innerHTML = note && note.body ? richToHtml(note.body) : "";
     resolveInlineImages(bodyEl);
+    // 쓰다 만 원고가 있으면 되살린다(등록에 성공하면 지워지므로, 남아 있다는 건 못 끝냈다는 뜻)
+    const note0 = document.getElementById('memo-draft-note');
+    note0.classList.remove('show');
+    const d = draftLoad(memoDraftName());
+    if (d && d.b && d.b.replace(/<br\s*\/?>|<p>|<\/p>|<div>|<\/div>|&nbsp;|\s/gi, "").length) {
+      bodyEl.innerHTML = sanitizePacketHtml(d.b);
+      resolveInlineImages(bodyEl);
+      if (d.k) document.getElementById('memo-kind').value = d.k;
+      note0.classList.add('show');
+    }
     if (bodyEl._updCount) bodyEl._updCount();
     memoModal.classList.add('open');
   }
   document.getElementById('memo-cancel').addEventListener('click', () => memoModal.classList.remove('open'));
-  memoModal.addEventListener('click', e => { if (e.target === memoModal) memoModal.classList.remove('open'); });
+  guardBackdrop(memoModal, () => memoModal.classList.contains('open') && !memoIsEmpty());
   memoForm.addEventListener('submit', async e => {
     e.preventDefault();
     const email = memoModal.dataset.email, kind = document.getElementById('memo-kind').value;
@@ -4425,6 +4486,8 @@
     }
     btn.disabled = false;
     if (error) { memoError.textContent = "저장하지 못했습니다. (" + error.message + ")"; memoError.classList.add('show'); return; }
+    draftClear(memoDraftName());
+    document.getElementById('memo-draft-note').classList.remove('show');
     memoModal.classList.remove('open');
     await renderAboutBoards();
   });
@@ -4438,6 +4501,15 @@
     else downloadDoc(safeFileName(r.title) + ".doc", html);
   });
   makeRichEditor("memo-toolbar", "memo-img-input", [document.getElementById("memo-body")]);
+  document.getElementById('memo-body').addEventListener('input', memoDraftSave);
+  document.getElementById('memo-kind').addEventListener('change', memoDraftSave);
+  document.getElementById('memo-draft-new').addEventListener('click', () => {
+    document.getElementById('memo-body').innerHTML = "";
+    draftClear(memoDraftName());
+    document.getElementById('memo-draft-note').classList.remove('show');
+    document.getElementById('memo-body').focus();
+  });
+  DIRTY.memo = () => memoModal.classList.contains('open') && !memoIsEmpty();
 
   // 회의록 모달 — 로그인한 단원 누구나 새로 올린다(대직). 올린 뒤 수정 불가, 항상 새 항목으로 추가.
   const meetingModal = document.getElementById('meeting-modal');
@@ -4464,7 +4536,8 @@
     await renderAboutBoards();
   }
   document.getElementById('meeting-cancel').addEventListener('click', () => meetingModal.classList.remove('open'));
-  meetingModal.addEventListener('click', e => { if (e.target === meetingModal) meetingModal.classList.remove('open'); });
+  guardBackdrop(meetingModal, () => meetingModal.classList.contains('open')
+    && !!document.getElementById('meeting-result').value.trim());
   meetingForm.addEventListener('submit', async e => {
     e.preventDefault();
     const date = document.getElementById('meeting-date').value;
@@ -4511,7 +4584,8 @@
     await renderAboutBoards();
   }
   document.getElementById('directive-cancel').addEventListener('click', () => directiveModal.classList.remove('open'));
-  directiveModal.addEventListener('click', e => { if (e.target === directiveModal) directiveModal.classList.remove('open'); });
+  guardBackdrop(directiveModal, () => directiveModal.classList.contains('open')
+    && !!document.getElementById('directive-body').value.trim());
   directiveForm.addEventListener('submit', async e => {
     e.preventDefault();
     const body = document.getElementById('directive-body').value.trim();

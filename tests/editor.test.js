@@ -130,6 +130,44 @@ const H = require("./helper");
   const t2 = await page.evaluate(() => { const tb = document.querySelector("#memo-body table"); return tb.querySelectorAll("tr").length + "x" + tb.querySelector("tr").children.length; });
   c.ok(t1 === "3x3" && t2 === "2x2", "표 행·열 추가/삭제 (2x2→" + t1 + "→" + t2 + ")");
 
+  // 번호 목록의 수준별 번호 체계 — Tab으로 수준을 내리면 1. → 가. → 1) 로 바뀌고, Shift+Tab으로 되돌아온다.
+  // 한글 공문서 번호 체계를 CSS가 수준에 따라 이어받으므로, 목록 구조(중첩 <ol>이 <li> 안)가 지켜져야 한다.
+  // 커서가 놓인 항목을 기준으로 재므로, 브라우저가 글자를 어디에 붙이든 결과가 흔들리지 않는다.
+  const caretLi = () => page.evaluate(() => {
+    const ed = document.getElementById("memo-body");
+    let n = getSelection().anchorNode; if (n && n.nodeType === 3) n = n.parentElement;
+    const li = n && n.closest ? n.closest("li") : null;
+    if (!li) return null;
+    let d = 0, e = li; while ((e = e.parentElement.closest("ol,ul"))) d++;
+    return { depth: d, mark: getComputedStyle(li.parentElement).listStyleType };
+  });
+  await page.evaluate(() => { document.getElementById("memo-body").innerHTML = ""; });
+  await page.click("#memo-body");
+  await page.type("#memo-body", "가장 바깥");
+  await page.click('#memo-toolbar [data-cmd="ol"]'); await page.waitForTimeout(200);
+  const l1 = await caretLi();
+  await page.keyboard.press("Tab"); await page.waitForTimeout(150);
+  const l2 = await caretLi();
+  await page.keyboard.press("Tab"); await page.waitForTimeout(150);
+  const l3 = await caretLi();
+  await page.keyboard.down("Shift"); await page.keyboard.press("Tab"); await page.keyboard.up("Shift"); await page.waitForTimeout(150);
+  const l4 = await caretLi();
+  c.ok(l1 && l1.depth === 1 && l1.mark === "kr-num", "1수준은 「1. 2. 3.」 (" + (l1 && l1.mark) + ")");
+  c.ok(l2 && l2.depth === 2 && l2.mark === "kr-hangul", "Tab 한 번 → 2수준 「가. 나. 다.」 (" + (l2 && l2.mark) + ")");
+  c.ok(l3 && l3.depth === 3 && l3.mark === "kr-pnum", "Tab 두 번 → 3수준 「1) 2) 3)」 (" + (l3 && l3.mark) + ")");
+  c.ok(l4 && l4.depth === 2 && l4.mark === "kr-hangul", "Shift+Tab → 한 수준 위로 (" + (l4 && l4.depth) + "수준 " + (l4 && l4.mark) + ")");
+  const shape = await page.evaluate(() => {
+    const ed = document.getElementById("memo-body");
+    // 바로 위에 항목이 있는데도 항목 밖에 놓인 중첩 목록 = 정리에 실패한 것
+    const loose = [...ed.querySelectorAll("ol > ol, ol > ul, ul > ol, ul > ul")]
+      .filter(x => x.previousElementSibling && x.previousElementSibling.tagName === "LI").length;
+    return { loose, rootClass: (ed.querySelector("ol") || {}).className || "",
+             nestedTagged: [...ed.querySelectorAll("ol ol")].filter(o => o.classList.contains("kout")).length };
+  });
+  c.ok(shape.rootClass.indexOf("kout") >= 0, "맨 바깥 목록에 한글 공문서 번호 체계 표시(kout)");
+  c.ok(shape.nestedTagged === 0, "안쪽 목록에는 표시를 달지 않음(수준은 CSS가 이어받음)");
+  c.ok(shape.loose === 0, "중첩 목록이 앞 항목 안으로 들어감 (남은 곳 " + shape.loose + ")");
+
   server.close();
   await c.finish(browser);
 })().catch(e => { console.error("FAIL", e.message, e.stack); process.exit(1); });
