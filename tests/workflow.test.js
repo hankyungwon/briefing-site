@@ -509,6 +509,10 @@ const daysAgo = n => { const d = new Date(); d.setDate(d.getDate() - n); return 
       const px = el => parseFloat(getComputedStyle(el).fontSize);
       return { authors, commentAuthor, nos: document.querySelectorAll("#fp-list .post-no").length,
         icons: (document.querySelector("#fp-list .board-card h3 .post-icon") || {}).textContent || "",
+        band: (() => { const c = document.querySelector("#fp-list .board-card"), h = c.querySelector(".bc-head");
+          if (!h) return { bg: "", full: false };
+          const cb = c.getBoundingClientRect(), hb = h.getBoundingClientRect();
+          return { bg: getComputedStyle(h).backgroundColor, full: Math.abs(hb.width - cb.width) <= 2 && Math.abs(hb.top - cb.top) <= 2 }; })(),
         firstChild: (document.querySelector("#fp-list .board-card") || {}).firstElementChild ?
           document.querySelector("#fp-list .board-card").firstElementChild.tagName : "",
         postCol: pa ? getComputedStyle(pa).color : "", postSize: pa ? px(pa) : 0,
@@ -521,8 +525,10 @@ const daysAgo = n => { const d = new Date(); d.setDate(d.getDate() - n); return 
     c.ok(r.cmtCol === "rgb(85, 106, 141)" && r.cmtSize < r.postSize, "댓글쓴이는 회색·더 작게 물러남 (" + r.cmtCol + ", " + r.cmtSize + "px)");
     // 게시 번호(No.N)는 중간 글을 지우면 건너뛰어 보이므로 없앴다 — 글은 제목부터 시작한다
     c.ok(r.nos === 0, "게시글에 게시 번호(No.N)가 없다 (" + r.nos + "개)");
-    c.ok(r.firstChild === "H3", "글이 제목(h3)부터 시작한다 (" + r.firstChild + ")");
-    c.ok(r.icons === "💬", "첨부가 없는 글은 제목 앞에 말풍선 그림 (" + r.icons + ")");
+    c.ok(r.firstChild === "DIV", "글이 제목 줄(띠)부터 시작한다 (" + r.firstChild + ")");
+    c.ok(r.icons === "🗨️", "첨부가 없는 글은 제목 앞에 말풍선 그림 (" + r.icons + ")");
+    c.ok(r.band.bg !== "rgba(0, 0, 0, 0)" && r.band.bg !== "rgb(255, 255, 255)" && r.band.full,
+      "제목 줄에 카드 폭을 채우는 옅은 띠 (" + r.band.bg + ")");
     await page.close();
   }
 
