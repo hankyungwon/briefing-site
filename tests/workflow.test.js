@@ -582,7 +582,7 @@ const daysAgo = n => { const d = new Date(); d.setDate(d.getDate() - n); return 
     await page.close();
   }
 
-  // J. 포스트잇 — 윗칸은 단원 전체 공지(서버), 아랫칸은 나만 보는 메모. 판은 옮기고 늘릴 수 있다.
+  // J. 포스트잇 — 윗칸은 전체 공지(서버), 아랫칸은 나만 보는 메모. 판은 옮기고 늘릴 수 있다.
   {
     const page = await H.newPage(browser);
     let notices = [{ id: 5, body: "포럼 준비물 확인 부탁드립니다.", author_email: "syho99@naver.com",
@@ -623,7 +623,7 @@ const daysAgo = n => { const d = new Date(); d.setDate(d.getDate() - n); return 
 
     // 머리를 끌어 옮기면 그 자리를 기억한다
     const before = await page.evaluate(() => Math.round(document.getElementById("sticky-panel").getBoundingClientRect().left));
-    await page.hover(".sp-title");
+    await page.hover("#sp-tool .sp-div");   // 머리띠의 빈 곳(도구 사이 구분선)을 잡아 끈다
     await page.mouse.down(); await page.mouse.move(300, 180, { steps: 6 }); await page.mouse.up();
     await page.waitForTimeout(250);
     const moved = await page.evaluate(() => ({
@@ -674,11 +674,32 @@ const daysAgo = n => { const d = new Date(); d.setDate(d.getDate() - n); return 
     await page.click('#sp-tool [data-sp="pal"][data-kind="hili"]'); await page.waitForTimeout(150);
     await page.click('#sp-pal-hili button[data-c="#FFF176"]'); await page.waitForTimeout(250);
     await page.click('#sp-tool [data-sp="bold"]'); await page.waitForTimeout(250);
-    await page.click('#sp-tool [data-sp="size"][data-v="5"]'); await page.waitForTimeout(250);
+    await page.click('#sp-tool [data-sp="underline"]'); await page.waitForTimeout(250);
+    await page.click('#sp-tool [data-sp="size"][data-v="large"]'); await page.waitForTimeout(250);
     const fx = await page.evaluate(() => document.getElementById("sp-memo").innerHTML);
     c.ok(/background-color:\s*rgb\(255, 241, 118\)/.test(fx), "형광펜이 칠해짐");
     c.ok(/font-weight:\s*bold/.test(fx), "굵게가 적용됨");
+    c.ok(/underline|<u>/i.test(fx), "밑줄이 적용됨");
     c.ok(/font-size:/.test(fx), "글자 크기(대·중·소)가 적용됨");
+    // 색 단추는 한글·워드처럼 방금 고른 색을 띠에 남긴다
+    const bar = await page.evaluate(() => getComputedStyle(document.getElementById("sp-bar-hili")).backgroundColor);
+    c.ok(bar === "rgb(255, 241, 118)", "형광펜 단추의 띠가 고른 색으로 바뀜 (" + bar + ")");
+    // 글자 크기는 「보통」이 지금 화면의 기본 크기 — 그래야 축소도 확대도 된다
+    await page.evaluate(() => { document.getElementById("sp-memo").innerHTML = ""; });
+    await page.click("#sp-memo"); await page.type("#sp-memo", "크기 확인");
+    const base = await page.evaluate(() => parseFloat(getComputedStyle(document.getElementById("sp-memo")).fontSize));
+    const size = {};
+    for (const v of ["small", "normal", "large"]) {
+      await page.keyboard.press("Control+a"); await page.waitForTimeout(120);
+      await page.click('#sp-tool [data-sp="size"][data-v="' + v + '"]'); await page.waitForTimeout(220);
+      size[v] = await page.evaluate(() => {
+        const els = [...document.querySelectorAll("#sp-memo span[style*='font-size']")];
+        return els.length ? parseFloat(getComputedStyle(els[els.length - 1]).fontSize) : null;
+      });
+    }
+    c.ok(size.small < base, "「작게」는 기본보다 실제로 작아진다 (" + size.small + " < " + base + ")");
+    c.ok(Math.abs(size.normal - base) <= 0.5, "「보통」이 기본 크기와 같다 (" + size.normal + " ≈ " + base + ")");
+    c.ok(size.large > base, "「크게」는 기본보다 커진다 (" + size.large + " > " + base + ")");
     // 개조식·약어가 많은 메모에 빨간 물결줄이 온통 그어지지 않게 맞춤법 검사를 끈다
     const sc = await page.evaluate(() => ["sp-memo", "sp-text"].map(i => document.getElementById(i).spellcheck));
     c.ok(sc.every(x => x === false), "맞춤법 검사(빨간 물결줄) 꺼짐 (" + JSON.stringify(sc) + ")");

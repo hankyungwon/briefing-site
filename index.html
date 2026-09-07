@@ -138,7 +138,13 @@
   .sticky-panel[hidden]{display:none;}
   .sp-head{flex:none;display:flex;align-items:center;gap:8px;padding:9px 12px;cursor:move;user-select:none;
     background:#F6E6B4;border-bottom:1px solid #E4CE86;}
-  .sp-title{font-size:15px;white-space:nowrap;}
+  /* 글자색·형광펜 단추 — 한글·워드처럼 「가」와 색 띠로 보여 준다.
+     글자색은 띠만 칠하고, 형광펜은 글자 뒤가 칠해져 한눈에 갈린다. 띠 색은 방금 고른 색으로 바뀐다. */
+  .sp-ic{display:inline-flex;flex-direction:column;align-items:center;gap:1px;line-height:1;}
+  .sp-ic b{font-weight:700;font-size:12px;padding:0 1px;border-radius:2px;}
+  .sp-ic i{display:block;width:14px;height:3px;border-radius:1px;}
+  #sp-bar-fore{background:#C0392B;}
+  #sp-bar-hili,#sp-hl{background:#FFF176;}
   /* 머리띠 안 서식 도구 — 공지칸·메모칸 중 방금 쓰던 칸에 적용된다 */
   .sp-tool{display:flex;align-items:center;gap:2px;flex-wrap:wrap;}
   .sp-tool button{appearance:none;cursor:pointer;border:1px solid transparent;background:none;color:#5A4300;
@@ -1567,26 +1573,26 @@
 
 <div class="sticky-panel" id="sticky-panel" hidden>
   <div class="sp-head" id="sp-head">
-    <span class="sp-title">📌</span>
     <span class="sp-tool" id="sp-tool">
       <button type="button" data-sp="bold" title="굵게"><b>B</b></button>
       <button type="button" data-sp="italic" title="기울임"><i>I</i></button>
+      <button type="button" data-sp="underline" title="밑줄"><u>U</u></button>
       <span class="sp-div"></span>
-      <button type="button" data-sp="size" data-v="2" title="작게" style="font-size:11px;">가</button>
-      <button type="button" data-sp="size" data-v="3" title="보통" style="font-size:13px;">가</button>
-      <button type="button" data-sp="size" data-v="5" title="크게" style="font-size:16px;">가</button>
+      <button type="button" data-sp="size" data-v="small" title="작게" style="font-size:11px;">가</button>
+      <button type="button" data-sp="size" data-v="normal" title="보통 — 지금 화면의 기본 크기" style="font-size:13px;">가</button>
+      <button type="button" data-sp="size" data-v="large" title="크게" style="font-size:16px;">가</button>
       <span class="sp-div"></span>
-      <span class="sp-pop"><button type="button" data-sp="pal" data-kind="hili" title="형광펜">🖍</button>
-        <span class="sp-pal" id="sp-pal-hili" hidden></span></span>
-      <span class="sp-pop"><button type="button" data-sp="pal" data-kind="fore" title="글자색">🎨</button>
+      <span class="sp-pop"><button type="button" data-sp="pal" data-kind="fore" title="글자색"><span class="sp-ic"><b>가</b><i id="sp-bar-fore"></i></span></button>
         <span class="sp-pal" id="sp-pal-fore" hidden></span></span>
+      <span class="sp-pop"><button type="button" data-sp="pal" data-kind="hili" title="형광펜"><span class="sp-ic"><b id="sp-hl">가</b><i id="sp-bar-hili"></i></span></button>
+        <span class="sp-pal" id="sp-pal-hili" hidden></span></span>
     </span>
     <button type="button" class="sp-x" id="sp-popout" title="따로 띄우기 — 사이트 창을 닫아도 남습니다">⧉</button>
     <button type="button" class="sp-x" id="sp-close" title="닫기">✕</button>
   </div>
   <div class="sp-body">
     <div class="sp-sec">
-      <div class="sp-lab">단원 전체 공지
+      <div class="sp-lab">전체 공지
         <button type="button" class="sp-add" id="sp-new">＋ 게시</button></div>
       <div class="sp-form" id="sp-form" hidden>
         <div id="sp-text" class="sp-edit" contenteditable="true" spellcheck="false" autocapitalize="off" autocorrect="off" data-ph="단원 모두에게 알릴 급한 내용을 짧게 적어 주세요."></div>
@@ -4735,7 +4741,7 @@
   const spPanel = document.getElementById("sticky-panel");
   // 포스트잇 조각들을 한 번만 붙잡아 둔다 — 「항상 위」 창으로 옮겨가면 document에서 찾을 수 없기 때문이다
   const SP = {};
-  ["sp-cancel", "sp-close", "sp-days", "sp-daysrow", "sp-err", "sp-form", "sp-head", "sp-memo", "sp-memo-state", "sp-new", "sp-notices", "sp-pal-fore", "sp-pal-hili", "sp-popout", "sp-post", "sp-text", "sp-tool"].forEach(id => { SP[id.replace("sp-", "").replace(/-/g, "_")] = document.getElementById(id); });
+  ["sp-cancel", "sp-close", "sp-days", "sp-daysrow", "sp-err", "sp-form", "sp-head", "sp-memo", "sp-memo-state", "sp-new", "sp-notices", "sp-bar-fore", "sp-bar-hili", "sp-hl", "sp-pal-fore", "sp-pal-hili", "sp-popout", "sp-post", "sp-text", "sp-tool"].forEach(id => { SP[id.replace("sp-", "").replace(/-/g, "_")] = document.getElementById(id); });
   // 포스트잇이 지금 어느 문서·창에 들어 있는가(본 화면일 수도, 「항상 위」 창일 수도 있다)
   const spDoc = () => spPanel.ownerDocument;
   const spWin = () => spDoc().defaultView || window;
@@ -4751,14 +4757,14 @@
       const el = document.getElementById(id);
       el.addEventListener("focus", () => { spActive = el; });
       ["keyup", "mouseup", "input"].forEach(ev => el.addEventListener(ev, () => {
-        const sel = window.getSelection();
+        const sel = spWin().getSelection();
         if (sel && sel.rangeCount && el.contains(sel.anchorNode)) { spActive = el; spRange = sel.getRangeAt(0).cloneRange(); }
       }));
       el.addEventListener("paste", e => {
         const html = (e.clipboardData || window.clipboardData).getData("text/html");
         if (!html) return;                       // 그림 없는 순수 글자는 브라우저에 맡긴다
         e.preventDefault(); el.focus();
-        document.execCommand("insertHTML", false, cleanPastedHtml(html));
+        spDoc().execCommand("insertHTML", false, cleanPastedHtml(html));
       });
     });
     // 팔레트 채우기
@@ -4773,14 +4779,35 @@
     const el = spActive || SP.memo;
     el.focus();
     if (spRange && el.contains(spRange.startContainer)) {
-      const s = window.getSelection(); s.removeAllRanges(); s.addRange(spRange);
+      const s = spWin().getSelection(); s.removeAllRanges(); s.addRange(spRange);
     }
     return el;
   }
+  // 글자 크기는 3단계. 브라우저의 옛 크기 체계(1~7)는 3단계가 이 화면의 기본보다 커서
+  // 「작게」를 눌러도 줄지 않았다. 그래서 크기를 직접 지정하고, 「보통」을 지금 화면의 기본 크기에 맞춘다.
+  const SP_SIZE = { small: "12px", normal: "14px", large: "18px" };
+  function spSize(key) {
+    const el = spFocusBack(), doc = spDoc();
+    try { doc.execCommand("styleWithCSS", false, false); } catch (e) {}
+    doc.execCommand("fontSize", false, "7");   // 7은 거의 안 쓰는 값 — 방금 고른 자리를 찾는 표식으로만 쓴다
+    el.querySelectorAll('font[size="7"]').forEach(f => {
+      const span = doc.createElement("span");
+      span.style.fontSize = SP_SIZE[key] || SP_SIZE.normal;
+      while (f.firstChild) span.appendChild(f.firstChild);
+      // 안쪽에 예전 크기가 남아 있으면 걷어낸다 — 겹쳐 놓으면 어느 것이 이겼는지 알 수 없다
+      span.querySelectorAll("font[size]").forEach(x => x.removeAttribute("size"));
+      span.querySelectorAll("[style]").forEach(x => {
+        x.style.removeProperty("font-size");
+        if (!x.getAttribute("style")) x.removeAttribute("style");
+      });
+      f.replaceWith(span);
+    });
+    el.dispatchEvent(new Event("input"));
+  }
   function spCmd(cmd, val) {
-    const el = spFocusBack();
-    try { document.execCommand("styleWithCSS", false, true); } catch (e) {}
-    document.execCommand(cmd, false, val || null);
+    const el = spFocusBack(), doc = spDoc();
+    try { doc.execCommand("styleWithCSS", false, true); } catch (e) {}
+    doc.execCommand(cmd, false, val || null);
     el.dispatchEvent(new Event("input"));
   }
   SP.tool.addEventListener("mousedown", e => { if (e.target.closest("button")) e.preventDefault(); });
@@ -4788,22 +4815,27 @@
     const b = e.target.closest("button[data-sp]"); if (!b) return;
     e.stopPropagation();
     const k = b.dataset.sp;
-    if (k === "bold" || k === "italic") spCmd(k);
-    else if (k === "size") spCmd("fontSize", b.dataset.v);
+    if (k === "bold" || k === "italic" || k === "underline") spCmd(k);
+    else if (k === "size") spSize(b.dataset.v);
     else if (k === "pal") {
-      const pal = document.getElementById("sp-pal-" + b.dataset.kind);
+      const pal = SP["pal_" + b.dataset.kind];
       const open = pal.hidden;
       spClosePals();
       pal.hidden = !open;
     }
   });
   ["hili", "fore"].forEach(kind => {
-    const pal = document.getElementById("sp-pal-" + kind);
+    const pal = SP["pal_" + kind];
     pal.addEventListener("mousedown", e => e.preventDefault());
     pal.addEventListener("click", e => {
       const b = e.target.closest("button[data-c]"); if (!b) return;
       e.stopPropagation();
-      spCmd(kind === "hili" ? "hiliteColor" : "foreColor", b.dataset.c);
+      const c = b.dataset.c;
+      spCmd(kind === "hili" ? "hiliteColor" : "foreColor", c);
+      // 고른 색을 단추에 남긴다 — 한글·워드처럼 다음에 누를 색이 보이게
+      if (kind === "fore") SP.bar_fore.style.background = c;
+      else { SP.bar_hili.style.background = c === "transparent" ? "#E4CE86" : c;
+             SP.hl.style.background = c === "transparent" ? "transparent" : c; }
       pal.hidden = true;
     });
   });
