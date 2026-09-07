@@ -38,7 +38,7 @@
     word-break:keep-all;overflow-wrap:break-word;}
   /* 한 줄로 유지돼야 하는 짧은 라벨(배지·태그·칩·버튼)은 서체·브라우저가 무엇이든 절대 갈라지지 않게 못 박는다.
      서체 폭이 넓어지면 담긴 상자가 눌리면서 '최'/'신'처럼 두 줄로 쪼개지는 사고가 실제로 있었다. */
-  .kind-tag,.type-tag,.pin-badge,.att-badge,.mlog-badge,.edition-chip,.ev-pill,
+  .type-tag,.pin-badge,.att-badge,.mlog-badge,.edition-chip,.ev-pill,
   .auth-btn,.link-btn,.btn-primary,.wi-btn,.cal-btn,.mini-btn,.bc-btn{white-space:nowrap;}
   .serif{font-family:'Noto Serif KR',serif;}
   .header-band{position:relative;overflow:hidden;color:#fff;
@@ -168,13 +168,11 @@
   .form-ok{display:none;margin-top:12px;background:#EAF7EF;border:1px solid #BFE3CC;color:#20713C;
     border-radius:8px;padding:11px 14px;font-size:14px;font-weight:600;}
   .form-ok.show{display:block;}
-  .kind-tag{display:inline-block;font-size:11.5px;font-weight:700;border-radius:5px;padding:2px 8px;margin-bottom:7px;}
+  .post-icon{margin-right:8px;font-size:21px;line-height:1;vertical-align:-2px;}
+  .post-icon + .post-icon{margin-left:-2px;}
   .post-no{display:inline-block;font-size:11px;font-weight:700;color:var(--muted);border:1px solid var(--line);
     border-radius:5px;padding:2px 7px;margin:0 0 7px 6px;letter-spacing:.02em;}
   .post-no:first-child{margin-left:0;}
-  .kind-tag.file{background:#EEF3F9;color:var(--gwanak-deep);border:1px solid #CFE0F0;}
-  .kind-tag.link{background:#EAF6F5;color:#0F6D66;border:1px solid #C3E4E1;}
-  .kind-tag.note{background:#F6F1E7;color:#7A6420;border:1px solid #E7DCC0;}
   .item.post.flash{animation:postFlash 2.5s ease;}
   @keyframes postFlash{0%,35%{background:#FFF6DC;}100%{background:transparent;}}
   /* ── 글쓰기 접기/펼치기 (목록 우선 배치) ── */
@@ -555,6 +553,13 @@
   article.item h3{font-family:'Noto Serif KR',serif;font-size:18px;font-weight:600;line-height:1.5;margin-bottom:8px;}
   article.item p{font-size:16px;color:#3B4756;}
   article.item a.src{font-size:13.5px;color:var(--gwanak);}
+  /* 자료 본문 — 길어도 6줄까지만 보이고 그 이상은 안쪽에서 굴려 본다(목록이 세로로 늘어지지 않게).
+     16px × 줄간격 1.7 = 한 줄 1.7em이므로 6줄 = 10.2em. 짧은 글에는 스크롤막대가 뜨지 않는다. */
+  article.item .post-text{margin-top:8px;line-height:1.7;max-height:10.2em;overflow-y:auto;padding-right:10px;
+    scrollbar-width:thin;scrollbar-color:#CBD8E6 transparent;}
+  article.item .post-text::-webkit-scrollbar{width:6px;}
+  article.item .post-text::-webkit-scrollbar-thumb{background:#CBD8E6;border-radius:3px;}
+  article.item .post-text::-webkit-scrollbar-track{background:transparent;}
   .implication{
     margin-top:12px;padding:11px 14px;border-left:3px solid var(--gold);
     background:#FBF7EC;border-radius:8px;font-size:13.8px;line-height:1.62;
@@ -2452,17 +2457,18 @@
     }
     const attMap = resourceAtts;
     listEl.innerHTML = data.map(p => {
-      const hasFile = (attMap[p.id] || []).length > 0;
-      const kind = hasFile ? ['file', '📎 파일'] : (p.url ? ['link', '🔗 링크'] : ['note', '📝 메모']);
+      const kinds = [];
+      if ((attMap[p.id] || []).length) kinds.push(["📎", "파일"]);
+      if (p.url) kinds.push(["🔗", "링크"]);
+      if (!kinds.length) kinds.push(["📝", "메모"]);
+      const icons = kinds.map(k => '<span class="post-icon" title="' + k[1] + ' 자료">' + k[0] + '</span>').join("");
       let html = '<article class="item post" data-post="' + p.id + '">'
-        + '<span class="kind-tag ' + kind[0] + '">' + kind[1] + '</span>'
-        + '<span class="post-no">No.' + p.id + '</span>'
-        + '<h3>' + esc(p.title) + '</h3>';
+        + '<h3>' + icons + esc(p.title) + '</h3>';
       if (p.url) {
         html += '<p style="margin-top:2px;"><a class="src" href="' + esc(linkHref(p.url)) + '" target="_blank" rel="noopener">' + esc(p.url) + '</a></p>';
       }
       if (p.comment) {
-        html += '<p style="margin-top:8px;">' + linkify(p.comment) + '</p>';
+        html += '<p class="post-text">' + linkify(p.comment) + '</p>';
       }
       html += renderAttachments(attMap[p.id]);
       html += '<div class="post-meta"><span class="author">' + esc(authorName(p.author_name)) + '</span>'
