@@ -582,6 +582,70 @@ const daysAgo = n => { const d = new Date(); d.setDate(d.getDate() - n); return 
     await page.close();
   }
 
+  // J. 포스트잇 — 윗칸은 단원 전체 공지(서버), 아랫칸은 나만 보는 메모. 판은 옮기고 늘릴 수 있다.
+  {
+    const page = await H.newPage(browser);
+    let notices = [{ id: 5, body: "포럼 준비물 확인 부탁드립니다.", author_email: "syho99@naver.com",
+      created_at: "2026-09-07T00:30:00Z", expires_at: "2099-01-01T00:00:00Z" }];
+    let memoSaved = null;
+    const { user, session } = H.mkSession("twopro@hanmail.net", "two");
+    await H.setupPage(page, { user, session, routes: (p, m, req) => {
+      if (p === "/rest/v1/sticky_notices") {
+        if (m === "POST") { const r = JSON.parse(req.postData()); r.id = 6; r.created_at = new Date().toISOString(); notices.unshift(r); return [r]; }
+        if (m === "DELETE") { notices = notices.slice(1); return []; }
+        return notices;
+      }
+      if (p === "/rest/v1/personal_memos") {
+        if (m === "POST" || m === "PATCH") { memoSaved = JSON.parse(req.postData()); return [memoSaved]; }
+        return { body: "지난 메모" };
+      }
+      return H.defaultBriefingRoutes(p);
+    }});
+    await H.login(page, port, "twopro@hanmail.net"); await page.waitForTimeout(900);
+
+    const first = await page.evaluate(() => ({
+      open: !document.getElementById("sticky-panel").hidden,
+      notices: document.querySelectorAll("#sp-notices .sp-note").length,
+      memo: document.getElementById("sp-memo").value,
+      canResize: getComputedStyle(document.getElementById("sticky-panel")).resize
+    }));
+    c.ok(first.open, "안 읽은 공지가 있으면 로그인 직후 포스트잇이 저절로 뜸");
+    c.ok(first.notices === 1, "공지 1장 표시 (" + first.notices + ")");
+    c.ok(first.memo === "지난 메모", "내 메모가 서버에서 복원됨 (" + first.memo + ")");
+    c.ok(first.canResize === "both", "판 크기를 사용자가 조절할 수 있음 (resize:" + first.canResize + ")");
+
+    // 머리를 끌어 옮기면 그 자리를 기억한다
+    const before = await page.evaluate(() => Math.round(document.getElementById("sticky-panel").getBoundingClientRect().left));
+    await page.hover("#sp-head");
+    await page.mouse.down(); await page.mouse.move(300, 180, { steps: 6 }); await page.mouse.up();
+    await page.waitForTimeout(250);
+    const moved = await page.evaluate(() => ({
+      left: Math.round(document.getElementById("sticky-panel").getBoundingClientRect().left),
+      saved: localStorage.getItem("gwanak_sticky_pos_two") }));
+    c.ok(moved.left !== before && moved.saved, "머리를 끌어 옮기면 위치가 바뀌고 기억됨 (" + before + " → " + moved.left + ")");
+
+    // 공지 올리기 — 올린 사람 이름은 서버가 아니라 내 계정으로 고정된다
+    await page.click("#sp-new"); await page.waitForTimeout(150);
+    await page.fill("#sp-text", "내일 오전 회의 30분 당겨졌습니다.");
+    await page.selectOption("#sp-days", "3");
+    await page.click("#sp-post"); await page.waitForTimeout(600);
+    c.ok(notices.length === 2 && notices[0].author_email === "twopro@hanmail.net", "공지 올리기 + 올린이 기록");
+    c.ok(new Date(notices[0].expires_at) > new Date(), "표시 기한이 미래로 설정됨(기한이 지나면 저절로 사라짐)");
+
+    // 내 메모는 저장 버튼 없이 잠깐 멈추면 저절로 저장된다
+    await page.fill("#sp-memo", "· 오늘 할 일: 로드맵 검토");
+    await page.waitForTimeout(1400);
+    c.ok(memoSaved && /로드맵 검토/.test(memoSaved.body) && memoSaved.user_id === "two",
+      "메모가 자동 저장되고 내 계정에만 붙는다");
+
+    // 닫았다가 📌 버튼으로 다시 연다
+    await page.click("#sp-close"); await page.waitForTimeout(150);
+    c.ok(await page.evaluate(() => document.getElementById("sticky-panel").hidden), "✕로 닫힘");
+    await page.click("#sticky-btn"); await page.waitForTimeout(200);
+    c.ok(await page.evaluate(() => !document.getElementById("sticky-panel").hidden), "📌 버튼으로 다시 열림");
+    await page.close();
+  }
+
   server.close();
   await c.finish(browser);
 })().catch(e => { console.error("FAIL", e.message, e.stack); process.exit(1); });
