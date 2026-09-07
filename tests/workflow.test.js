@@ -240,6 +240,29 @@ const daysAgo = n => { const d = new Date(); d.setDate(d.getDate() - n); return 
     c.ok(!/#C00|rgb\(204, 0, 0\)/i.test(draftHasFmt), "제각각인 글자색도 표준으로 정리됨");
     c.ok(/<b>|font-weight/i.test(draftHasFmt), "굵게 같은 강조는 그대로 유지");
 
+    // 취합 편집기에서도 원고 창과 똑같이 Tab으로 번호 수준을 조절할 수 있어야 한다
+    const caretLv = () => page.evaluate(() => {
+      const ed = document.getElementById("packet-edit-body");
+      let n = getSelection().anchorNode; if (n && n.nodeType === 3) n = n.parentElement;
+      const li = n && n.closest ? n.closest("li") : null;
+      if (!li) return null;
+      let d = 0, e = li; while ((e = e.parentElement.closest("ol,ul"))) d++;
+      return { depth: d, mark: getComputedStyle(li.parentElement).listStyleType };
+    });
+    await page.evaluate(() => { const ed = document.getElementById("packet-edit-body"); ed.focus();
+      const r = document.createRange(); r.selectNodeContents(ed); r.collapse(false);
+      const s = getSelection(); s.removeAllRanges(); s.addRange(r); });
+    await page.type("#packet-edit-body", "취합 중 항목");
+    await page.click('#packet-toolbar [data-cmd="ol"]'); await page.waitForTimeout(250);
+    const pk1 = await caretLv();
+    await page.keyboard.press("Tab"); await page.waitForTimeout(200);
+    const pk2 = await caretLv();
+    await page.keyboard.down("Shift"); await page.keyboard.press("Tab"); await page.keyboard.up("Shift"); await page.waitForTimeout(200);
+    const pk3 = await caretLv();
+    c.ok(pk1 && pk1.mark === "kr-num" && pk2 && pk2.depth === 2 && pk2.mark === "kr-hangul",
+      "취합 편집기도 Tab으로 수준 내리기 (1. → " + (pk2 && pk2.mark) + ")");
+    c.ok(pk3 && pk3.depth === 1, "취합 편집기도 Shift+Tab으로 수준 올리기 (" + (pk3 && pk3.depth) + "수준)");
+
     await page.fill("#packet-edit-summary", "AI 교육 확대·공모사업 마감 대응");
     await page.click("#packet-save"); await page.waitForTimeout(500);
     c.ok(packets.length === 1, "「올리기」로 게시본 1건 생성");
