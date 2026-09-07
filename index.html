@@ -3959,7 +3959,7 @@
   function renderFreePost(p) {
     const mine = p.author_id === currentUser.id;
     let h = '<article class="board-card' + (p.pinned?' pinned':'') + '" data-post="' + p.id + '">';
-    const kind = (boardAtts[p.id] || []).length ? ["🗂️", "파일"] : ["🗨️", "이야기"];
+    const kind = (boardAtts[p.id] || []).length ? ["🗂️", "파일"] : ["📝", "이야기"];
     h += '<div class="bc-head">'
       + (p.pinned ? '<span class="pin-badge">📌 공지</span>' : '')
       + '<h3><span class="post-icon" title="' + kind[1] + '">' + kind[0] + '</span>' + esc(p.title) + '</h3></div>';

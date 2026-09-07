@@ -526,7 +526,7 @@ const daysAgo = n => { const d = new Date(); d.setDate(d.getDate() - n); return 
     // 게시 번호(No.N)는 중간 글을 지우면 건너뛰어 보이므로 없앴다 — 글은 제목부터 시작한다
     c.ok(r.nos === 0, "게시글에 게시 번호(No.N)가 없다 (" + r.nos + "개)");
     c.ok(r.firstChild === "DIV", "글이 제목 줄(띠)부터 시작한다 (" + r.firstChild + ")");
-    c.ok(r.icons === "🗨️", "첨부가 없는 글은 제목 앞에 말풍선 그림 (" + r.icons + ")");
+    c.ok(r.icons === "📝", "첨부가 없는 글은 제목 앞에 메모 그림 — 자료마당 메모 자료와 같은 그림 (" + r.icons + ")");
     c.ok(r.band.bg !== "rgba(0, 0, 0, 0)" && r.band.bg !== "rgb(255, 255, 255)" && r.band.full,
       "제목 줄에 카드 폭을 채우는 옅은 띠 (" + r.band.bg + ")");
     await page.close();
