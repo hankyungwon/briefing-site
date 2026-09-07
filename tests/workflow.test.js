@@ -695,6 +695,19 @@ const daysAgo = n => { const d = new Date(); d.setDate(d.getDate() - n); return 
     c.ok(memoSaved && /로드맵 검토/.test(memoSaved.body) && memoSaved.user_id === "two",
       "메모가 자동 저장되고 내 계정에만 붙는다");
 
+    // 꺾쇠(< >)를 쓴 공지 — 저장할 때 &lt;로 바뀌므로, 다시 그릴 때 또 바꾸면 화면에 &lt;가 그대로 나온다.
+    // 「한 줄 전체가 꺾쇠 제목」이면 태그가 하나도 없어 예전에는 순수 글자로 잘못 봤다.
+    await page.click("#sp-new"); await page.waitForTimeout(150);
+    await page.click("#sp-text"); await page.type("#sp-text", "<전기 절약 협조>");
+    await page.click("#sp-post"); await page.waitForTimeout(600);
+    await page.evaluate(() => window.__spLoadNotices && window.__spLoadNotices());
+    await page.waitForTimeout(400);
+    const ang = await page.evaluate(() => ({
+      seen: (document.querySelector("#sp-notices .sp-note .t") || {}).textContent || "",
+      raw: (document.querySelector("#sp-notices .sp-note .t") || {}).innerHTML || "" }));
+    c.ok(ang.seen.indexOf("<전기 절약 협조>") === 0, "꺾쇠를 쓴 공지가 쓴 그대로 보인다 (" + ang.seen.slice(0, 14) + ")");
+    c.ok(!/&amp;(lt|gt);/.test(ang.raw), "&lt; 같은 이상한 문자가 화면에 새지 않는다");
+
     // 남이 올린 공지가 밀려 들어오면, 판을 닫아 두었어도 스스로 뜨고 맨 위에 쌓인다
     await page.click("#sp-close"); await page.waitForTimeout(150);
     notices.unshift({ id: 9, body: "정전 예고 — 오후 3시 서버 잠시 중단됩니다.", author_email: "syho99@naver.com",
