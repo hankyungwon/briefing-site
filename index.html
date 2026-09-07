@@ -4868,8 +4868,12 @@
     const can = mine || isAdminUser;
     return '<div class="sp-note"><div class="t">' + spRich(n.body) + '</div>'
       + '<div class="m"><span class="who">' + esc(authorName(n.author_email)) + '</span>'
-      + '<span>' + esc(fmtStamp(n.created_at)) + '</span>'
-      + (n.edited_at ? '<span class="sp-edited" title="' + esc(fmtDateTime(n.edited_at)) + ' 수정">· 수정됨</span>' : '')
+      // 고친 공지는 「고친 시각」을 보여 준다 — 사람들이 보는 것은 「이 공지가 마지막으로 언제 바뀌었나」다.
+      // 처음 쓴 시각은 마우스를 올리면 함께 나온다.
+      + '<span title="' + esc(fmtDateTime(n.created_at)) + ' 작성'
+        + (n.edited_at ? ' · ' + esc(fmtDateTime(n.edited_at)) + ' 수정' : '') + '">'
+        + esc(fmtStamp(n.edited_at || n.created_at))
+        + (n.edited_at ? ' <span class="sp-edited">수정</span>' : '') + '</span>'
       + (can ? '<span class="sp-acts"><button type="button" class="edit" data-sp-edit="' + n.id + '">수정</button>'
              + '<button type="button" data-sp-del="' + n.id + '">삭제</button></span>' : '')
       + '</div></div>';

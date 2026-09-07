@@ -652,7 +652,21 @@ const daysAgo = n => { const d = new Date(); d.setDate(d.getDate() - n); return 
     await page.click("#sp-post"); await page.waitForTimeout(600);
     c.ok(notices.length === 2, "수정은 공지를 늘리지 않는다 (" + notices.length + "장)");
     c.ok(/9시 30분/.test(notices[0].body) && !!notices[0].edited_at, "그 자리가 고쳐지고 수정 시각이 남는다");
-    c.ok(await page.evaluate(() => !!document.querySelector("#sp-notices .sp-edited")), "화면에 「수정됨」 표시");
+    await page.evaluate(t2 => { window.__lastEdited = t2; }, notices[0].edited_at);
+    // 고친 뒤에는 「고친 시각」이 보여야 한다(처음 쓴 시각이 그대로 남아 있으면 안 된다)
+    const stamp = await page.evaluate(() => {
+      const n = document.querySelector("#sp-notices .sp-note .m span[title]");
+      return { text: (n || {}).textContent || "", tip: (n || {}).title || "" };
+    });
+    c.ok(/수정/.test(stamp.text), "고친 공지에 「수정」 표시 (" + stamp.text.trim() + ")");
+    c.ok(/작성/.test(stamp.tip) && /수정/.test(stamp.tip), "마우스를 올리면 작성·수정 시각이 함께 나옴");
+    const shown = await page.evaluate(() => {
+      const el = document.querySelector("#sp-notices .sp-note .m span[title]");
+      const hhmm = (el.textContent.match(/(\d{1,2}):(\d{2})/) || [])[0];
+      const ed = new Date(window.__lastEdited);
+      return { hhmm, edited: String(ed.getHours()).padStart(2, "0") + ":" + String(ed.getMinutes()).padStart(2, "0") };
+    });
+    c.ok(shown.hhmm === shown.edited, "보이는 시각이 고친 시각과 같음 (" + shown.hhmm + " = " + shown.edited + ")");
 
     // 머리띠의 서식 도구 — 공지칸·메모칸 중 방금 쓰던 칸에 적용된다
     await page.click("#sp-memo"); await page.type("#sp-memo", "핵심 아이디어");
