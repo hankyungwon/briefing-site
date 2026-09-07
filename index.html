@@ -119,6 +119,15 @@
     border-radius:999px;padding:3px 11px;font-family:inherit;font-size:12.5px;font-weight:700;white-space:nowrap;}
   .draft-note button:hover{background:#7A5E10;border-color:#7A5E10;color:#fff;}
   /* ── 포스트잇 판 — 모달이 아니라 떠 있는 판. 옮길 수 있고(머리 끌기), 늘릴 수 있다(오른쪽 아래 모서리) ── */
+  /* 별도 창(주소에 ?postit=1)으로 열었을 때 — 포스트잇만 창을 가득 채운다.
+     이 창은 사이트 창과 별개라, 사이트를 닫거나 줄여도 그대로 남는다. */
+  body.postit-only{background:#FFFDF3;}
+  body.postit-only > .header-band, body.postit-only > nav, body.postit-only > main,
+  body.postit-only > footer, body.postit-only > .modal-backdrop{display:none !important;}
+  body.postit-only .sticky-panel{position:static;width:100%;height:100vh;max-width:none;max-height:none;
+    border:none;border-radius:0;box-shadow:none;resize:none;}
+  body.postit-only .sp-head{cursor:default;}
+  body.postit-only #sp-close,body.postit-only #sp-popout{display:none;}
   .sticky-btn{position:relative;}
   .sticky-btn.has-new::after{content:"";position:absolute;top:2px;right:3px;width:7px;height:7px;border-radius:50%;
     background:#D64545;box-shadow:0 0 0 2px #fff;}
@@ -129,8 +138,20 @@
   .sticky-panel[hidden]{display:none;}
   .sp-head{flex:none;display:flex;align-items:center;gap:8px;padding:9px 12px;cursor:move;user-select:none;
     background:#F6E6B4;border-bottom:1px solid #E4CE86;}
-  .sp-title{font-size:14px;font-weight:800;color:#5A4300;white-space:nowrap;}
-  .sp-hint{font-size:11px;color:#8A6E17;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+  .sp-title{font-size:15px;white-space:nowrap;}
+  /* 머리띠 안 서식 도구 — 공지칸·메모칸 중 방금 쓰던 칸에 적용된다 */
+  .sp-tool{display:flex;align-items:center;gap:2px;flex-wrap:wrap;}
+  .sp-tool button{appearance:none;cursor:pointer;border:1px solid transparent;background:none;color:#5A4300;
+    border-radius:5px;min-width:22px;height:22px;padding:0 4px;font-family:inherit;font-size:12.5px;line-height:1;}
+  .sp-tool button:hover{background:#fff;border-color:#D9B94A;}
+  .sp-div{width:1px;height:14px;background:#D9B94A;margin:0 3px;opacity:.6;}
+  .sp-pop{position:relative;display:inline-flex;}
+  .sp-pal{position:absolute;top:26px;left:0;z-index:5;display:flex;gap:4px;padding:6px;
+    background:#fff;border:1px solid #D9B94A;border-radius:8px;box-shadow:0 6px 18px rgba(28,43,58,.18);}
+  .sp-pal[hidden]{display:none;}
+  .sp-pal button{width:20px;height:20px;min-width:20px;border-radius:5px;border:1px solid #D7E0EA;padding:0;}
+  .sp-pal button.none{width:auto;padding:0 7px;font-size:11px;font-weight:700;color:var(--muted);background:#fff;}
+  #sp-popout{margin-left:auto;}
   .sp-x{margin-left:auto;appearance:none;border:none;background:none;cursor:pointer;font-size:14px;color:#7A5E10;
     padding:2px 4px;border-radius:5px;line-height:1;}
   .sp-x:hover{background:#E4CE86;}
@@ -144,8 +165,11 @@
   .sp-add:hover{background:#7A5E10;border-color:#7A5E10;color:#fff;}
   .sp-form{display:flex;flex-direction:column;gap:6px;background:#fff;border:1px solid #E4CE86;border-radius:8px;padding:8px;}
   .sp-form[hidden]{display:none;}
-  .sp-form textarea{width:100%;min-height:62px;resize:vertical;font-family:inherit;font-size:13.5px;color:var(--ink);
-    border:1px solid var(--line);border-radius:6px;padding:7px 9px;line-height:1.6;}
+  .sp-edit{width:100%;font-family:inherit;font-size:13.5px;color:var(--ink);background:#fff;
+    border:1px solid var(--line);border-radius:6px;padding:7px 9px;line-height:1.6;overflow-y:auto;
+    word-break:keep-all;overflow-wrap:break-word;}
+  .sp-form .sp-edit{min-height:62px;max-height:140px;}
+  .sp-edit:empty::before{content:attr(data-ph);color:var(--muted);}
   .sp-formrow{display:flex;align-items:center;gap:6px;flex-wrap:wrap;font-size:12px;color:#7A5E10;}
   .sp-formrow select{font-family:inherit;font-size:12.5px;border:1px solid var(--line);border-radius:6px;padding:3px 6px;}
   .sp-btn{appearance:none;cursor:pointer;border:1px solid var(--gwanak);background:var(--gwanak);color:#fff;
@@ -159,15 +183,19 @@
   .sp-note .t{font-size:13.5px;color:var(--ink);line-height:1.6;white-space:pre-wrap;word-break:keep-all;}
   .sp-note .m{display:flex;align-items:center;gap:7px;font-size:11.5px;color:var(--muted);}
   .sp-note .m .who{font-weight:700;color:#7A5E10;}
-  .sp-note .m button{margin-left:auto;appearance:none;cursor:pointer;border:1px solid #E3B7B0;background:#fff;
+  .sp-edited{font-size:11px;color:var(--muted);white-space:nowrap;}
+  .sp-acts{margin-left:auto;display:flex;gap:5px;}
+  .sp-note .m button{appearance:none;cursor:pointer;border:1px solid #E3B7B0;background:#fff;
     color:#A33;border-radius:999px;padding:1px 8px;font-family:inherit;font-size:11px;font-weight:700;white-space:nowrap;}
   .sp-note .m button:hover{background:#A33;border-color:#A33;color:#fff;}
+  .sp-note .m button.edit{border-color:#CFDDEC;color:var(--gwanak);}
+  .sp-note .m button.edit:hover{background:var(--gwanak);border-color:var(--gwanak);color:#fff;}
   .sp-empty{font-size:12.5px;color:var(--muted);padding:2px 0;}
-  .sp-memosec textarea{flex:1;width:100%;min-height:110px;resize:none;font-family:inherit;font-size:14px;color:var(--ink);
-    background:#fff;border:1px solid #E4CE86;border-radius:8px;padding:9px 11px;line-height:1.7;}
+  .sp-memoedit{flex:1;min-height:110px;font-size:14px;border-color:#E4CE86;border-radius:8px;padding:9px 11px;line-height:1.7;}
+  /* 눌렀을 때 테두리 — 브라우저 기본값(검정)은 이 화면과 겉돈다. 사이트 다른 입력칸과 같은 관악 블루로. */
+  .sp-edit:focus,.sp-formrow select:focus{outline:2px solid var(--gwanak);outline-offset:-1px;border-color:var(--gwanak);}
   @media(max-width:640px){
     .sticky-panel{right:8px;left:8px;bottom:8px;width:auto;height:66vh;resize:none;}
-    .sp-hint{display:none;}
   }
   .form-ok{color:#1E8E5A;font-size:13.5px;margin-top:10px;display:none;}
   .form-ok.show{display:block;}
@@ -1539,20 +1567,33 @@
 
 <div class="sticky-panel" id="sticky-panel" hidden>
   <div class="sp-head" id="sp-head">
-    <span class="sp-title">📌 포스트잇</span>
-    <span class="sp-hint">머리를 끌어 옮기고, 오른쪽 아래 모서리를 끌어 크기를 바꿉니다</span>
+    <span class="sp-title">📌</span>
+    <span class="sp-tool" id="sp-tool">
+      <button type="button" data-sp="bold" title="굵게"><b>B</b></button>
+      <button type="button" data-sp="italic" title="기울임"><i>I</i></button>
+      <span class="sp-div"></span>
+      <button type="button" data-sp="size" data-v="2" title="작게" style="font-size:11px;">가</button>
+      <button type="button" data-sp="size" data-v="3" title="보통" style="font-size:13px;">가</button>
+      <button type="button" data-sp="size" data-v="5" title="크게" style="font-size:16px;">가</button>
+      <span class="sp-div"></span>
+      <span class="sp-pop"><button type="button" data-sp="pal" data-kind="hili" title="형광펜">🖍</button>
+        <span class="sp-pal" id="sp-pal-hili" hidden></span></span>
+      <span class="sp-pop"><button type="button" data-sp="pal" data-kind="fore" title="글자색">🎨</button>
+        <span class="sp-pal" id="sp-pal-fore" hidden></span></span>
+    </span>
+    <button type="button" class="sp-x" id="sp-popout" title="따로 띄우기 — 사이트 창을 닫아도 남습니다">⧉</button>
     <button type="button" class="sp-x" id="sp-close" title="닫기">✕</button>
   </div>
   <div class="sp-body">
     <div class="sp-sec">
       <div class="sp-lab">단원 전체 공지
-        <button type="button" class="sp-add" id="sp-new">＋ 올리기</button></div>
+        <button type="button" class="sp-add" id="sp-new">＋ 게시</button></div>
       <div class="sp-form" id="sp-form" hidden>
-        <textarea id="sp-text" maxlength="300" placeholder="단원 모두에게 알릴 급한 내용을 짧게 적어 주세요."></textarea>
+        <div id="sp-text" class="sp-edit" contenteditable="true" data-ph="단원 모두에게 알릴 급한 내용을 짧게 적어 주세요."></div>
         <div class="sp-formrow">
-          <label for="sp-days">표시 기간</label>
-          <select id="sp-days"><option value="3">3일</option><option value="7" selected>7일</option><option value="14">14일</option></select>
-          <button type="button" class="sp-btn" id="sp-post">올리기</button>
+          <span id="sp-daysrow"><label for="sp-days">표시 기간</label>
+            <select id="sp-days"><option value="3">3일</option><option value="7" selected>7일</option><option value="14">14일</option></select></span>
+          <button type="button" class="sp-btn" id="sp-post">게시</button>
           <button type="button" class="sp-btn ghost" id="sp-cancel">취소</button>
         </div>
         <p class="sp-err" id="sp-err"></p>
@@ -1561,7 +1602,7 @@
     </div>
     <div class="sp-sec sp-memosec">
       <div class="sp-lab">내 메모 <span class="sp-state" id="sp-memo-state"></span></div>
-      <textarea id="sp-memo" placeholder="오늘 할 일, 떠오른 생각을 적어 두세요. 나만 볼 수 있고 자동으로 저장됩니다."></textarea>
+      <div id="sp-memo" class="sp-edit sp-memoedit" contenteditable="true" data-ph="오늘 할 일, 떠오른 생각을 적어 두세요. 나만 볼 수 있고 자동으로 저장됩니다."></div>
     </div>
   </div>
 </div>
@@ -4690,13 +4731,98 @@
   const spBtn = document.getElementById("sticky-btn");
   let spNotices = [], spMemoTimer = null;
 
+  // 머리띠의 서식 도구는 두 칸(공지·메모)이 함께 쓴다. 방금 쓰던 칸을 기억해 두고 거기에 적용한다.
+  const SP_HILI = ["#FFF176", "#B9F6CA", "#B3E5FC", "#F8BBD0"];
+  const SP_FORE = ["#1C2B3A", "#C0392B", "#0E5FA8", "#1E8E5A"];
+  let spActive = null, spRange = null;
+  function spWireEditors() {
+    ["sp-text", "sp-memo"].forEach(id => {
+      const el = document.getElementById(id);
+      el.addEventListener("focus", () => { spActive = el; });
+      ["keyup", "mouseup", "input"].forEach(ev => el.addEventListener(ev, () => {
+        const sel = window.getSelection();
+        if (sel && sel.rangeCount && el.contains(sel.anchorNode)) { spActive = el; spRange = sel.getRangeAt(0).cloneRange(); }
+      }));
+      el.addEventListener("paste", e => {
+        const html = (e.clipboardData || window.clipboardData).getData("text/html");
+        if (!html) return;                       // 그림 없는 순수 글자는 브라우저에 맡긴다
+        e.preventDefault(); el.focus();
+        document.execCommand("insertHTML", false, cleanPastedHtml(html));
+      });
+    });
+    // 팔레트 채우기
+    const fill = (box, colors, cmd) => {
+      box.innerHTML = colors.map(c => '<button type="button" data-c="' + c + '" style="background:' + c + '"></button>').join("")
+        + '<button type="button" class="none" data-c="' + (cmd === "hiliteColor" ? "transparent" : "#1C2B3A") + '">없음</button>';
+    };
+    fill(document.getElementById("sp-pal-hili"), SP_HILI, "hiliteColor");
+    fill(document.getElementById("sp-pal-fore"), SP_FORE, "foreColor");
+  }
+  function spFocusBack() {
+    const el = spActive || document.getElementById("sp-memo");
+    el.focus();
+    if (spRange && el.contains(spRange.startContainer)) {
+      const s = window.getSelection(); s.removeAllRanges(); s.addRange(spRange);
+    }
+    return el;
+  }
+  function spCmd(cmd, val) {
+    const el = spFocusBack();
+    try { document.execCommand("styleWithCSS", false, true); } catch (e) {}
+    document.execCommand(cmd, false, val || null);
+    el.dispatchEvent(new Event("input"));
+  }
+  document.getElementById("sp-tool").addEventListener("mousedown", e => { if (e.target.closest("button")) e.preventDefault(); });
+  document.getElementById("sp-tool").addEventListener("click", e => {
+    const b = e.target.closest("button[data-sp]"); if (!b) return;
+    e.stopPropagation();
+    const k = b.dataset.sp;
+    if (k === "bold" || k === "italic") spCmd(k);
+    else if (k === "size") spCmd("fontSize", b.dataset.v);
+    else if (k === "pal") {
+      const pal = document.getElementById("sp-pal-" + b.dataset.kind);
+      const open = pal.hidden;
+      document.querySelectorAll(".sp-pal").forEach(p2 => p2.hidden = true);
+      pal.hidden = !open;
+    }
+  });
+  ["hili", "fore"].forEach(kind => {
+    const pal = document.getElementById("sp-pal-" + kind);
+    pal.addEventListener("mousedown", e => e.preventDefault());
+    pal.addEventListener("click", e => {
+      const b = e.target.closest("button[data-c]"); if (!b) return;
+      e.stopPropagation();
+      spCmd(kind === "hili" ? "hiliteColor" : "foreColor", b.dataset.c);
+      pal.hidden = true;
+    });
+  });
+  document.addEventListener("click", () => document.querySelectorAll(".sp-pal").forEach(p2 => p2.hidden = true));
+
+  // 별도 창으로 열렸는가(주소에 ?postit=1) — 그때는 포스트잇만 창을 채운다
+  const SP_WINDOW = new URLSearchParams(location.search).has("postit");
+  if (SP_WINDOW) document.body.classList.add("postit-only");
+  // 「따로 띄우기」 — 사이트와 별개의 작은 창을 연다. 로그인 정보는 같은 브라우저에 있으므로 그대로 이어진다.
+  // 이 창은 사이트 창을 닫거나 줄여도 남는다. 한 번 쓰면 다음부터 📌은 늘 별도 창을 연다.
+  const spPrefKey = () => "gwanak_sticky_pref_" + ((currentUser && currentUser.id) || "anon");
+  function spPopout() {
+    const w = window.open(location.pathname + "?postit=1", "gwanak_postit",
+      "width=400,height=560,menubar=no,toolbar=no,location=no,status=no");
+    if (!w) { alert("팝업이 막혀 있습니다. 주소창 오른쪽의 팝업 차단을 풀고 다시 눌러 주세요."); return false; }
+    try { localStorage.setItem(spPrefKey(), "window"); } catch (e) {}
+    w.focus(); spClose();
+    return true;
+  }
+  const spPrefersWindow = () => { try { return localStorage.getItem(spPrefKey()) === "window"; } catch (e) { return false; } };
+
   const spPosKey = () => "gwanak_sticky_pos_" + ((currentUser && currentUser.id) || "anon");
   const spSeenKey = () => "gwanak_sticky_seen_" + ((currentUser && currentUser.id) || "anon");
   function spSavePos() {
+    if (SP_WINDOW) return;
     const r = spPanel.getBoundingClientRect();
     try { localStorage.setItem(spPosKey(), JSON.stringify({ x: Math.round(r.left), y: Math.round(r.top), w: Math.round(r.width), h: Math.round(r.height) })); } catch (e) {}
   }
   function spLoadPos() {
+    if (SP_WINDOW) return;
     let d = null; try { d = JSON.parse(localStorage.getItem(spPosKey()) || "null"); } catch (e) {}
     if (!d) return;
     // 화면이 작아졌을 때 판이 밖으로 나가지 않게 안쪽으로 당긴다
@@ -4711,7 +4837,7 @@
     const head = document.getElementById("sp-head");
     let dx = 0, dy = 0, moving = false;
     head.addEventListener("pointerdown", e => {
-      if (e.target.closest("button")) return;
+      if (e.target.closest("button, .sp-pal")) return;   // 단추·색판만 빼고, 도구 사이 빈 곳도 끌 수 있게
       const r = spPanel.getBoundingClientRect();
       dx = e.clientX - r.left; dy = e.clientY - r.top; moving = true;
       spPanel.style.right = "auto"; spPanel.style.bottom = "auto";
@@ -4734,12 +4860,18 @@
     new ResizeObserver(() => { if (spPanel.hidden) return; clearTimeout(t); t = setTimeout(spSavePos, 400); }).observe(spPanel);
   }
 
+  // 공지·메모 본문: 서식(HTML)이면 정화해 쓰고, 예전에 저장된 순수 글자면 줄바꿈·링크만 살린다
+  function spRich(v) { return !v ? "" : (/<[a-z][\s\S]*>/i.test(v) ? sanitizePacketHtml(v) : linkify(v)); }
+  const spEmpty = el => !el.innerHTML.replace(/<br\s*\/?>|<p>|<\/p>|<div>|<\/div>|&nbsp;|\s/gi, "").length;
   function spNoticeHtml(n) {
     const mine = currentUser && (n.author_email || "").toLowerCase() === (currentUser.email || "").toLowerCase();
-    return '<div class="sp-note"><div class="t">' + linkify(n.body || "") + '</div>'
+    const can = mine || isAdminUser;
+    return '<div class="sp-note"><div class="t">' + spRich(n.body) + '</div>'
       + '<div class="m"><span class="who">' + esc(authorName(n.author_email)) + '</span>'
       + '<span>' + esc(fmtStamp(n.created_at)) + '</span>'
-      + (mine || isAdminUser ? '<button type="button" data-sp-del="' + n.id + '">내리기</button>' : '')
+      + (n.edited_at ? '<span class="sp-edited" title="' + esc(fmtDateTime(n.edited_at)) + ' 수정">· 수정됨</span>' : '')
+      + (can ? '<span class="sp-acts"><button type="button" class="edit" data-sp-edit="' + n.id + '">수정</button>'
+             + '<button type="button" data-sp-del="' + n.id + '">삭제</button></span>' : '')
       + '</div></div>';
   }
   function spPaint() {
@@ -4749,7 +4881,7 @@
     box.innerHTML = show.length ? show.map(spNoticeHtml).join("")
       : '<p class="sp-empty">지금 올라온 공지가 없습니다.</p>';
     document.getElementById("sp-new").disabled = spNotices.length >= 3;
-    document.getElementById("sp-new").title = spNotices.length >= 3 ? "공지는 한 번에 3장까지입니다" : "";
+    document.getElementById("sp-new").title = spNotices.length >= 3 ? "공지는 한 번에 3장까지입니다(하나를 삭제한 뒤 게시)" : "";
   }
   function spMarkSeen() {
     const top = spNotices.length ? spNotices[0].id : 0;
@@ -4763,54 +4895,115 @@
   function spOpen() { spPanel.hidden = false; spLoadPos(); spMarkSeen(); }
   function spClose() { spSavePos(); spPanel.hidden = true; }
 
-  async function spLoad() {
-    if (!currentUser) { spPanel.hidden = true; spBtn.hidden = true; return; }
-    spBtn.hidden = false;
-    const { data: nd } = await sb.from("sticky_notices").select("*")
+  // 공지만 다시 불러온다 — 남이 올린 공지가 곧바로 맨 위에 쌓이게 하는 길
+  async function spLoadNotices() {
+    if (!currentUser) return;
+    const { data } = await sb.from("sticky_notices").select("*")
       .gt("expires_at", new Date().toISOString()).order("id", { ascending: false }).limit(10);
-    spNotices = nd || [];
+    spNotices = data || [];
     spPaint();
-    const { data: md } = await sb.from("personal_memos").select("body").eq("user_id", currentUser.id).maybeSingle();
-    document.getElementById("sp-memo").value = (md && md.body) || "";
-    // 아직 못 본 공지가 있을 때만 저절로 뜬다(없으면 조용히 둔다)
-    if (spUnread()) spOpen(); else spBtn.classList.toggle("has-new", false);
+    if (SP_WINDOW) { spPanel.hidden = false; spMarkSeen(); return; }
+    // 아직 못 본 공지가 있으면 판을 띄워 알린다. 닫아 두었어도 새 공지는 스스로 뜬다.
+    if (spUnread()) { spOpen(); spBtn.classList.add("has-new"); }
+    else spBtn.classList.remove("has-new");
+  }
+  // 내 메모는 지금 쓰고 있는 중이면 건드리지 않는다(남의 공지 때문에 내 글이 지워지면 안 된다)
+  async function spLoadMemo() {
+    const el = document.getElementById("sp-memo");
+    if (!currentUser || document.activeElement === el || spMemoTimer) return;
+    const { data } = await sb.from("personal_memos").select("body").eq("user_id", currentUser.id).maybeSingle();
+    el.innerHTML = spRich(data && data.body);
+  }
+  async function spLoad() {
+    if (!currentUser) { spPanel.hidden = true; spBtn.hidden = true; spUnwatch(); return; }
+    spBtn.hidden = false;
+    await spLoadMemo();
+    await spLoadNotices();
+    spWatch();
+  }
+  // 실시간 — 누가 공지를 올리거나 고치거나 지우면 「바뀌었다」는 신호가 오고, 각 화면이 다시 조회한다.
+  // 내용 자체는 신호에 실리지 않으므로 읽기 권한(RLS)은 그대로 지켜진다.
+  let spChannel = null, spPollTimer = null;
+  function spWatch() {
+    if (spChannel) return;
+    try {
+      spChannel = sb.channel("sticky-notices")
+        .on("postgres_changes", { event: "*", schema: "public", table: "sticky_notices" }, () => spLoadNotices())
+        .subscribe();
+    } catch (e) { spChannel = null; }
+    // 실시간이 막혀 있는 사무실 망을 대비한 안전망 — 1분에 한 번 조용히 확인한다
+    if (!spPollTimer) spPollTimer = setInterval(() => {
+      if (document.hidden) return;
+      const busy = document.activeElement === document.getElementById("sp-text") || !document.getElementById("sp-form").hidden;
+      if (!busy) spLoadNotices();
+    }, 60000);
+  }
+  function spUnwatch() {
+    if (spChannel) { try { sb.removeChannel(spChannel); } catch (e) {} spChannel = null; }
+    if (spPollTimer) { clearInterval(spPollTimer); spPollTimer = null; }
   }
 
-  spBtn.addEventListener("click", () => { if (spPanel.hidden) spOpen(); else spClose(); });
+  spWireEditors();
+  if (SP_WINDOW) window.addEventListener("focus", () => spLoadNotices());
+  window.__spLoadNotices = () => spLoadNotices();   // 실시간 신호가 왔을 때와 같은 길 — 회귀 테스트가 이 길을 확인한다
+  spBtn.addEventListener("click", () => {
+    if (spPrefersWindow() && spPopout()) return;
+    if (spPanel.hidden) spOpen(); else spClose();
+  });
+  document.getElementById("sp-popout").addEventListener("click", spPopout);
   document.getElementById("sp-close").addEventListener("click", spClose);
+  // 공지 입력칸을 「새로 게시」 또는 「고치기」 모드로 연다
+  function spForm(notice) {
+    const f = document.getElementById("sp-form");
+    f.dataset.editId = notice ? String(notice.id) : "";
+    document.getElementById("sp-text").innerHTML = notice ? spRich(notice.body) : "";
+    document.getElementById("sp-post").textContent = notice ? "수정 저장" : "게시";
+    document.getElementById("sp-daysrow").hidden = !!notice;   // 고칠 때는 기한을 건드리지 않는다
+    document.getElementById("sp-err").classList.remove("show");
+    f.hidden = false;
+    document.getElementById("sp-text").focus();
+  }
   document.getElementById("sp-new").addEventListener("click", () => {
     const f = document.getElementById("sp-form");
-    f.hidden = !f.hidden;
-    if (!f.hidden) document.getElementById("sp-text").focus();
+    if (!f.hidden && !f.dataset.editId) { f.hidden = true; return; }
+    spForm(null);
   });
   document.getElementById("sp-cancel").addEventListener("click", () => {
     document.getElementById("sp-form").hidden = true;
-    document.getElementById("sp-text").value = "";
+    document.getElementById("sp-form").dataset.editId = "";
+    document.getElementById("sp-text").innerHTML = "";
     document.getElementById("sp-err").classList.remove("show");
   });
   document.getElementById("sp-post").addEventListener("click", async () => {
     const err = document.getElementById("sp-err"), ta = document.getElementById("sp-text");
-    const body = ta.value.trim();
     err.classList.remove("show");
-    if (!body) { err.textContent = "내용을 입력해 주세요."; err.classList.add("show"); return; }
-    if (spNotices.length >= 3) { err.textContent = "공지는 한 번에 3장까지입니다. 하나를 내린 뒤 올려 주세요."; err.classList.add("show"); return; }
+    if (spEmpty(ta)) { err.textContent = "내용을 입력해 주세요."; err.classList.add("show"); return; }
+    const body = sanitizePacketHtml(ta.innerHTML);
+    if (!document.getElementById("sp-form").dataset.editId && spNotices.length >= 3) {
+      err.textContent = "공지는 한 번에 3장까지입니다. 하나를 삭제한 뒤 게시해 주세요."; err.classList.add("show"); return; }
+    const editId = document.getElementById("sp-form").dataset.editId;
     const days = parseInt(document.getElementById("sp-days").value, 10) || 7;
     const btn = document.getElementById("sp-post"); btn.disabled = true;
-    const { error } = await sb.from("sticky_notices").insert({
-      body, author_email: currentUser.email,
-      expires_at: new Date(Date.now() + days * 86400000).toISOString()
-    });
+    // 고칠 때는 기한과 올린이를 그대로 두고 내용과 「수정됨」 시각만 바꾼다
+    const { error } = editId
+      ? await sb.from("sticky_notices").update({ body, edited_at: new Date().toISOString() }).eq("id", Number(editId))
+      : await sb.from("sticky_notices").insert({
+          body, author_email: currentUser.email,
+          expires_at: new Date(Date.now() + days * 86400000).toISOString()
+        });
     btn.disabled = false;
-    if (error) { err.textContent = "올리지 못했습니다. (" + error.message + ")"; err.classList.add("show"); return; }
-    ta.value = ""; document.getElementById("sp-form").hidden = true;
-    await spLoad(); spMarkSeen();
+    if (error) { err.textContent = (editId ? "수정하지 못했습니다. " : "게시하지 못했습니다. ") + "(" + error.message + ")"; err.classList.add("show"); return; }
+    ta.innerHTML = ""; document.getElementById("sp-form").dataset.editId = ""; document.getElementById("sp-form").hidden = true;
+    await spLoadNotices(); spMarkSeen();
   });
   document.getElementById("sp-notices").addEventListener("click", async e => {
+    const ed = e.target.closest("[data-sp-edit]");
+    if (ed) { const n = spNotices.find(x => String(x.id) === ed.dataset.spEdit); if (n) spForm(n); return; }
     const b = e.target.closest("[data-sp-del]"); if (!b) return;
-    if (!confirm("이 공지를 내릴까요?")) return;
+    if (!confirm("이 공지를 삭제할까요? 되돌릴 수 없습니다.")) return;
     const { error } = await sb.from("sticky_notices").delete().eq("id", Number(b.dataset.spDel));
-    if (error) { alert("내리지 못했습니다. (" + error.message + ")"); return; }
-    await spLoad(); spMarkSeen();
+    if (error) { alert("삭제하지 못했습니다. (" + error.message + ")"); return; }
+    await spLoadNotices(); spMarkSeen();
   });
   // 메모는 저장 버튼 없이 잠깐 멈추면 저절로 저장된다
   document.getElementById("sp-memo").addEventListener("input", () => {
@@ -4819,8 +5012,9 @@
     clearTimeout(spMemoTimer);
     spMemoTimer = setTimeout(async () => {
       if (!currentUser) return;
+      const el = document.getElementById("sp-memo");
       const { error } = await sb.from("personal_memos").upsert({
-        user_id: currentUser.id, body: document.getElementById("sp-memo").value, updated_at: new Date().toISOString()
+        user_id: currentUser.id, body: spEmpty(el) ? "" : sanitizePacketHtml(el.innerHTML), updated_at: new Date().toISOString()
       });
       st.textContent = error ? "저장 실패" : "저장됨";
       if (!error) setTimeout(() => { if (st.textContent === "저장됨") st.textContent = ""; }, 2500);

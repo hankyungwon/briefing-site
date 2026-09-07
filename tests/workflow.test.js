@@ -592,6 +592,13 @@ const daysAgo = n => { const d = new Date(); d.setDate(d.getDate() - n); return 
     await H.setupPage(page, { user, session, routes: (p, m, req) => {
       if (p === "/rest/v1/sticky_notices") {
         if (m === "POST") { const r = JSON.parse(req.postData()); r.id = 6; r.created_at = new Date().toISOString(); notices.unshift(r); return [r]; }
+        if (m === "PATCH") {
+          const patch = JSON.parse(req.postData());
+          const id = Number((req.url().match(/id=eq\.(\d+)/) || [])[1]);
+          const row = notices.find(n => n.id === id);
+          if (row) Object.assign(row, patch);
+          return row ? [row] : [];
+        }
         if (m === "DELETE") { notices = notices.slice(1); return []; }
         return notices;
       }
@@ -606,7 +613,7 @@ const daysAgo = n => { const d = new Date(); d.setDate(d.getDate() - n); return 
     const first = await page.evaluate(() => ({
       open: !document.getElementById("sticky-panel").hidden,
       notices: document.querySelectorAll("#sp-notices .sp-note").length,
-      memo: document.getElementById("sp-memo").value,
+      memo: document.getElementById("sp-memo").innerText.trim(),
       canResize: getComputedStyle(document.getElementById("sticky-panel")).resize
     }));
     c.ok(first.open, "안 읽은 공지가 있으면 로그인 직후 포스트잇이 저절로 뜸");
@@ -616,7 +623,7 @@ const daysAgo = n => { const d = new Date(); d.setDate(d.getDate() - n); return 
 
     // 머리를 끌어 옮기면 그 자리를 기억한다
     const before = await page.evaluate(() => Math.round(document.getElementById("sticky-panel").getBoundingClientRect().left));
-    await page.hover("#sp-head");
+    await page.hover(".sp-title");
     await page.mouse.down(); await page.mouse.move(300, 180, { steps: 6 }); await page.mouse.up();
     await page.waitForTimeout(250);
     const moved = await page.evaluate(() => ({
@@ -626,17 +633,64 @@ const daysAgo = n => { const d = new Date(); d.setDate(d.getDate() - n); return 
 
     // 공지 올리기 — 올린 사람 이름은 서버가 아니라 내 계정으로 고정된다
     await page.click("#sp-new"); await page.waitForTimeout(150);
-    await page.fill("#sp-text", "내일 오전 회의 30분 당겨졌습니다.");
+    await page.click("#sp-text"); await page.type("#sp-text", "내일 오전 회의 30분 당겨졌습니다.");
     await page.selectOption("#sp-days", "3");
     await page.click("#sp-post"); await page.waitForTimeout(600);
-    c.ok(notices.length === 2 && notices[0].author_email === "twopro@hanmail.net", "공지 올리기 + 올린이 기록");
+    c.ok(notices.length === 2 && notices[0].author_email === "twopro@hanmail.net", "공지 게시 + 올린이 기록");
     c.ok(new Date(notices[0].expires_at) > new Date(), "표시 기한이 미래로 설정됨(기한이 지나면 저절로 사라짐)");
 
+    // 공지 수정 — 새 회차를 만들지 않고 그 자리를 고치며, 고친 흔적이 남는다.
+    // 공지는 기한이 지나면 사라지는 글이라 「맨 위 1건만」 같은 제한을 두지 않는다.
+    await page.click("#sp-notices [data-sp-edit]"); await page.waitForTimeout(200);
+    const em = await page.evaluate(() => ({ text: document.getElementById("sp-text").innerText,
+      btn: document.getElementById("sp-post").textContent,
+      daysHidden: document.getElementById("sp-daysrow").hidden }));
+    c.ok(/30분 당겨/.test(em.text), "「수정」은 그 공지 내용을 불러온다");
+    c.ok(/수정/.test(em.btn) && em.daysHidden, "수정 모드에서는 기한을 건드리지 않는다 (" + em.btn + ")");
+    await page.evaluate(() => { document.getElementById("sp-text").innerHTML = ""; });
+    await page.click("#sp-text"); await page.type("#sp-text", "내일 오전 회의 9시 30분으로 당겨졌습니다.");
+    await page.click("#sp-post"); await page.waitForTimeout(600);
+    c.ok(notices.length === 2, "수정은 공지를 늘리지 않는다 (" + notices.length + "장)");
+    c.ok(/9시 30분/.test(notices[0].body) && !!notices[0].edited_at, "그 자리가 고쳐지고 수정 시각이 남는다");
+    c.ok(await page.evaluate(() => !!document.querySelector("#sp-notices .sp-edited")), "화면에 「수정됨」 표시");
+
+    // 머리띠의 서식 도구 — 공지칸·메모칸 중 방금 쓰던 칸에 적용된다
+    await page.click("#sp-memo"); await page.type("#sp-memo", "핵심 아이디어");
+    await page.keyboard.press("Control+a"); await page.waitForTimeout(150);
+    await page.click('#sp-tool [data-sp="pal"][data-kind="hili"]'); await page.waitForTimeout(150);
+    await page.click('#sp-pal-hili button[data-c="#FFF176"]'); await page.waitForTimeout(250);
+    await page.click('#sp-tool [data-sp="bold"]'); await page.waitForTimeout(250);
+    await page.click('#sp-tool [data-sp="size"][data-v="5"]'); await page.waitForTimeout(250);
+    const fx = await page.evaluate(() => document.getElementById("sp-memo").innerHTML);
+    c.ok(/background-color:\s*rgb\(255, 241, 118\)/.test(fx), "형광펜이 칠해짐");
+    c.ok(/font-weight:\s*bold/.test(fx), "굵게가 적용됨");
+    c.ok(/font-size:/.test(fx), "글자 크기(대·중·소)가 적용됨");
+
+    // 눌렀을 때 테두리 색이 사이트의 다른 입력칸과 같아야 한다(브라우저 기본 검정 금지)
+    await page.click("#sp-memo"); await page.waitForTimeout(120);
+    const foc = await page.evaluate(() => { const cs = getComputedStyle(document.getElementById("sp-memo")); return cs.outlineColor; });
+    c.ok(foc === "rgb(14, 95, 168)", "메모칸을 누르면 관악 블루 테두리 (" + foc + ")");
+
     // 내 메모는 저장 버튼 없이 잠깐 멈추면 저절로 저장된다
-    await page.fill("#sp-memo", "· 오늘 할 일: 로드맵 검토");
+    await page.evaluate(() => { document.getElementById("sp-memo").innerHTML = ""; });
+    await page.click("#sp-memo"); await page.type("#sp-memo", "· 오늘 할 일: 로드맵 검토");
     await page.waitForTimeout(1400);
     c.ok(memoSaved && /로드맵 검토/.test(memoSaved.body) && memoSaved.user_id === "two",
       "메모가 자동 저장되고 내 계정에만 붙는다");
+
+    // 남이 올린 공지가 밀려 들어오면, 판을 닫아 두었어도 스스로 뜨고 맨 위에 쌓인다
+    await page.click("#sp-close"); await page.waitForTimeout(150);
+    notices.unshift({ id: 9, body: "정전 예고 — 오후 3시 서버 잠시 중단됩니다.", author_email: "syho99@naver.com",
+      created_at: new Date().toISOString(), expires_at: "2099-01-01T00:00:00Z" });
+    await page.evaluate(() => window.__spLoadNotices && window.__spLoadNotices());
+    await page.waitForTimeout(500);
+    const pushed = await page.evaluate(() => ({
+      open: !document.getElementById("sticky-panel").hidden,
+      top: (document.querySelector("#sp-notices .sp-note .t") || {}).textContent || "",
+      count: document.querySelectorAll("#sp-notices .sp-note").length }));
+    c.ok(pushed.open, "남이 올린 공지가 오면 닫아 둔 판이 스스로 뜬다");
+    c.ok(/정전 예고/.test(pushed.top), "새 공지가 맨 위에 쌓인다 (" + pushed.top.slice(0, 12) + ")");
+    c.ok(pushed.count === 3, "공지는 최근 3장까지 보인다 (" + pushed.count + ")");
 
     // 닫았다가 📌 버튼으로 다시 연다
     await page.click("#sp-close"); await page.waitForTimeout(150);
