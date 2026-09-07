@@ -219,15 +219,15 @@ const WIDTHS = [1400, 1280, 1024, 900, 820, 768, 640, 540, 430, 412, 390, 375, 3
   c.ok(have.every(x => x.r === have[0].r), "세 요소의 모서리 곡률이 같음 (" + have.map(x => x.r).join("/") + ")");
   c.ok(have.every(x => x.bw === "1px"), "세 요소의 테두리 두께가 모두 1px");
 
-  // 자료 본문은 아무리 길어도 6줄까지만 보이고, 넘치면 그 상자 안에서 굴려 본다
+  // 자료 본문은 아무리 길어도 4줄까지만 보이고, 넘치면 그 상자 안에서 굴려 본다
   const texts = await page.evaluate(() => [...document.querySelectorAll("#post-list .post-text")].map(e => {
     const cs = getComputedStyle(e), lh = parseFloat(cs.lineHeight);
     return { lines: +(e.clientHeight / lh).toFixed(2), scrolls: e.scrollHeight > e.clientHeight + 1,
              hidden: cs.overflowY, full: +(e.scrollHeight / lh).toFixed(1) };
   }));
   c.ok(texts.length === 2, "자료 2건이 목록에 표시됨 (" + texts.length + ")");
-  c.ok(texts[0] && texts[0].full > 6, "첫 자료의 본문은 6줄을 넘는 길이 (" + (texts[0] && texts[0].full) + "줄)");
-  c.ok(texts[0] && texts[0].lines <= 6.05, "그래도 보이는 높이는 6줄 이내 (" + (texts[0] && texts[0].lines) + "줄)");
+  c.ok(texts[0] && texts[0].full > 4, "첫 자료의 본문은 4줄을 넘는 길이 (" + (texts[0] && texts[0].full) + "줄)");
+  c.ok(texts[0] && texts[0].lines <= 4.05, "그래도 보이는 높이는 4줄 이내 (" + (texts[0] && texts[0].lines) + "줄)");
   c.ok(texts[0] && texts[0].scrolls && texts[0].hidden === "auto", "넘친 만큼은 상자 안에서 스크롤");
   c.ok(texts[1] && !texts[1].scrolls, "짧은 본문에는 스크롤이 생기지 않음");
 

@@ -322,6 +322,12 @@
   .pin-badge{display:inline-block;font-size:11.5px;font-weight:700;color:#fff;background:var(--gold);
     border-radius:5px;padding:2px 9px;margin-bottom:9px;}
   .board-card h3{font-family:'Noto Serif KR',serif;font-size:18px;font-weight:600;line-height:1.5;margin-bottom:8px;}
+  /* 자유게시판 제목 줄 띠 — 카드 가장자리까지 닿게 하되 색은 아주 옅게. 공지 글은 카드 색에 맞춰 따뜻하게 */
+  .bc-head{margin:-12px -15px 11px;padding:10px 15px 9px;background:#F4F8FC;
+    border-bottom:1px solid #E6EDF5;border-radius:9px 9px 0 0;}
+  .bc-head h3{margin-bottom:0;}
+  .bc-head .pin-badge{margin-bottom:6px;}
+  .board-card.pinned .bc-head{background:#FDF8EA;border-bottom-color:#EFDFB6;}
   .board-card .body{font-size:14.5px;color:#3B4756;line-height:1.72;white-space:pre-wrap;
     max-height:200px;overflow-y:auto;padding-right:6px;overscroll-behavior:contain;
     scrollbar-width:thin;scrollbar-color:#CBD8E6 transparent;}
@@ -553,9 +559,9 @@
   article.item h3{font-family:'Noto Serif KR',serif;font-size:18px;font-weight:600;line-height:1.5;margin-bottom:8px;}
   article.item p{font-size:16px;color:#3B4756;}
   article.item a.src{font-size:13.5px;color:var(--gwanak);}
-  /* 자료 본문 — 길어도 6줄까지만 보이고 그 이상은 안쪽에서 굴려 본다(목록이 세로로 늘어지지 않게).
-     16px × 줄간격 1.7 = 한 줄 1.7em이므로 6줄 = 10.2em. 짧은 글에는 스크롤막대가 뜨지 않는다. */
-  article.item .post-text{margin-top:8px;line-height:1.7;max-height:10.2em;overflow-y:auto;padding-right:10px;
+  /* 자료 본문 — 길어도 4줄까지만 보이고 그 이상은 안쪽에서 굴려 본다(목록이 세로로 늘어지지 않게).
+     16px × 줄간격 1.7 = 한 줄 1.7em이므로 4줄 = 6.8em. 짧은 글에는 스크롤막대가 뜨지 않는다. */
+  article.item .post-text{margin-top:8px;line-height:1.7;max-height:6.8em;overflow-y:auto;padding-right:10px;
     scrollbar-width:thin;scrollbar-color:#CBD8E6 transparent;}
   article.item .post-text::-webkit-scrollbar{width:6px;}
   article.item .post-text::-webkit-scrollbar-thumb{background:#CBD8E6;border-radius:3px;}
@@ -3953,9 +3959,10 @@
   function renderFreePost(p) {
     const mine = p.author_id === currentUser.id;
     let h = '<article class="board-card' + (p.pinned?' pinned':'') + '" data-post="' + p.id + '">';
-    if (p.pinned) h += '<span class="pin-badge">📌 공지</span>';
-    const kind = (boardAtts[p.id] || []).length ? ["🗂️", "파일"] : ["💬", "이야기"];
-    h += '<h3><span class="post-icon" title="' + kind[1] + '">' + kind[0] + '</span>' + esc(p.title) + '</h3>';
+    const kind = (boardAtts[p.id] || []).length ? ["🗂️", "파일"] : ["🗨️", "이야기"];
+    h += '<div class="bc-head">'
+      + (p.pinned ? '<span class="pin-badge">📌 공지</span>' : '')
+      + '<h3><span class="post-icon" title="' + kind[1] + '">' + kind[0] + '</span>' + esc(p.title) + '</h3></div>';
     if (p.body) h += '<div class="body">' + linkify(p.body) + '</div>';
     h += renderAttachments(boardAtts[p.id]);
     h += '<div class="board-meta"><span class="author">' + esc(authorName(p.author_name)) + '</span>'
