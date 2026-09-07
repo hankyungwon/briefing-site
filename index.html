@@ -1598,7 +1598,7 @@
         <div id="sp-text" class="sp-edit" contenteditable="true" spellcheck="false" autocapitalize="off" autocorrect="off" data-ph="단원 모두에게 알릴 급한 내용을 짧게 적어 주세요."></div>
         <div class="sp-formrow">
           <span id="sp-daysrow"><label for="sp-days">표시 기간</label>
-            <select id="sp-days"><option value="3">3일</option><option value="7" selected>7일</option><option value="14">14일</option></select></span>
+            <select id="sp-days"><option value="1">1일</option><option value="3">3일</option><option value="7" selected>7일</option><option value="14">14일</option></select></span>
           <button type="button" class="sp-btn" id="sp-post">게시</button>
           <button type="button" class="sp-btn ghost" id="sp-cancel">취소</button>
         </div>
@@ -5039,13 +5039,23 @@
   });
   SP.popout.addEventListener("click", spPopout);
   SP.close.addEventListener("click", spClose);
+  // 지금 남은 기간에 가장 가까운 보기를 고른다(새 공지는 7일)
+  function spDaysFor(notice) {
+    if (!notice) return "7";
+    const left = (new Date(notice.expires_at) - Date.now()) / 86400000;
+    const opts = [...SP.days.options].map(o => Number(o.value));
+    return String(opts.reduce((a, b) => (Math.abs(b - left) < Math.abs(a - left) ? b : a)));
+  }
   // 공지 입력칸을 「새로 게시」 또는 「고치기」 모드로 연다
   function spForm(notice) {
     const f = SP.form;
     f.dataset.editId = notice ? String(notice.id) : "";
     SP.text.innerHTML = notice ? spRich(notice.body) : "";
     SP.post.textContent = notice ? "수정 저장" : "게시";
-    SP.daysrow.hidden = !!notice;   // 고칠 때는 기한을 건드리지 않는다
+    // 고칠 때도 기한을 손볼 수 있게 보여 준다. 남은 기간에 가장 가까운 값을 미리 골라 두므로,
+    // 기한을 건드리지 않고 글만 고치면 사라지는 때가 거의 그대로 유지된다.
+    SP.days.value = spDaysFor(notice);
+    SP.daysrow.hidden = false;
     SP.err.classList.remove("show");
     f.hidden = false;
     SP.text.focus();
@@ -5071,9 +5081,13 @@
     const editId = SP.form.dataset.editId;
     const days = parseInt(SP.days.value, 10) || 7;
     const btn = SP.post; btn.disabled = true;
-    // 고칠 때는 기한과 올린이를 그대로 두고 내용과 「수정됨」 시각만 바꾼다
+    // 고칠 때는 올린이를 그대로 두고, 내용·기한·「수정됨」 시각을 바꾼다.
+    // 기한은 「지금부터 며칠」로 다시 센다.
     const { error } = editId
-      ? await sb.from("sticky_notices").update({ body, edited_at: new Date().toISOString() }).eq("id", Number(editId))
+      ? await sb.from("sticky_notices").update({
+          body, edited_at: new Date().toISOString(),
+          expires_at: new Date(Date.now() + days * 86400000).toISOString()
+        }).eq("id", Number(editId))
       : await sb.from("sticky_notices").insert({
           body, author_email: currentUser.email,
           expires_at: new Date(Date.now() + days * 86400000).toISOString()

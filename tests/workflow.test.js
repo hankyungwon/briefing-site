@@ -644,14 +644,21 @@ const daysAgo = n => { const d = new Date(); d.setDate(d.getDate() - n); return 
     await page.click("#sp-notices [data-sp-edit]"); await page.waitForTimeout(200);
     const em = await page.evaluate(() => ({ text: document.getElementById("sp-text").innerText,
       btn: document.getElementById("sp-post").textContent,
-      daysHidden: document.getElementById("sp-daysrow").hidden }));
+      daysHidden: document.getElementById("sp-daysrow").hidden,
+      days: document.getElementById("sp-days").value,
+      opts: [...document.getElementById("sp-days").options].map(o => o.value).join(",") }));
     c.ok(/30분 당겨/.test(em.text), "「수정」은 그 공지 내용을 불러온다");
-    c.ok(/수정/.test(em.btn) && em.daysHidden, "수정 모드에서는 기한을 건드리지 않는다 (" + em.btn + ")");
+    c.ok(/수정/.test(em.btn) && !em.daysHidden, "고칠 때도 표시 기간을 손볼 수 있다 (" + em.btn + ")");
+    c.ok(em.opts === "1,3,7,14", "표시 기간에 1일도 있다 (" + em.opts + ")");
+    c.ok(em.days === "3", "지금 남은 기간에 가장 가까운 값이 미리 골라져 있다 (" + em.days + "일)");
     await page.evaluate(() => { document.getElementById("sp-text").innerHTML = ""; });
     await page.click("#sp-text"); await page.type("#sp-text", "내일 오전 회의 9시 30분으로 당겨졌습니다.");
     await page.click("#sp-post"); await page.waitForTimeout(600);
     c.ok(notices.length === 2, "수정은 공지를 늘리지 않는다 (" + notices.length + "장)");
     c.ok(/9시 30분/.test(notices[0].body) && !!notices[0].edited_at, "그 자리가 고쳐지고 수정 시각이 남는다");
+    // 기한을 손대지 않고 글만 고치면 사라지는 때가 거의 그대로 유지된다(남은 기간 = 고른 값)
+    const leftDays = (new Date(notices[0].expires_at) - Date.now()) / 86400000;
+    c.ok(leftDays > 2.9 && leftDays < 3.1, "기한을 건드리지 않으면 남은 기간이 그대로 (" + leftDays.toFixed(2) + "일)");
     await page.evaluate(t2 => { window.__lastEdited = t2; }, notices[0].edited_at);
     // 고친 뒤에는 「고친 시각」이 보여야 한다(처음 쓴 시각이 그대로 남아 있으면 안 된다)
     const stamp = await page.evaluate(() => {
