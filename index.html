@@ -118,6 +118,57 @@
   .draft-note button{appearance:none;cursor:pointer;border:1px solid #D9B94A;background:#fff;color:#7A5E10;
     border-radius:999px;padding:3px 11px;font-family:inherit;font-size:12.5px;font-weight:700;white-space:nowrap;}
   .draft-note button:hover{background:#7A5E10;border-color:#7A5E10;color:#fff;}
+  /* ── 포스트잇 판 — 모달이 아니라 떠 있는 판. 옮길 수 있고(머리 끌기), 늘릴 수 있다(오른쪽 아래 모서리) ── */
+  .sticky-btn{position:relative;}
+  .sticky-btn.has-new::after{content:"";position:absolute;top:2px;right:3px;width:7px;height:7px;border-radius:50%;
+    background:#D64545;box-shadow:0 0 0 2px #fff;}
+  .sticky-panel{position:fixed;z-index:60;width:360px;height:480px;min-width:280px;min-height:260px;
+    max-width:96vw;max-height:88vh;right:20px;bottom:20px;display:flex;flex-direction:column;
+    background:#FFFDF3;border:1px solid #E4CE86;border-radius:12px;overflow:hidden;resize:both;
+    box-shadow:0 14px 40px rgba(28,43,58,.28);}
+  .sticky-panel[hidden]{display:none;}
+  .sp-head{flex:none;display:flex;align-items:center;gap:8px;padding:9px 12px;cursor:move;user-select:none;
+    background:#F6E6B4;border-bottom:1px solid #E4CE86;}
+  .sp-title{font-size:14px;font-weight:800;color:#5A4300;white-space:nowrap;}
+  .sp-hint{font-size:11px;color:#8A6E17;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+  .sp-x{margin-left:auto;appearance:none;border:none;background:none;cursor:pointer;font-size:14px;color:#7A5E10;
+    padding:2px 4px;border-radius:5px;line-height:1;}
+  .sp-x:hover{background:#E4CE86;}
+  .sp-body{flex:1;min-height:0;display:flex;flex-direction:column;overflow-y:auto;padding:10px 12px 12px;gap:12px;}
+  .sp-sec{display:flex;flex-direction:column;gap:6px;}
+  .sp-memosec{flex:1;min-height:120px;}
+  .sp-lab{display:flex;align-items:center;gap:8px;font-size:12px;font-weight:800;color:#7A5E10;letter-spacing:.02em;}
+  .sp-state{font-weight:600;color:#8A9AA8;font-size:11.5px;}
+  .sp-add{margin-left:auto;appearance:none;cursor:pointer;border:1px solid #D9B94A;background:#fff;color:#7A5E10;
+    border-radius:999px;padding:2px 10px;font-family:inherit;font-size:11.5px;font-weight:700;white-space:nowrap;}
+  .sp-add:hover{background:#7A5E10;border-color:#7A5E10;color:#fff;}
+  .sp-form{display:flex;flex-direction:column;gap:6px;background:#fff;border:1px solid #E4CE86;border-radius:8px;padding:8px;}
+  .sp-form[hidden]{display:none;}
+  .sp-form textarea{width:100%;min-height:62px;resize:vertical;font-family:inherit;font-size:13.5px;color:var(--ink);
+    border:1px solid var(--line);border-radius:6px;padding:7px 9px;line-height:1.6;}
+  .sp-formrow{display:flex;align-items:center;gap:6px;flex-wrap:wrap;font-size:12px;color:#7A5E10;}
+  .sp-formrow select{font-family:inherit;font-size:12.5px;border:1px solid var(--line);border-radius:6px;padding:3px 6px;}
+  .sp-btn{appearance:none;cursor:pointer;border:1px solid var(--gwanak);background:var(--gwanak);color:#fff;
+    border-radius:6px;padding:4px 12px;font-family:inherit;font-size:12.5px;font-weight:700;white-space:nowrap;}
+  .sp-btn.ghost{background:#fff;color:var(--gwanak);}
+  .sp-err{color:#A33;font-size:12px;display:none;}
+  .sp-err.show{display:block;}
+  .sp-note{background:#fff;border:1px solid #E4CE86;border-left:4px solid var(--gold);border-radius:7px;
+    padding:8px 10px;display:flex;flex-direction:column;gap:4px;}
+  .sp-note + .sp-note{margin-top:6px;}
+  .sp-note .t{font-size:13.5px;color:var(--ink);line-height:1.6;white-space:pre-wrap;word-break:keep-all;}
+  .sp-note .m{display:flex;align-items:center;gap:7px;font-size:11.5px;color:var(--muted);}
+  .sp-note .m .who{font-weight:700;color:#7A5E10;}
+  .sp-note .m button{margin-left:auto;appearance:none;cursor:pointer;border:1px solid #E3B7B0;background:#fff;
+    color:#A33;border-radius:999px;padding:1px 8px;font-family:inherit;font-size:11px;font-weight:700;white-space:nowrap;}
+  .sp-note .m button:hover{background:#A33;border-color:#A33;color:#fff;}
+  .sp-empty{font-size:12.5px;color:var(--muted);padding:2px 0;}
+  .sp-memosec textarea{flex:1;width:100%;min-height:110px;resize:none;font-family:inherit;font-size:14px;color:var(--ink);
+    background:#fff;border:1px solid #E4CE86;border-radius:8px;padding:9px 11px;line-height:1.7;}
+  @media(max-width:640px){
+    .sticky-panel{right:8px;left:8px;bottom:8px;width:auto;height:66vh;resize:none;}
+    .sp-hint{display:none;}
+  }
   .form-ok{color:#1E8E5A;font-size:13.5px;margin-top:10px;display:none;}
   .form-ok.show{display:block;}
   .modal-backdrop{
@@ -987,6 +1038,7 @@
   <button role="tab" aria-selected="false" data-panel="about">연구단마당</button>
   <div class="nav-auth">
     <span class="auth-email" id="auth-email" hidden></span>
+    <button type="button" class="auth-btn auth-sm sticky-btn" id="sticky-btn" hidden title="포스트잇 열기">📌 포스트잇</button>
     <button type="button" class="auth-btn auth-sm" id="pw-change-btn" hidden>비밀번호 변경</button>
     <button type="button" class="auth-btn" id="auth-btn">로그인</button>
   </div>
@@ -1484,6 +1536,35 @@
   window.si = window.si || function () { (window.siq = window.siq || []).push(arguments); };
 </script>
 <script defer src="/_vercel/speed-insights/script.js"></script>
+
+<div class="sticky-panel" id="sticky-panel" hidden>
+  <div class="sp-head" id="sp-head">
+    <span class="sp-title">📌 포스트잇</span>
+    <span class="sp-hint">머리를 끌어 옮기고, 오른쪽 아래 모서리를 끌어 크기를 바꿉니다</span>
+    <button type="button" class="sp-x" id="sp-close" title="닫기">✕</button>
+  </div>
+  <div class="sp-body">
+    <div class="sp-sec">
+      <div class="sp-lab">단원 전체 공지
+        <button type="button" class="sp-add" id="sp-new">＋ 올리기</button></div>
+      <div class="sp-form" id="sp-form" hidden>
+        <textarea id="sp-text" maxlength="300" placeholder="단원 모두에게 알릴 급한 내용을 짧게 적어 주세요."></textarea>
+        <div class="sp-formrow">
+          <label for="sp-days">표시 기간</label>
+          <select id="sp-days"><option value="3">3일</option><option value="7" selected>7일</option><option value="14">14일</option></select>
+          <button type="button" class="sp-btn" id="sp-post">올리기</button>
+          <button type="button" class="sp-btn ghost" id="sp-cancel">취소</button>
+        </div>
+        <p class="sp-err" id="sp-err"></p>
+      </div>
+      <div id="sp-notices"><p class="sp-empty">지금 올라온 공지가 없습니다.</p></div>
+    </div>
+    <div class="sp-sec sp-memosec">
+      <div class="sp-lab">내 메모 <span class="sp-state" id="sp-memo-state"></span></div>
+      <textarea id="sp-memo" placeholder="오늘 할 일, 떠오른 생각을 적어 두세요. 나만 볼 수 있고 자동으로 저장됩니다."></textarea>
+    </div>
+  </div>
+</div>
 
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script>
@@ -2159,7 +2240,7 @@
     currentUser = nextUser;
     renderAuthNav();
     // 관리자 여부를 먼저 확정한 뒤 화면을 그려야 모더레이션 버튼·삭제 이력이 올바르게 표시됨
-    if (!sameUser) { await checkAdmin(); renderAuthNav(); renderResources(); renderCalendar(); renderBoard(); checkNewBadges(); }
+    if (!sameUser) { await checkAdmin(); renderAuthNav(); renderResources(); renderCalendar(); renderBoard(); checkNewBadges(); spLoad(); }
     // 초대/재설정 링크로 접속한 경우 비밀번호 설정 화면을 띄운다.
     if (!pwFlowHandled && session &&
         (event === "PASSWORD_RECOVERY" || authHashType === "invite" || authHashType === "recovery")) {
@@ -4600,6 +4681,150 @@
     if (error) { directiveError.textContent = (editId ? "수정하지 못했습니다. " : "저장하지 못했습니다. ") + "(" + error.message + ")"; directiveError.classList.add('show'); return; }
     directiveModal.classList.remove('open');
     await renderAboutBoards();
+  });
+
+  // ── 포스트잇 ─────────────────────────────
+  // 윗칸은 단원 전체가 보는 공지(서버), 아랫칸은 나만 보는 메모(서버, 본인만 읽고 쓰게 DB가 막는다).
+  // 판은 모달이 아니라 떠 있는 창이라 화면을 가리지 않는다. 머리를 끌어 옮기고 모서리를 끌어 늘린다.
+  const spPanel = document.getElementById("sticky-panel");
+  const spBtn = document.getElementById("sticky-btn");
+  let spNotices = [], spMemoTimer = null;
+
+  const spPosKey = () => "gwanak_sticky_pos_" + ((currentUser && currentUser.id) || "anon");
+  const spSeenKey = () => "gwanak_sticky_seen_" + ((currentUser && currentUser.id) || "anon");
+  function spSavePos() {
+    const r = spPanel.getBoundingClientRect();
+    try { localStorage.setItem(spPosKey(), JSON.stringify({ x: Math.round(r.left), y: Math.round(r.top), w: Math.round(r.width), h: Math.round(r.height) })); } catch (e) {}
+  }
+  function spLoadPos() {
+    let d = null; try { d = JSON.parse(localStorage.getItem(spPosKey()) || "null"); } catch (e) {}
+    if (!d) return;
+    // 화면이 작아졌을 때 판이 밖으로 나가지 않게 안쪽으로 당긴다
+    const w = Math.min(d.w || 360, window.innerWidth - 16), h = Math.min(d.h || 480, window.innerHeight - 16);
+    spPanel.style.width = w + "px"; spPanel.style.height = h + "px";
+    spPanel.style.left = Math.max(4, Math.min(d.x, window.innerWidth - w - 4)) + "px";
+    spPanel.style.top = Math.max(4, Math.min(d.y, window.innerHeight - h - 4)) + "px";
+    spPanel.style.right = "auto"; spPanel.style.bottom = "auto";
+  }
+  // 머리를 끌어 옮기기
+  (() => {
+    const head = document.getElementById("sp-head");
+    let dx = 0, dy = 0, moving = false;
+    head.addEventListener("pointerdown", e => {
+      if (e.target.closest("button")) return;
+      const r = spPanel.getBoundingClientRect();
+      dx = e.clientX - r.left; dy = e.clientY - r.top; moving = true;
+      spPanel.style.right = "auto"; spPanel.style.bottom = "auto";
+      spPanel.style.width = r.width + "px"; spPanel.style.height = r.height + "px";
+      head.setPointerCapture(e.pointerId);
+    });
+    head.addEventListener("pointermove", e => {
+      if (!moving) return;
+      const w = spPanel.offsetWidth, h = spPanel.offsetHeight;
+      spPanel.style.left = Math.max(4, Math.min(e.clientX - dx, window.innerWidth - w - 4)) + "px";
+      spPanel.style.top = Math.max(4, Math.min(e.clientY - dy, window.innerHeight - h - 4)) + "px";
+    });
+    const stop = e => { if (!moving) return; moving = false; try { head.releasePointerCapture(e.pointerId); } catch (x) {} spSavePos(); };
+    head.addEventListener("pointerup", stop);
+    head.addEventListener("pointercancel", stop);
+  })();
+  // 모서리를 끌어 크기 바꾸기(브라우저 기본 기능) — 다 끌고 나면 기억해 둔다
+  if (window.ResizeObserver) {
+    let t = null;
+    new ResizeObserver(() => { if (spPanel.hidden) return; clearTimeout(t); t = setTimeout(spSavePos, 400); }).observe(spPanel);
+  }
+
+  function spNoticeHtml(n) {
+    const mine = currentUser && (n.author_email || "").toLowerCase() === (currentUser.email || "").toLowerCase();
+    return '<div class="sp-note"><div class="t">' + linkify(n.body || "") + '</div>'
+      + '<div class="m"><span class="who">' + esc(authorName(n.author_email)) + '</span>'
+      + '<span>' + esc(fmtStamp(n.created_at)) + '</span>'
+      + (mine || isAdminUser ? '<button type="button" data-sp-del="' + n.id + '">내리기</button>' : '')
+      + '</div></div>';
+  }
+  function spPaint() {
+    const box = document.getElementById("sp-notices");
+    // 포스트잇은 게시판이 아니므로 최근 3장만 보여 준다
+    const show = spNotices.slice(0, 3);
+    box.innerHTML = show.length ? show.map(spNoticeHtml).join("")
+      : '<p class="sp-empty">지금 올라온 공지가 없습니다.</p>';
+    document.getElementById("sp-new").disabled = spNotices.length >= 3;
+    document.getElementById("sp-new").title = spNotices.length >= 3 ? "공지는 한 번에 3장까지입니다" : "";
+  }
+  function spMarkSeen() {
+    const top = spNotices.length ? spNotices[0].id : 0;
+    try { localStorage.setItem(spSeenKey(), String(top)); } catch (e) {}
+    spBtn.classList.remove("has-new");
+  }
+  function spUnread() {
+    let seen = 0; try { seen = parseInt(localStorage.getItem(spSeenKey()) || "0", 10) || 0; } catch (e) {}
+    return spNotices.length > 0 && spNotices[0].id > seen;
+  }
+  function spOpen() { spPanel.hidden = false; spLoadPos(); spMarkSeen(); }
+  function spClose() { spSavePos(); spPanel.hidden = true; }
+
+  async function spLoad() {
+    if (!currentUser) { spPanel.hidden = true; spBtn.hidden = true; return; }
+    spBtn.hidden = false;
+    const { data: nd } = await sb.from("sticky_notices").select("*")
+      .gt("expires_at", new Date().toISOString()).order("id", { ascending: false }).limit(10);
+    spNotices = nd || [];
+    spPaint();
+    const { data: md } = await sb.from("personal_memos").select("body").eq("user_id", currentUser.id).maybeSingle();
+    document.getElementById("sp-memo").value = (md && md.body) || "";
+    // 아직 못 본 공지가 있을 때만 저절로 뜬다(없으면 조용히 둔다)
+    if (spUnread()) spOpen(); else spBtn.classList.toggle("has-new", false);
+  }
+
+  spBtn.addEventListener("click", () => { if (spPanel.hidden) spOpen(); else spClose(); });
+  document.getElementById("sp-close").addEventListener("click", spClose);
+  document.getElementById("sp-new").addEventListener("click", () => {
+    const f = document.getElementById("sp-form");
+    f.hidden = !f.hidden;
+    if (!f.hidden) document.getElementById("sp-text").focus();
+  });
+  document.getElementById("sp-cancel").addEventListener("click", () => {
+    document.getElementById("sp-form").hidden = true;
+    document.getElementById("sp-text").value = "";
+    document.getElementById("sp-err").classList.remove("show");
+  });
+  document.getElementById("sp-post").addEventListener("click", async () => {
+    const err = document.getElementById("sp-err"), ta = document.getElementById("sp-text");
+    const body = ta.value.trim();
+    err.classList.remove("show");
+    if (!body) { err.textContent = "내용을 입력해 주세요."; err.classList.add("show"); return; }
+    if (spNotices.length >= 3) { err.textContent = "공지는 한 번에 3장까지입니다. 하나를 내린 뒤 올려 주세요."; err.classList.add("show"); return; }
+    const days = parseInt(document.getElementById("sp-days").value, 10) || 7;
+    const btn = document.getElementById("sp-post"); btn.disabled = true;
+    const { error } = await sb.from("sticky_notices").insert({
+      body, author_email: currentUser.email,
+      expires_at: new Date(Date.now() + days * 86400000).toISOString()
+    });
+    btn.disabled = false;
+    if (error) { err.textContent = "올리지 못했습니다. (" + error.message + ")"; err.classList.add("show"); return; }
+    ta.value = ""; document.getElementById("sp-form").hidden = true;
+    await spLoad(); spMarkSeen();
+  });
+  document.getElementById("sp-notices").addEventListener("click", async e => {
+    const b = e.target.closest("[data-sp-del]"); if (!b) return;
+    if (!confirm("이 공지를 내릴까요?")) return;
+    const { error } = await sb.from("sticky_notices").delete().eq("id", Number(b.dataset.spDel));
+    if (error) { alert("내리지 못했습니다. (" + error.message + ")"); return; }
+    await spLoad(); spMarkSeen();
+  });
+  // 메모는 저장 버튼 없이 잠깐 멈추면 저절로 저장된다
+  document.getElementById("sp-memo").addEventListener("input", () => {
+    const st = document.getElementById("sp-memo-state");
+    st.textContent = "저장 중…";
+    clearTimeout(spMemoTimer);
+    spMemoTimer = setTimeout(async () => {
+      if (!currentUser) return;
+      const { error } = await sb.from("personal_memos").upsert({
+        user_id: currentUser.id, body: document.getElementById("sp-memo").value, updated_at: new Date().toISOString()
+      });
+      st.textContent = error ? "저장 실패" : "저장됨";
+      if (!error) setTimeout(() => { if (st.textContent === "저장됨") st.textContent = ""; }, 2500);
+    }, 800);
   });
 
   init();
