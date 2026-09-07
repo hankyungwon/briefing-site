@@ -2458,7 +2458,7 @@
     const attMap = resourceAtts;
     listEl.innerHTML = data.map(p => {
       const kinds = [];
-      if ((attMap[p.id] || []).length) kinds.push(["📎", "파일"]);
+      if ((attMap[p.id] || []).length) kinds.push(["🗂️", "파일"]);
       if (p.url) kinds.push(["🔗", "링크"]);
       if (!kinds.length) kinds.push(["📝", "메모"]);
       const icons = kinds.map(k => '<span class="post-icon" title="' + k[1] + ' 자료">' + k[0] + '</span>').join("");
@@ -3954,7 +3954,8 @@
     const mine = p.author_id === currentUser.id;
     let h = '<article class="board-card' + (p.pinned?' pinned':'') + '" data-post="' + p.id + '">';
     if (p.pinned) h += '<span class="pin-badge">📌 공지</span>';
-    h += '<h3>' + esc(p.title) + '</h3>';
+    const kind = (boardAtts[p.id] || []).length ? ["🗂️", "파일"] : ["💬", "이야기"];
+    h += '<h3><span class="post-icon" title="' + kind[1] + '">' + kind[0] + '</span>' + esc(p.title) + '</h3>';
     if (p.body) h += '<div class="body">' + linkify(p.body) + '</div>';
     h += renderAttachments(boardAtts[p.id]);
     h += '<div class="board-meta"><span class="author">' + esc(authorName(p.author_name)) + '</span>'
