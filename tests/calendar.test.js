@@ -140,6 +140,43 @@ const H = require("./helper");
     c.ok(other.edit === 0 && other.del === 0, "일반 연구관은 남의 일정에 버튼 없음 (수정 " + other.edit + " / 삭제 " + other.del + ")");
   }
 
+  // 일정 창 닫기 보호 — 쓰다 만 일정이 바깥 클릭·Esc 로 날아가지 않게
+  {
+    const page = await H.newPage(browser);
+    const { user, session } = H.mkSession("twopro@hanmail.net", "two-uid");
+    await H.setupPage(page, { user, session, routes: p => H.defaultBriefingRoutes(p) });
+    const asked = []; page.on("dialog", d => { asked.push(d.message()); d.dismiss().catch(() => {}); });
+    await H.login(page, port, "twopro@hanmail.net");
+    await page.click('nav button[data-panel="calendar"]'); await page.waitForTimeout(600);
+    const open = () => page.click(".cal-add").then(() => page.waitForTimeout(300));
+    const isOpen = () => page.evaluate(() => document.getElementById("event-modal").classList.contains("open"));
+
+    // ① 빈 창은 그냥 닫힌다(쓸데없이 묻지 않는다)
+    await open();
+    await page.mouse.click(5, 5); await page.waitForTimeout(250);
+    c.ok(!(await isOpen()) && asked.length === 0, "아무것도 안 썼으면 바깥을 눌러 그냥 닫힌다");
+
+    // ② 쓰다 만 일정이 있으면 바깥을 눌러도 묻고, 「아니오」면 창이 그대로 남는다
+    await open();
+    await page.fill("#event-name", "구청장 보고");
+    await page.mouse.click(5, 5); await page.waitForTimeout(250);
+    c.ok(asked.length === 1 && /닫을까요/.test(asked[0]), "쓰던 일정이 있으면 물어본다 (" + (asked[0] || "").split("\n")[0] + ")");
+    c.ok(await isOpen(), "「아니오」를 고르면 창이 그대로 남는다");
+    const kept = await page.inputValue("#event-name");
+    c.ok(kept === "구청장 보고", "쓰던 내용도 그대로 (" + kept + ")");
+
+    // ③ Esc 도 마찬가지
+    await page.keyboard.press("Escape"); await page.waitForTimeout(250);
+    c.ok(asked.length === 2 && await isOpen(), "Esc 로 닫을 때도 물어본다");
+
+    // ④ 메모만 썼을 때도 지켜진다
+    await page.fill("#event-name", "");
+    await page.fill("#event-memo", "참석자 확인 필요");
+    await page.keyboard.press("Escape"); await page.waitForTimeout(250);
+    c.ok(asked.length === 3 && await isOpen(), "제목이 비어도 메모를 썼으면 지켜진다");
+    await page.close();
+  }
+
   server.close();
   await c.finish(browser);
 })().catch(e => { console.error("FAIL", e.message, e.stack); process.exit(1); });
