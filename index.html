@@ -133,8 +133,18 @@
     background:#D64545;box-shadow:0 0 0 2px #fff;}
   .sticky-panel{position:fixed;z-index:60;width:360px;height:480px;min-width:280px;min-height:260px;
     max-width:96vw;max-height:88vh;right:20px;bottom:20px;display:flex;flex-direction:column;
-    background:#FFFDF3;border:1px solid #E4CE86;border-radius:12px;overflow:hidden;resize:both;
+    background:#FFFDF3;border:1px solid #E4CE86;border-radius:12px;overflow:hidden;
     box-shadow:0 14px 40px rgba(28,43,58,.28);}
+  /* 크기 조절 손잡이 — 브라우저가 그려 주는 기본 손잡이는 흐리고, 사파리·휴대폰에서는 아예 안 보인다.
+     그래서 직접 그리고 직접 끌게 한다(마우스·손가락 모두 같은 방식). */
+  .sp-grip{position:absolute;right:0;bottom:0;width:26px;height:26px;cursor:nwse-resize;touch-action:none;
+    z-index:3;background:#F6E6B4;border-top:1px solid #E4CE86;border-left:1px solid #E4CE86;
+    border-radius:9px 0 10px 0;}
+  /* 빗금은 기울임 계산 없이 「줄무늬를 모서리 삼각형으로 잘라」 그린다 — 어느 브라우저에서도 같게 보인다 */
+  .sp-grip::before{content:"";position:absolute;inset:5px 4px 4px 5px;
+    background:repeating-linear-gradient(315deg,#8A6C15 0 2px,transparent 2px 5px);
+    clip-path:polygon(100% 0,100% 100%,0 100%);}
+  body.postit-only .sp-grip{display:none;}
   .sticky-panel[hidden]{display:none;}
   .sp-head{flex:none;display:flex;align-items:center;gap:8px;padding:9px 12px;cursor:move;user-select:none;
     background:#F6E6B4;border-bottom:1px solid #E4CE86;}
@@ -201,7 +211,8 @@
   /* 눌렀을 때 테두리 — 브라우저 기본값(검정)은 이 화면과 겉돈다. 사이트 다른 입력칸과 같은 관악 블루로. */
   .sp-edit:focus,.sp-formrow select:focus{outline:2px solid var(--gwanak);outline-offset:-1px;border-color:var(--gwanak);}
   @media(max-width:640px){
-    .sticky-panel{right:8px;left:8px;bottom:8px;width:auto;height:66vh;resize:none;}
+    .sticky-panel{right:8px;left:8px;bottom:8px;width:auto;height:66vh;}
+    .sp-grip{width:34px;height:34px;}   /* 손가락으로 잡을 수 있게 조금 크게 */
   }
   .form-ok{color:#1E8E5A;font-size:13.5px;margin-top:10px;display:none;}
   .form-ok.show{display:block;}
@@ -1611,6 +1622,7 @@
       <div id="sp-memo" class="sp-edit sp-memoedit" contenteditable="true" spellcheck="false" autocapitalize="off" autocorrect="off" data-ph="오늘 할 일, 떠오른 생각을 적어 두세요. 나만 볼 수 있고 자동으로 저장됩니다."></div>
     </div>
   </div>
+  <div class="sp-grip" id="sp-grip" title="끌어서 크기 바꾸기"></div>
 </div>
 
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
@@ -2337,10 +2349,10 @@
 
   // 창 바깥을 눌러 닫을 때, 쓰던 글이 있으면 한 번 물어본다.
   // hasText()는 「지금 이 창에 쓰다 만 글이 있나?」를 답하는 함수.
-  function guardBackdrop(modal, hasText) {
+  function guardBackdrop(modal, hasText, msg) {
     modal.addEventListener("click", e => {
       if (e.target !== modal) return;
-      if (hasText() && !confirm("작성 중인 내용이 있습니다. 창을 닫을까요?\n(임시저장되어 다시 열면 이어서 쓸 수 있습니다)")) return;
+      if (hasText() && !confirm(msg || "작성 중인 내용이 있습니다. 창을 닫을까요?\n(임시저장되어 다시 열면 이어서 쓸 수 있습니다)")) return;
       modal.classList.remove("open");
     });
   }
@@ -2405,9 +2417,17 @@
         + esc(f.name) + ' <span class="att-size">' + fmtSize(f.size) + '</span></div>').join("");
     });
   }
+  // 저장소에 붙이는 「주소」는 영문·숫자만 받는다. 한글이 섞이면 Supabase가 「Invalid key」로 거절해
+  // 한글 이름의 파일이 아예 올라가지 않았다. 그래서 주소는 영문으로만 만들고,
+  // 화면에 보이는 이름(file_name)에는 원래 한글 이름을 그대로 저장한다 — 보이는 이름은 달라지지 않는다.
+  function storageSafeName(name) {
+    const ext = ((name || "").match(/\.[A-Za-z0-9]{1,10}$/) || [""])[0].toLowerCase();
+    const base = (name || "").slice(0, (name || "").length - ext.length).replace(/[^\w.\-]/g, "").slice(0, 40);
+    return (base || "file") + ext;
+  }
   async function uploadAttachments(parentType, parentId, files) {
     for (const f of files) {
-      const safe = f.name.replace(/[^\w.\-가-힣]/g, "_");
+      const safe = storageSafeName(f.name);
       const path = parentType + "/" + parentId + "/" + Date.now() + "_" + Math.random().toString(36).slice(2,8) + "_" + safe;
       const { error: upErr } = await sb.storage.from("attachments").upload(path, f, { contentType: f.type || undefined });
       if (upErr) throw upErr;
@@ -3024,10 +3044,16 @@
     return !!currentUser && (currentUser.email || "").toLowerCase() === (MEMBER_EMAILS.song || "").toLowerCase();
   }
   function closeEventModal() { eventModal.classList.remove("open"); }
-  eventModal.addEventListener("click", e => { if (e.target === eventModal) closeEventModal(); });
-  document.getElementById("event-cancel").addEventListener("click", closeEventModal);
+  // 쓰다 만 일정이 있나 — 있으면 바깥을 눌러도, Esc 를 눌러도 한 번 물어본다.
+  // (일정 창에는 임시저장이 없으므로 닫으면 정말 사라진다고 분명히 알린다)
+  const EVENT_FIELDS = ["event-name", "event-loc", "event-memo", "event-stime", "event-etime", "event-end"];
+  const eventDirty = () => EVENT_FIELDS.some(id => ((document.getElementById(id).value || "").trim() !== ""));
+  const EVENT_ASK = "작성 중인 일정이 있습니다. 창을 닫을까요?\n(닫으면 입력한 내용은 사라집니다)";
+  const askCloseEvent = () => { if (eventDirty() && !confirm(EVENT_ASK)) return; closeEventModal(); };
+  guardBackdrop(eventModal, eventDirty, EVENT_ASK);
+  document.getElementById("event-cancel").addEventListener("click", askCloseEvent);
   document.addEventListener("keydown", e => {
-    if (e.key === "Escape" && eventModal.classList.contains("open")) closeEventModal();
+    if (e.key === "Escape" && eventModal.classList.contains("open")) askCloseEvent();
   });
 
   // ── 날짜·시각 빠른 입력 ─────────────────────────────
@@ -4741,7 +4767,7 @@
   const spPanel = document.getElementById("sticky-panel");
   // 포스트잇 조각들을 한 번만 붙잡아 둔다 — 「항상 위」 창으로 옮겨가면 document에서 찾을 수 없기 때문이다
   const SP = {};
-  ["sp-cancel", "sp-close", "sp-days", "sp-daysrow", "sp-err", "sp-form", "sp-head", "sp-memo", "sp-memo-state", "sp-new", "sp-notices", "sp-bar-fore", "sp-bar-hili", "sp-hl", "sp-pal-fore", "sp-pal-hili", "sp-popout", "sp-post", "sp-text", "sp-tool"].forEach(id => { SP[id.replace("sp-", "").replace(/-/g, "_")] = document.getElementById(id); });
+  ["sp-cancel", "sp-close", "sp-days", "sp-daysrow", "sp-err", "sp-form", "sp-grip", "sp-head", "sp-memo", "sp-memo-state", "sp-new", "sp-notices", "sp-bar-fore", "sp-bar-hili", "sp-hl", "sp-pal-fore", "sp-pal-hili", "sp-popout", "sp-post", "sp-text", "sp-tool"].forEach(id => { SP[id.replace("sp-", "").replace(/-/g, "_")] = document.getElementById(id); });
   // 포스트잇이 지금 어느 문서·창에 들어 있는가(본 화면일 수도, 「항상 위」 창일 수도 있다)
   const spDoc = () => spPanel.ownerDocument;
   const spWin = () => spDoc().defaultView || window;
@@ -4932,7 +4958,34 @@
     head.addEventListener("pointerup", stop);
     head.addEventListener("pointercancel", stop);
   })();
-  // 모서리를 끌어 크기 바꾸기(브라우저 기본 기능) — 다 끌고 나면 기억해 둔다
+  // 오른쪽 아래 손잡이를 끌어 크기 바꾸기.
+  // 브라우저가 그려 주는 기본 손잡이(resize:both)는 흐려서 잘 안 보이고, 사파리·휴대폰에서는
+  // 아예 없었다. 그래서 손잡이를 직접 그리고 끌기도 직접 처리한다 — 마우스든 손가락이든 같다.
+  (() => {
+    const grip = SP.grip;
+    let x0 = 0, y0 = 0, w0 = 0, h0 = 0, sizing = false;
+    const narrow = () => spWin().matchMedia("(max-width: 640px)").matches;   // 좁은 화면은 좌우가 화면에 물려 있어 높이만 바꾼다
+    grip.addEventListener("pointerdown", e => {
+      if (spDetached()) return;                 // 따로 띄운 창에서는 창 자체를 늘린다
+      const r = spPanel.getBoundingClientRect();
+      x0 = e.clientX; y0 = e.clientY; w0 = r.width; h0 = r.height; sizing = true;
+      e.preventDefault();
+      grip.setPointerCapture(e.pointerId);
+    });
+    grip.addEventListener("pointermove", e => {
+      if (!sizing) return;
+      const r = spPanel.getBoundingClientRect();
+      const h = Math.max(260, Math.min(h0 + (e.clientY - y0), window.innerHeight - r.top - 8));
+      spPanel.style.height = h + "px";
+      if (narrow()) return;
+      const w = Math.max(280, Math.min(w0 + (e.clientX - x0), window.innerWidth - r.left - 8));
+      spPanel.style.width = w + "px";
+    });
+    const stop = e => { if (!sizing) return; sizing = false; try { grip.releasePointerCapture(e.pointerId); } catch (x) {} spSavePos(); };
+    grip.addEventListener("pointerup", stop);
+    grip.addEventListener("pointercancel", stop);
+  })();
+  // 크기가 바뀌면 기억해 둔다
   if (window.ResizeObserver) {
     let t = null;
     new ResizeObserver(() => { if (spPanel.hidden) return; clearTimeout(t); t = setTimeout(spSavePos, 400); }).observe(spPanel);

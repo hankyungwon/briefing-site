@@ -614,12 +614,23 @@ const daysAgo = n => { const d = new Date(); d.setDate(d.getDate() - n); return 
       open: !document.getElementById("sticky-panel").hidden,
       notices: document.querySelectorAll("#sp-notices .sp-note").length,
       memo: document.getElementById("sp-memo").innerText.trim(),
-      canResize: getComputedStyle(document.getElementById("sticky-panel")).resize
+      grip: !!document.getElementById("sp-grip") && getComputedStyle(document.getElementById("sp-grip")).display !== "none"
     }));
     c.ok(first.open, "올라와 있는 공지가 있으면 로그인 직후 포스트잇이 저절로 뜸");
     c.ok(first.notices === 1, "공지 1장 표시 (" + first.notices + ")");
     c.ok(first.memo === "지난 메모", "내 메모가 서버에서 복원됨 (" + first.memo + ")");
-    c.ok(first.canResize === "both", "판 크기를 사용자가 조절할 수 있음 (resize:" + first.canResize + ")");
+    c.ok(first.grip, "크기 조절 손잡이가 눈에 보인다(브라우저 기본 손잡이는 사파리·휴대폰에서 안 보임)");
+    // 손잡이를 끌면 실제로 크기가 바뀐다 — 마우스든 손가락이든 같은 길
+    const sz0 = await page.evaluate(() => { const r = document.getElementById("sticky-panel").getBoundingClientRect();
+      return { w: Math.round(r.width), h: Math.round(r.height) }; });
+    const gb = await page.locator("#sp-grip").boundingBox();
+    await page.mouse.move(gb.x + gb.width / 2, gb.y + gb.height / 2);
+    await page.mouse.down(); await page.mouse.move(gb.x + 70, gb.y + 60, { steps: 6 }); await page.mouse.up();
+    await page.waitForTimeout(250);
+    const sz1 = await page.evaluate(() => { const r = document.getElementById("sticky-panel").getBoundingClientRect();
+      return { w: Math.round(r.width), h: Math.round(r.height) }; });
+    c.ok(sz1.w > sz0.w + 20 && sz1.h > sz0.h + 20,
+      "손잡이를 끌면 판이 실제로 커진다 (" + sz0.w + "×" + sz0.h + " → " + sz1.w + "×" + sz1.h + ")");
 
     // 머리를 끌어 옮기면 그 자리를 기억한다
     const before = await page.evaluate(() => Math.round(document.getElementById("sticky-panel").getBoundingClientRect().left));
@@ -777,6 +788,56 @@ const daysAgo = n => { const d = new Date(); d.setDate(d.getDate() - n); return 
     c.ok(await page.evaluate(() => document.getElementById("sticky-panel").hidden), "✕로 닫힘");
     await page.click("#sticky-btn"); await page.waitForTimeout(200);
     c.ok(await page.evaluate(() => !document.getElementById("sticky-panel").hidden), "📌 버튼으로 다시 열림");
+    await page.close();
+  }
+
+  // K. 한글 이름의 파일도 첨부된다.
+  //    저장소 주소에 한글이 섞이면 Supabase가 「Invalid key」로 거절한다 —
+  //    그래서 주소는 영문으로만 만들고, 보이는 이름에는 한글 원래 이름을 그대로 남긴다.
+  {
+    const page = await H.newPage(browser);
+    const { user, session } = H.mkSession("twopro@hanmail.net", "two");
+    let keys = [], rows = [], posts = [], pid = 1;
+    await H.setupPage(page, { user, session, routes: (p, m, req) => {
+      if (p === "/rest/v1/free_posts") {
+        if (m === "POST") { const r = JSON.parse(req.postData()); r.id = pid++; r.created_at = new Date().toISOString(); posts.unshift(r); return r; }
+        return posts;
+      }
+      if (p === "/rest/v1/free_comments") return [];
+      if (p === "/rest/v1/attachments") {
+        if (m === "POST") { const r = JSON.parse(req.postData()); rows.push(r); return [r]; }
+        return rows;
+      }
+      if (p.startsWith("/storage/v1/object/attachments/")) {
+        const key = decodeURIComponent(p.slice("/storage/v1/object/attachments/".length));
+        keys.push(key);
+        // 실제 서버와 같은 잣대로 막는다 — 영문·숫자 밖의 글자가 있으면 거절
+        if (!/^[\w!\-.*'()/ &$@=;:+,?]*$/.test(key)) return { __status: 400, error: "Invalid key", message: "Invalid key: " + key };
+        return { Id: "1", Key: "attachments/" + key };
+      }
+      if (p === "/storage/v1/object/sign/attachments") {
+        const paths = JSON.parse(req.postData()).paths;
+        return paths.map(x => ({ path: x, signedURL: "/object/sign/attachments/" + x + "?token=t", error: null }));
+      }
+      return H.defaultBriefingRoutes(p);
+    }});
+    await H.login(page, port, "twopro@hanmail.net");
+    await page.click('nav button[data-panel="board"]'); await page.waitForTimeout(600);
+    await page.click("#fp-write-toggle"); await page.waitForTimeout(300);
+    await page.fill("#fp-title", "한글 이름 파일 시험");
+    await page.setInputFiles("#fp-file", { name: "2026년 연구계획(안).pdf", mimeType: "application/pdf", buffer: Buffer.from("%PDF-1.4 test") });
+    await page.waitForTimeout(200);
+    await page.click("#fp-submit"); await page.waitForTimeout(900);
+    const errShown = await page.evaluate(() => {
+      const e = document.getElementById("fp-error");
+      return e && e.classList.contains("show") ? e.textContent : "";
+    });
+    c.ok(!errShown, "한글 이름 파일을 붙여도 오류가 나지 않는다 (" + (errShown || "오류 없음") + ")");
+    c.ok(keys.length === 1 && /^[\w!\-.*'()/ &$@=;:+,?]*$/.test(keys[0]),
+      "저장소 주소에는 한글이 들어가지 않는다 (" + (keys[0] || "없음") + ")");
+    c.ok(keys.length === 1 && /\.pdf$/.test(keys[0]), "확장자는 지켜진다 (" + (keys[0] || "") + ")");
+    c.ok(rows.length === 1 && rows[0].file_name === "2026년 연구계획(안).pdf",
+      "보이는 이름은 한글 원래 이름 그대로 (" + (rows[0] && rows[0].file_name) + ")");
     await page.close();
   }
 
