@@ -826,7 +826,32 @@ const daysAgo = n => { const d = new Date(); d.setDate(d.getDate() - n); return 
     });
     c.ok(oneRow.tool <= oneRow.btn + 4,
       "커진 뒤에도 전폭에서는 한 줄에 들어간다 (도구 " + oneRow.tool + "px / 단추 " + oneRow.btn + "px)");
-    await page.evaluate(() => { document.getElementById("sp-popout").hidden = false; });
+
+    // 판을 좁히면 단추가 줄을 넘는데, 짝인 단추(글자색·형광펜)는 한꺼번에 넘어가야 한다.
+    // 하나만 떨어져 내려가면 어디로 갔는지 찾기 어렵다.
+    await page.evaluate(() => { const p = document.getElementById("sticky-panel");
+      p.style.right = "auto"; p.style.left = "8px"; p.style.width = "260px"; });
+    await page.waitForTimeout(300);
+    const wrapped = await page.evaluate(() => {
+      const rows = {};
+      document.querySelectorAll("#sp-tool button[data-sp]").forEach(b => {   // 색판 안 조각은 빼고
+        const t = Math.round(b.getBoundingClientRect().top);
+        (rows[t] = rows[t] || []).push(b.dataset.kind || b.dataset.v || b.dataset.sp);
+      });
+      const keys = Object.keys(rows).sort((a, b) => a - b);
+      return { last: rows[keys[keys.length - 1]], rows: keys.length,
+        // 줄 맨 앞에 홀로 남은 구분선이 보이면 안 된다
+        stray: [...document.querySelectorAll("#sp-tool .sp-grp")].some((g, i, a) =>
+          i > 0 && g.offsetTop !== a[i - 1].offsetTop
+          && getComputedStyle(g.querySelector(".sp-div")).visibility !== "hidden") };
+    });
+    c.ok(wrapped.rows === 2, "좁히면 두 줄이 된다 (" + wrapped.rows + "줄)");
+    c.ok(wrapped.last.length === 2 && wrapped.last.join(",") === "fore,hili",
+      "글자색·형광펜이 한꺼번에 넘어간다 (아랫줄: " + wrapped.last.join(" ") + ")");
+    c.ok(!wrapped.stray, "줄 맨 앞에 구분선이 홀로 남지 않는다");
+    await page.evaluate(() => { const p = document.getElementById("sticky-panel");
+      p.style.width = ""; document.getElementById("sp-popout").hidden = false; });
+    await page.waitForTimeout(200);
 
     const at = () => page.evaluate(() => { const r = document.getElementById("sticky-panel").getBoundingClientRect();
       return { x: Math.round(r.left), y: Math.round(r.top), w: Math.round(r.width) }; });

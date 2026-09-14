@@ -159,6 +159,8 @@
   #sp-bar-hili,#sp-hl{background:#FFF176;}
   /* 머리띠 안 서식 도구 — 공지칸·메모칸 중 방금 쓰던 칸에 적용된다 */
   .sp-tool{display:flex;align-items:center;gap:2px;flex-wrap:wrap;}
+  /* 서로 짝인 단추들은 한 묶음으로 묶어 통째로 줄을 넘긴다 — 하나만 떨어져 내려가면 찾기 어렵다 */
+  .sp-grp{display:inline-flex;align-items:center;gap:2px;}
   .sp-tool button{appearance:none;cursor:pointer;border:1px solid transparent;background:none;color:#5A4300;
     border-radius:5px;min-width:22px;height:22px;padding:0 4px;font-family:inherit;font-size:12.5px;line-height:1;}
   .sp-tool button:hover{background:#fff;border-color:#D9B94A;}
@@ -219,7 +221,7 @@
      권장치(44px)까지 키우면 머리띠가 두꺼워져 답답해지므로 그 중간인 30px로 둔다.
      단추가 두 줄로 내려앉는 것은 그대로 둔다 — 접어 넣으면 평소에 한 번 더 눌러야 한다. */
   @media (pointer: coarse), (max-width: 640px){
-    .sp-tool{gap:3px;}
+    .sp-tool,.sp-grp{gap:3px;}
     .sp-tool button{min-width:28px;height:28px;padding:0 6px;font-size:14px;}
     .sp-ic b{font-size:13.5px;}
     .sp-ic i{width:16px;}
@@ -1600,18 +1602,23 @@
 <div class="sticky-panel" id="sticky-panel" hidden>
   <div class="sp-head" id="sp-head">
     <span class="sp-tool" id="sp-tool">
-      <button type="button" data-sp="bold" title="굵게"><b>B</b></button>
-      <button type="button" data-sp="italic" title="기울임"><i>I</i></button>
-      <button type="button" data-sp="underline" title="밑줄"><u>U</u></button>
-      <span class="sp-div"></span>
-      <button type="button" data-sp="size" data-v="small" title="작게" style="font-size:11px;">가</button>
-      <button type="button" data-sp="size" data-v="normal" title="보통 — 지금 화면의 기본 크기" style="font-size:13px;">가</button>
-      <button type="button" data-sp="size" data-v="large" title="크게" style="font-size:16px;">가</button>
-      <span class="sp-div"></span>
-      <span class="sp-pop"><button type="button" data-sp="pal" data-kind="fore" title="글자색"><span class="sp-ic"><b>가</b><i id="sp-bar-fore"></i></span></button>
-        <span class="sp-pal" id="sp-pal-fore" hidden></span></span>
-      <span class="sp-pop"><button type="button" data-sp="pal" data-kind="hili" title="형광펜"><span class="sp-ic"><b id="sp-hl">가</b><i id="sp-bar-hili"></i></span></button>
-        <span class="sp-pal" id="sp-pal-hili" hidden></span></span>
+      <!-- 한 묶음(sp-grp)은 통째로 줄을 넘는다 — 짝인 단추가 혼자 아래로 떨어지지 않게 -->
+      <span class="sp-grp">
+        <button type="button" data-sp="bold" title="굵게"><b>B</b></button>
+        <button type="button" data-sp="italic" title="기울임"><i>I</i></button>
+        <button type="button" data-sp="underline" title="밑줄"><u>U</u></button>
+      </span>
+      <span class="sp-grp"><span class="sp-div"></span>
+        <button type="button" data-sp="size" data-v="small" title="작게" style="font-size:11px;">가</button>
+        <button type="button" data-sp="size" data-v="normal" title="보통 — 지금 화면의 기본 크기" style="font-size:13px;">가</button>
+        <button type="button" data-sp="size" data-v="large" title="크게" style="font-size:16px;">가</button>
+      </span>
+      <span class="sp-grp"><span class="sp-div"></span>
+        <span class="sp-pop"><button type="button" data-sp="pal" data-kind="fore" title="글자색"><span class="sp-ic"><b>가</b><i id="sp-bar-fore"></i></span></button>
+          <span class="sp-pal" id="sp-pal-fore" hidden></span></span>
+        <span class="sp-pop"><button type="button" data-sp="pal" data-kind="hili" title="형광펜"><span class="sp-ic"><b id="sp-hl">가</b><i id="sp-bar-hili"></i></span></button>
+          <span class="sp-pal" id="sp-pal-hili" hidden></span></span>
+      </span>
     </span>
     <button type="button" class="sp-x" id="sp-popout" title="따로 띄우기 — 사이트 창을 닫아도 남습니다">⧉</button>
     <button type="button" class="sp-x" id="sp-close" title="닫기">✕</button>
@@ -5001,10 +5008,24 @@
     grip.addEventListener("pointerup", stop);
     grip.addEventListener("pointercancel", stop);
   })();
-  // 크기가 바뀌면 기억해 둔다
+  // 줄이 넘어간 자리에서는 앞머리 구분선을 감춘다 — 줄 맨 앞에 홀로 선 세로선은 뜻이 없다.
+  // 자리는 그대로 두고 보이지만 않게 한다(없애면 너비가 바뀌어 줄바꿈이 다시 일어난다).
+  function spTrimDividers() {
+    let prevTop = null;
+    SP.tool.querySelectorAll(".sp-grp").forEach(g => {
+      const top = g.offsetTop, d = g.querySelector(".sp-div");
+      if (d) d.style.visibility = (prevTop !== null && top !== prevTop) ? "hidden" : "";
+      prevTop = top;
+    });
+  }
+  // 크기가 바뀌면 기억해 두고, 단추 줄도 다시 다듬는다
   if (window.ResizeObserver) {
     let t = null;
-    new ResizeObserver(() => { if (spPanel.hidden) return; clearTimeout(t); t = setTimeout(spSavePos, 400); }).observe(spPanel);
+    new ResizeObserver(() => {
+      if (spPanel.hidden) return;
+      spTrimDividers();
+      clearTimeout(t); t = setTimeout(spSavePos, 400);
+    }).observe(spPanel);
   }
 
   // 공지·메모 본문: 서식(HTML)이면 정화해 쓰고, 예전에 저장된 순수 글자면 줄바꿈·링크만 살린다
@@ -5043,7 +5064,7 @@
     let seen = 0; try { seen = parseInt(localStorage.getItem(spSeenKey()) || "0", 10) || 0; } catch (e) {}
     return spNotices.length > 0 && spNotices[0].id > seen;
   }
-  function spOpen() { spPanel.hidden = false; spLoadPos(); spMarkSeen(); }
+  function spOpen() { spPanel.hidden = false; spLoadPos(); spTrimDividers(); spMarkSeen(); }
   function spClose() { spSavePos(); spPanel.hidden = true; }
 
   // 공지만 다시 불러온다 — 남이 올린 공지가 곧바로 맨 위에 쌓이게 하는 길
