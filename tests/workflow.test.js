@@ -811,12 +811,29 @@ const daysAgo = n => { const d = new Date(); d.setDate(d.getDate() - n); return 
     c.ok(ta[0] === "none" && ta[1] === "none",
       "머리띠와 손잡이 둘 다 손가락 끌기를 받는다 (머리 " + ta[0] + " / 손잡이 " + ta[1] + ")");
 
+    // 손끝으로 누를 단추는 마우스용(22px)보다 커야 한다. 다만 너무 키우면 머리띠가 두꺼워지므로
+    // 실제 휴대폰(⧉ 없음)에서 한 줄로 들어가는 선까지만 키운다.
+    const btn = await page.evaluate(() => {
+      const b = document.querySelector('#sp-tool [data-sp="bold"]').getBoundingClientRect();
+      return { w: Math.round(b.width), h: Math.round(b.height) };
+    });
+    c.ok(btn.h >= 28 && btn.h <= 34, "휴대폰에서 서식 단추가 손끝에 맞게 커진다 (" + btn.w + "×" + btn.h + ")");
+    const oneRow = await page.evaluate(() => {
+      document.getElementById("sp-popout").hidden = true;   // 실제 휴대폰에는 ⧉가 없다
+      const t = document.getElementById("sp-tool").getBoundingClientRect();
+      const b = document.querySelector('#sp-tool [data-sp="bold"]').getBoundingClientRect();
+      return { tool: Math.round(t.height), btn: Math.round(b.height) };
+    });
+    c.ok(oneRow.tool <= oneRow.btn + 4,
+      "커진 뒤에도 전폭에서는 한 줄에 들어간다 (도구 " + oneRow.tool + "px / 단추 " + oneRow.btn + "px)");
+    await page.evaluate(() => { document.getElementById("sp-popout").hidden = false; });
+
     const at = () => page.evaluate(() => { const r = document.getElementById("sticky-panel").getBoundingClientRect();
       return { x: Math.round(r.left), y: Math.round(r.top), w: Math.round(r.width) }; });
     const p0 = await at();
-    const hb = await page.locator("#sp-head").boundingBox();
-    await page.mouse.move(hb.x + hb.width - 60, hb.y + hb.height / 2);
-    await page.mouse.down(); await page.mouse.move(hb.x + hb.width - 60, hb.y + hb.height / 2 - 120, { steps: 8 }); await page.mouse.up();
+    const hb = await page.locator("#sp-tool .sp-div").first().boundingBox();   // 단추가 아닌 빈 곳(구분선)
+    await page.mouse.move(hb.x, hb.y + hb.height / 2);
+    await page.mouse.down(); await page.mouse.move(hb.x, hb.y + hb.height / 2 - 120, { steps: 8 }); await page.mouse.up();
     await page.waitForTimeout(250);
     const p1 = await at();
     c.ok(p1.y < p0.y - 60, "머리를 끌면 판이 위아래로 움직인다 (" + p0.y + " → " + p1.y + ")");

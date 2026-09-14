@@ -214,6 +214,19 @@
   .sp-edit:focus,.sp-formrow select:focus{outline:2px solid var(--gwanak);outline-offset:-1px;border-color:var(--gwanak);}
   @media(max-width:640px){
     .sticky-panel{right:8px;left:8px;bottom:8px;width:auto;height:66vh;}
+  }
+  /* 손가락으로 누르는 화면에서는 단추를 조금 키운다 — 22px는 마우스에 알맞지만 손끝에는 작다.
+     권장치(44px)까지 키우면 머리띠가 두꺼워져 답답해지므로 그 중간인 30px로 둔다.
+     단추가 두 줄로 내려앉는 것은 그대로 둔다 — 접어 넣으면 평소에 한 번 더 눌러야 한다. */
+  @media (pointer: coarse), (max-width: 640px){
+    .sp-tool{gap:3px;}
+    .sp-tool button{min-width:28px;height:28px;padding:0 6px;font-size:14px;}
+    .sp-ic b{font-size:13.5px;}
+    .sp-ic i{width:16px;}
+    .sp-pal{top:34px;gap:6px;padding:8px;}
+    .sp-pal button{width:28px;height:28px;min-width:28px;}
+    .sp-pal button.none{width:auto;font-size:12.5px;}
+    .sp-x{font-size:17px;padding:5px 7px;}
     .sp-grip{width:34px;height:34px;}   /* 손가락으로 잡을 수 있게 조금 크게 */
   }
   .form-ok{color:#1E8E5A;font-size:13.5px;margin-top:10px;display:none;}
