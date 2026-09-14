@@ -146,8 +146,10 @@
     clip-path:polygon(100% 0,100% 100%,0 100%);}
   body.postit-only .sp-grip{display:none;}
   .sticky-panel[hidden]{display:none;}
+  /* touch-action:none 이 없으면 손가락으로 머리를 끌 때 브라우저가 「화면 넘기기」로 가로채
+     휴대폰에서는 판이 움직이지 않는다(크기 손잡이만 되던 까닭). */
   .sp-head{flex:none;display:flex;align-items:center;gap:8px;padding:9px 12px;cursor:move;user-select:none;
-    background:#F6E6B4;border-bottom:1px solid #E4CE86;}
+    touch-action:none;background:#F6E6B4;border-bottom:1px solid #E4CE86;}
   /* 글자색·형광펜 단추 — 한글·워드처럼 「가」와 색 띠로 보여 준다.
      글자색은 띠만 칠하고, 형광펜은 글자 뒤가 칠해져 한눈에 갈린다. 띠 색은 방금 고른 색으로 바뀐다. */
   .sp-ic{display:inline-flex;flex-direction:column;align-items:center;gap:1px;line-height:1;}
@@ -212,6 +214,19 @@
   .sp-edit:focus,.sp-formrow select:focus{outline:2px solid var(--gwanak);outline-offset:-1px;border-color:var(--gwanak);}
   @media(max-width:640px){
     .sticky-panel{right:8px;left:8px;bottom:8px;width:auto;height:66vh;}
+  }
+  /* 손가락으로 누르는 화면에서는 단추를 조금 키운다 — 22px는 마우스에 알맞지만 손끝에는 작다.
+     권장치(44px)까지 키우면 머리띠가 두꺼워져 답답해지므로 그 중간인 30px로 둔다.
+     단추가 두 줄로 내려앉는 것은 그대로 둔다 — 접어 넣으면 평소에 한 번 더 눌러야 한다. */
+  @media (pointer: coarse), (max-width: 640px){
+    .sp-tool{gap:3px;}
+    .sp-tool button{min-width:28px;height:28px;padding:0 6px;font-size:14px;}
+    .sp-ic b{font-size:13.5px;}
+    .sp-ic i{width:16px;}
+    .sp-pal{top:34px;gap:6px;padding:8px;}
+    .sp-pal button{width:28px;height:28px;min-width:28px;}
+    .sp-pal button.none{width:auto;font-size:12.5px;}
+    .sp-x{font-size:17px;padding:5px 7px;}
     .sp-grip{width:34px;height:34px;}   /* 손가락으로 잡을 수 있게 조금 크게 */
   }
   .form-ok{color:#1E8E5A;font-size:13.5px;margin-top:10px;display:none;}
@@ -4944,6 +4959,7 @@
       if (e.target.closest("button, .sp-pal")) return;   // 단추·색판만 빼고, 도구 사이 빈 곳도 끌 수 있게
       const r = spPanel.getBoundingClientRect();
       dx = e.clientX - r.left; dy = e.clientY - r.top; moving = true;
+      e.preventDefault();
       spPanel.style.right = "auto"; spPanel.style.bottom = "auto";
       spPanel.style.width = r.width + "px"; spPanel.style.height = r.height + "px";
       head.setPointerCapture(e.pointerId);
@@ -4964,21 +4980,21 @@
   (() => {
     const grip = SP.grip;
     let x0 = 0, y0 = 0, w0 = 0, h0 = 0, sizing = false;
-    const narrow = () => spWin().matchMedia("(max-width: 640px)").matches;   // 좁은 화면은 좌우가 화면에 물려 있어 높이만 바꾼다
+    const minW = () => (window.innerWidth < 400 ? 220 : 280);   // 휴대폰에서도 폭을 줄여 옆으로 옮길 자리를 낼 수 있게
     grip.addEventListener("pointerdown", e => {
       if (spDetached()) return;                 // 따로 띄운 창에서는 창 자체를 늘린다
       const r = spPanel.getBoundingClientRect();
       x0 = e.clientX; y0 = e.clientY; w0 = r.width; h0 = r.height; sizing = true;
       e.preventDefault();
+      spPanel.style.right = "auto";             // 폭이 기준이 되게 — 좌우가 동시에 물려 있으면 폭이 먹지 않는다
       grip.setPointerCapture(e.pointerId);
     });
     grip.addEventListener("pointermove", e => {
       if (!sizing) return;
       const r = spPanel.getBoundingClientRect();
-      const h = Math.max(260, Math.min(h0 + (e.clientY - y0), window.innerHeight - r.top - 8));
+      const h = Math.max(240, Math.min(h0 + (e.clientY - y0), window.innerHeight - r.top - 8));
+      const w = Math.max(minW(), Math.min(w0 + (e.clientX - x0), window.innerWidth - r.left - 8));
       spPanel.style.height = h + "px";
-      if (narrow()) return;
-      const w = Math.max(280, Math.min(w0 + (e.clientX - x0), window.innerWidth - r.left - 8));
       spPanel.style.width = w + "px";
     });
     const stop = e => { if (!sizing) return; sizing = false; try { grip.releasePointerCapture(e.pointerId); } catch (x) {} spSavePos(); };

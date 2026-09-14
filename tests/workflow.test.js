@@ -791,6 +791,70 @@ const daysAgo = n => { const d = new Date(); d.setDate(d.getDate() - n); return 
     await page.close();
   }
 
+  // J2. 휴대폰에서도 판을 옮길 수 있다.
+  //     머리띠에 touch-action:none 이 없으면 손가락으로 끌 때 브라우저가 「화면 넘기기」로
+  //     가로채 판이 꿈쩍도 하지 않는다(크기 손잡이만 되던 까닭).
+  {
+    const page = await H.newPage(browser, { mobile: true, viewport: { width: 390, height: 780 } });
+    const { user, session } = H.mkSession("twopro@hanmail.net", "two");
+    await H.setupPage(page, { user, session, routes: p => {
+      if (p === "/rest/v1/sticky_notices") return [];
+      if (p === "/rest/v1/personal_memos") return { body: "" };
+      return H.defaultBriefingRoutes(p);
+    }});
+    await H.login(page, port, "twopro@hanmail.net"); await page.waitForTimeout(900);
+    await page.evaluate(() => { document.getElementById("sticky-panel").hidden = false; });
+    await page.waitForTimeout(300);
+    const ta = await page.evaluate(() => [
+      getComputedStyle(document.getElementById("sp-head")).touchAction,
+      getComputedStyle(document.getElementById("sp-grip")).touchAction ]);
+    c.ok(ta[0] === "none" && ta[1] === "none",
+      "머리띠와 손잡이 둘 다 손가락 끌기를 받는다 (머리 " + ta[0] + " / 손잡이 " + ta[1] + ")");
+
+    // 손끝으로 누를 단추는 마우스용(22px)보다 커야 한다. 다만 너무 키우면 머리띠가 두꺼워지므로
+    // 실제 휴대폰(⧉ 없음)에서 한 줄로 들어가는 선까지만 키운다.
+    const btn = await page.evaluate(() => {
+      const b = document.querySelector('#sp-tool [data-sp="bold"]').getBoundingClientRect();
+      return { w: Math.round(b.width), h: Math.round(b.height) };
+    });
+    c.ok(btn.h >= 28 && btn.h <= 34, "휴대폰에서 서식 단추가 손끝에 맞게 커진다 (" + btn.w + "×" + btn.h + ")");
+    const oneRow = await page.evaluate(() => {
+      document.getElementById("sp-popout").hidden = true;   // 실제 휴대폰에는 ⧉가 없다
+      const t = document.getElementById("sp-tool").getBoundingClientRect();
+      const b = document.querySelector('#sp-tool [data-sp="bold"]').getBoundingClientRect();
+      return { tool: Math.round(t.height), btn: Math.round(b.height) };
+    });
+    c.ok(oneRow.tool <= oneRow.btn + 4,
+      "커진 뒤에도 전폭에서는 한 줄에 들어간다 (도구 " + oneRow.tool + "px / 단추 " + oneRow.btn + "px)");
+    await page.evaluate(() => { document.getElementById("sp-popout").hidden = false; });
+
+    const at = () => page.evaluate(() => { const r = document.getElementById("sticky-panel").getBoundingClientRect();
+      return { x: Math.round(r.left), y: Math.round(r.top), w: Math.round(r.width) }; });
+    const p0 = await at();
+    const hb = await page.locator("#sp-tool .sp-div").first().boundingBox();   // 단추가 아닌 빈 곳(구분선)
+    await page.mouse.move(hb.x, hb.y + hb.height / 2);
+    await page.mouse.down(); await page.mouse.move(hb.x, hb.y + hb.height / 2 - 120, { steps: 8 }); await page.mouse.up();
+    await page.waitForTimeout(250);
+    const p1 = await at();
+    c.ok(p1.y < p0.y - 60, "머리를 끌면 판이 위아래로 움직인다 (" + p0.y + " → " + p1.y + ")");
+
+    // 폭도 줄일 수 있어야 옆으로 옮길 자리가 생긴다
+    const gb = await page.locator("#sp-grip").boundingBox();
+    await page.mouse.move(gb.x + gb.width / 2, gb.y + gb.height / 2);
+    await page.mouse.down(); await page.mouse.move(gb.x - 110, gb.y + gb.height / 2, { steps: 8 }); await page.mouse.up();
+    await page.waitForTimeout(250);
+    const p2 = await at();
+    c.ok(p2.w < p1.w - 60, "휴대폰에서도 폭을 줄일 수 있다 (" + p1.w + " → " + p2.w + ")");
+
+    const db = await page.locator("#sp-tool .sp-div").first().boundingBox();   // 단추가 아닌 빈 곳(구분선)을 잡는다
+    await page.mouse.move(db.x, db.y + db.height / 2);
+    await page.mouse.down(); await page.mouse.move(db.x + 120, db.y + db.height / 2, { steps: 8 }); await page.mouse.up();
+    await page.waitForTimeout(250);
+    const p3 = await at();
+    c.ok(p3.x > p2.x + 40, "폭을 줄인 뒤에는 옆으로도 옮겨진다 (" + p2.x + " → " + p3.x + ")");
+    await page.close();
+  }
+
   // K. 한글 이름의 파일도 첨부된다.
   //    저장소 주소에 한글이 섞이면 Supabase가 「Invalid key」로 거절한다 —
   //    그래서 주소는 영문으로만 만들고, 보이는 이름에는 한글 원래 이름을 그대로 남긴다.
