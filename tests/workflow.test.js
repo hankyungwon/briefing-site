@@ -791,6 +791,69 @@ const daysAgo = n => { const d = new Date(); d.setDate(d.getDate() - n); return 
     await page.close();
   }
 
+  // J3. 공지 삭제는 판 안에서 되묻고, 정말 지워졌는지 확인한다.
+  //     브라우저 확인 창(confirm)은 「이 페이지의 추가 대화 상자 차단」을 한 번 누르면 그 뒤로
+  //     조용히 무시되고, 「항상 위」 창에서도 뜨지 않는다 — 그러면 눌러도 아무 일이 없어 보인다.
+  {
+    const page = await H.newPage(browser);
+    const { user, session } = H.mkSession("hanpro@hanmail.net", "lead");
+    let notices = [1, 2].map(i => ({ id: i, body: "공지 " + i, author_email: "hanpro@hanmail.net",
+      created_at: "2026-09-14T01:00:00Z", expires_at: "2099-01-01T00:00:00Z" }));
+    let blocked = false;            // 참이면 서버가 0줄을 돌려준다(RLS가 막은 상황)
+    await H.setupPage(page, { user, session, routes: (p, m, req) => {
+      if (p === "/rest/v1/sticky_notices") {
+        if (m === "DELETE") {
+          if (blocked) return [];
+          const id = Number((req.url().match(/id=eq\.(\d+)/) || [])[1]);
+          const gone = notices.filter(n => n.id === id);
+          notices = notices.filter(n => n.id !== id);
+          return gone;
+        }
+        return notices;
+      }
+      if (p === "/rest/v1/personal_memos") return { body: "" };
+      if (p === "/rest/v1/admin_emails") return [];
+      return H.defaultBriefingRoutes(p);
+    }});
+    // 브라우저 확인 창이 뜨면 그 자체가 잘못 — 떴는지 세어 둔다
+    const dialogs = []; page.on("dialog", d => { dialogs.push(d.message()); d.dismiss().catch(() => {}); });
+    await H.login(page, port, "hanpro@hanmail.net"); await page.waitForTimeout(1000);
+
+    await page.click("#sp-notices [data-sp-del]"); await page.waitForTimeout(300);
+    const ask = await page.evaluate(() => {
+      const a = document.querySelector(".sp-ask");
+      return { text: a ? a.textContent.replace(/\s+/g, " ").trim() : "", yes: !!document.querySelector("[data-sp-delyes]"),
+               no: !!document.querySelector("[data-sp-delno]"), left: document.querySelectorAll("#sp-notices .sp-note").length };
+    });
+    c.ok(dialogs.length === 0, "브라우저 확인 창에 기대지 않는다 (" + dialogs.length + "회)");
+    c.ok(/정말 삭제할까요/.test(ask.text) && ask.yes && ask.no, "판 안에서 되묻는다 (" + ask.text + ")");
+    c.ok(ask.left === 2, "되묻는 동안에는 아직 지워지지 않는다 (" + ask.left + "장)");
+
+    await page.click("[data-sp-delno]"); await page.waitForTimeout(300);
+    const cancelled = await page.evaluate(() => ({
+      ask: !!document.querySelector(".sp-ask"), left: document.querySelectorAll("#sp-notices .sp-note").length }));
+    c.ok(!cancelled.ask && cancelled.left === 2, "「취소」를 고르면 그대로 남는다 (" + cancelled.left + "장)");
+
+    await page.click("#sp-notices [data-sp-del]"); await page.waitForTimeout(250);
+    await page.click("[data-sp-delyes]"); await page.waitForTimeout(800);
+    const done = await page.evaluate(() => ({
+      left: document.querySelectorAll("#sp-notices .sp-note").length,
+      msg: document.getElementById("sp-nerr").textContent }));
+    c.ok(done.left === 1 && !done.msg, "「삭제」를 고르면 정말 사라진다 (" + done.left + "장 남음)");
+
+    // 권한이 없어 0줄이 지워진 경우 — 조용히 넘어가지 말고 까닭을 알려야 한다
+    blocked = true;
+    await page.click("#sp-notices [data-sp-del]"); await page.waitForTimeout(250);
+    await page.click("[data-sp-delyes]"); await page.waitForTimeout(800);
+    const denied = await page.evaluate(() => ({
+      left: document.querySelectorAll("#sp-notices .sp-note").length,
+      msg: document.getElementById("sp-nerr").textContent,
+      shown: document.getElementById("sp-nerr").classList.contains("show") }));
+    c.ok(denied.left === 1, "지워지지 않았으면 그대로 남는다");
+    c.ok(denied.shown && /권한/.test(denied.msg), "왜 안 지워졌는지 알려 준다 (" + denied.msg + ")");
+    await page.close();
+  }
+
   // J2. 휴대폰에서도 판을 옮길 수 있다.
   //     머리띠에 touch-action:none 이 없으면 손가락으로 끌 때 브라우저가 「화면 넘기기」로
   //     가로채 판이 꿈쩍도 하지 않는다(크기 손잡이만 되던 까닭).
