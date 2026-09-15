@@ -943,6 +943,35 @@ const daysAgo = n => { const d = new Date(); d.setDate(d.getDate() - n); return 
     await page.close();
   }
 
+  // L. 운영 안내문은 공개 파일(index.html)에 없다 — 로그인한 뒤 DB에서 받아 채운다.
+  //    이 파일은 누구나(검색 크롤러 포함) 그대로 내려받으므로, 파일 안에 있으면 검색·AI 요약에 실린다.
+  {
+    const src = require("fs").readFileSync(require("path").join(__dirname, "..", "index.html"), "utf8");
+    // (「개조식으로 간단히」만 찾으면 회의록 입력칸 라벨에 걸리므로 안내문 문장 그대로 찾는다)
+    const leaked = ["회의 전에 원고", "취합 버튼을 누르면", "개조식으로 간단히 적습니다", "회의 자료로 취합될 원고", "행정지원 주무관(최근 7일"]
+      .filter(k => src.includes(k));
+    c.ok(leaked.length === 0, "운영 안내문이 공개 파일에 남아 있지 않다" + (leaked.length ? " — 남음: " + leaked.join(" / ") : ""));
+
+    const page = await H.newPage(browser);
+    const { user, session } = H.mkSession("twopro@hanmail.net", "two");
+    await H.setupPage(page, { user, session, routes: p => H.defaultBriefingRoutes(p) });
+    const before = await page.evaluate(() => (document.getElementById("about-workinfo") || {}).textContent || "");
+    await H.login(page, port, "twopro@hanmail.net");
+    await page.click('nav button[data-panel="about"]'); await page.waitForTimeout(700);
+    const after = await page.evaluate(() => {
+      const w = document.getElementById("about-workinfo");
+      return { text: w.textContent.trim(), shown: !w.hidden, hl: !!w.querySelector(".hl"),
+               help: document.getElementById("directive-help").textContent.trim() };
+    });
+    c.ok(before.trim() === "", "로그인 전 화면에는 안내문이 비어 있다");
+    c.ok(after.shown && /회의 전에 원고/.test(after.text) && after.hl, "로그인하면 DB에서 받은 안내문이 띠에 채워진다(강조 서식 포함)");
+    c.ok(/개조식/.test(after.help), "지시사항 창 도움말도 DB에서 채워진다");
+    await page.click('nav button[data-panel="resources"]'); await page.waitForTimeout(600);
+    const note = await page.evaluate(() => (document.getElementById("packet-note-detail") || {}).textContent || "");
+    c.ok(/취합 버튼을 누르면/.test(note), "자료마당 취합 안내도 DB에서 채워진다");
+    await page.close();
+  }
+
   // K. 한글 이름의 파일도 첨부된다.
   //    저장소 주소에 한글이 섞이면 Supabase가 「Invalid key」로 거절한다 —
   //    그래서 주소는 영문으로만 만들고, 보이는 이름에는 한글 원래 이름을 그대로 남긴다.

@@ -1173,7 +1173,8 @@
     </p>
     <div class="board-card head-directive" id="head-directive" hidden></div>
     <div class="board-card mboard" id="mboard" hidden></div>
-    <p class="work-info" id="about-workinfo" hidden>💡 회의 전에 원고(주간/수시)를 <span class="hl">간략하게</span> 작성합니다. 자료마당에서 담당자가 각 원고를 취합하면 회의 자료가 됩니다.</p>
+    <!-- 업무 안내문은 로그인한 뒤 DB(site_config 'guides')에서 채운다 — 공개 파일에 두면 검색에 실린다 -->
+    <p class="work-info" id="about-workinfo" hidden></p>
     <div class="team-grid">
       <div class="member head" data-member="lead">
         <div class="member-head"><h4>한프로</h4><span class="role-tag">단장</span></div>
@@ -1410,7 +1411,7 @@
 <div class="modal-backdrop" id="directive-modal">
   <div class="modal" role="dialog" aria-modal="true" aria-labelledby="directive-title">
     <h3 id="directive-title">새 지시사항</h3>
-    <p class="modal-sub">단원들이 잘 기억하도록 개조식으로 간단히 적습니다. 저장하면 새 회차로 맨 위에 등록되고, 이전 지시는 그 아래로 쌓입니다. (단장·관리자만 작성)</p>
+    <p class="modal-sub" id="directive-help"></p>
     <form id="directive-form">
       <div class="field" style="max-width:200px;">
         <label for="directive-kind">종류</label>
@@ -2182,6 +2183,24 @@
 
   const sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
   let currentUser = null;
+  // 운영 안내문(회의 전 원고 작성·취합 절차·지시사항/원고 창 도움말)은 공개 파일에 두지 않는다.
+  // 이 파일은 로그인 여부와 상관없이 누구나(검색 크롤러 포함) 그대로 내려받으므로, 「로그인해야 보이는」
+  // 글이라도 파일 안에 있으면 검색과 AI 요약에 실린다. 그래서 로그인한 뒤 DB(site_config 'guides',
+  // 로그인 전용)에서 받아 채우고, 로그아웃하면 비운다.
+  let GUIDES = {};
+  async function loadGuides() {
+    GUIDES = {};
+    if (currentUser) {
+      const { data } = await sb.from("site_config").select("value").eq("key", "guides").maybeSingle();
+      GUIDES = (data && data.value) || {};
+    }
+    const wi = document.getElementById("about-workinfo");
+    if (wi) wi.innerHTML = sanitizePacketHtml(GUIDES.workinfo || "");
+    const dh = document.getElementById("directive-help");
+    if (dh) dh.textContent = GUIDES.directive_help || "";
+    const nd = document.getElementById("packet-note-detail");   // 자료마당은 다시 그릴 때도 GUIDES로 채운다
+    if (nd) nd.textContent = GUIDES.packet_note || "";
+  }
   let pwFlowHandled = false;
 
   const authEmailEl = document.getElementById("auth-email");
@@ -2329,7 +2348,7 @@
     currentUser = nextUser;
     renderAuthNav();
     // 관리자 여부를 먼저 확정한 뒤 화면을 그려야 모더레이션 버튼·삭제 이력이 올바르게 표시됨
-    if (!sameUser) { await checkAdmin(); renderAuthNav(); renderResources(); renderCalendar(); renderBoard(); checkNewBadges(); spLoad(); }
+    if (!sameUser) { await checkAdmin(); await loadGuides(); renderAuthNav(); renderResources(); renderCalendar(); renderBoard(); checkNewBadges(); spLoad(); }
     // 초대/재설정 링크로 접속한 경우 비밀번호 설정 화면을 띄운다.
     if (!pwFlowHandled && session &&
         (event === "PASSWORD_RECOVERY" || authHashType === "invite" || authHashType === "recovery")) {
@@ -2548,7 +2567,7 @@
       + '<div id="res-packets" hidden>'
       + '<div class="list-toolbar">'
       + '<span class="res-packet-note">💡 연구단마당의 최신 원고를 모아 회의 자료로 올립니다. <button type="button" class="note-more" data-note-more aria-expanded="false">자세히 ⓘ</button>'
-      + '<span class="note-detail" hidden>취합 버튼을 누르면 각 단원의 최신 원고(주간/수시)가 초안으로 모이고, 다듬어 올리면 됩니다. 취합은 로그인한 단원 누구나 할 수 있고(평소에는 행정지원 주무관 담당), 한 번 올린 자료는 수정할 수 없어 바로잡을 때는 새로 올립니다. 삭제는 관리자와 행정지원 주무관(최근 7일 내 자료)만 가능합니다.</span></span>'
+      + '<span class="note-detail" id="packet-note-detail" hidden>' + esc(GUIDES.packet_note || "") + '</span></span>'
       + '<span style="display:flex;gap:6px;flex-wrap:wrap;">'
       + '<button type="button" class="pk-genbtn gen-week" data-pkkind="주간">📋 주간회의 자료 취합</button>'
       + '<button type="button" class="pk-genbtn gen-adhoc" data-pkkind="수시">🗓 수시회의 자료 취합</button></span>'
@@ -4525,7 +4544,7 @@
       });
       return;
     }
-    if (workInfo) workInfo.hidden = false;
+    if (workInfo) workInfo.hidden = !workInfo.textContent.trim();   // 안내문을 못 받았으면 빈 띠를 띄우지 않는다
     // 로그인: 업무게시판으로 전환
     let staff = [], meetings = [], directives = [];
     try {
@@ -4632,9 +4651,7 @@
     memoModal.dataset.email = email;
     memoModal.dataset.noteId = note ? String(note.id) : "";
     document.getElementById('memo-kind').value = (note && note.kind === "수시") ? "수시" : "주간";
-    document.getElementById('memo-sub').textContent = note
-      ? "이 원고를 고쳐 다시 저장합니다. 글자 크기·서체는 회의 자료로 모을 때 표준 서식으로 정리됩니다."
-      : "회의 자료로 취합될 원고를 새로 작성합니다. 저장하면 카드 맨 위에 쌓이고, 취합 때는 구분별 최신 원고가 사용됩니다. 글자 크기·서체는 표준 서식으로 정리되니 내용에 집중하세요. 사진·그림은 20MB 이하, 글 하나에 10장까지 넣을 수 있습니다.";
+    document.getElementById('memo-sub').textContent = note ? (GUIDES.memo_edit || "") : (GUIDES.memo_new || "");
     const bodyEl = document.getElementById('memo-body');
     bodyEl.innerHTML = note && note.body ? richToHtml(note.body) : "";
     resolveInlineImages(bodyEl);
