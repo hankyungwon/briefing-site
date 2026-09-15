@@ -943,6 +943,78 @@ const daysAgo = n => { const d = new Date(); d.setDate(d.getDate() - n); return 
     await page.close();
   }
 
+  // M. 문서 첨부는 「내려받기」로 받는다 — 새 탭으로 Supabase 주소를 여는 대신, 누를 때 새 서명을 받아
+  //    파일 이름을 붙인 내려받기로 보낸다. 태블릿에서 주소창에 Supabase 주소가 드러나고, 서명이 1시간 지나면
+  //    오류 화면이 뜨던 문제.
+  {
+    const page = await H.newPage(browser);
+    const { user, session } = H.mkSession("twopro@hanmail.net", "two");
+    const signs = [];
+    await H.setupPage(page, { user, session, routes: (p, m, req) => {
+      if (p === "/rest/v1/free_posts") return [{ id: 7, title: "첨부 시험", body: null, author_name: "twopro", author_id: "two", pinned: false, created_at: "2026-09-15T01:00:00Z" }];
+      if (p === "/rest/v1/free_comments") return [];
+      if (p === "/rest/v1/attachments") return [{ id: 1, parent_type: "free", parent_id: 7, path: "free/7/1_ab_2026.pdf", file_name: "2026년 연구계획(안).pdf", file_size: 1234, mime: "application/pdf" }];
+      if (p === "/storage/v1/object/sign/attachments") {            // 목록 그릴 때의 묶음 서명(1시간)
+        const paths = JSON.parse(req.postData()).paths;
+        return paths.map(x => ({ path: x, signedURL: "/object/sign/attachments/" + x + "?token=old", error: null }));
+      }
+      if (p.startsWith("/storage/v1/object/sign/attachments/")) {   // 누를 때의 새 서명
+        signs.push(p); return { signedURL: "/object/sign/attachments/free/7/1_ab_2026.pdf?token=fresh" };
+      }
+      return H.defaultBriefingRoutes(p);
+    }});
+    // 서명 주소로 실제 파일을 내려주는 척 — 이름은 Content-Disposition 으로
+    // (같은 경로로 오는 서명 요청 POST 는 위 목 라우트로 넘기고, 파일을 받는 GET 만 여기서 응답한다)
+    await page.route("**/storage/v1/object/sign/attachments/free/**", r => r.request().method() !== "GET" ? r.fallback()
+      : r.fulfill({ status: 200, contentType: "application/pdf",
+          headers: { "Content-Disposition": "attachment; filename=\"file.pdf\"; filename*=UTF-8''" + encodeURIComponent("2026년 연구계획(안).pdf") }, body: "%PDF-1.4 x" }));
+    const alerts = []; page.on("dialog", d => { alerts.push(d.message()); d.dismiss().catch(() => {}); });
+    await H.login(page, port, "twopro@hanmail.net");
+    await page.click('nav button[data-panel="board"]'); await page.waitForTimeout(700);
+    const link = await page.evaluate(() => { const a = document.querySelector("a.att-doc"); return a ? { href: a.getAttribute("href"), target: a.getAttribute("target") || "", name: a.dataset.attName } : null; });
+    c.ok(link && /download=/.test(link.href) && !link.target, "문서 링크는 새 탭이 아니라 내려받기용 주소 (" + (link && link.href.slice(-40)) + ")");
+    const urlBefore = page.url();
+    const [dl] = await Promise.all([page.waitForEvent("download"), page.click("a.att-doc")]);
+    c.ok(signs.length === 1, "누를 때 새 서명을 받는다 (" + signs.length + "회)");
+    c.ok(/token=fresh/.test(dl.url()) && /download=/.test(dl.url()), "새 서명 + 내려받기 표시로 요청 (" + dl.url().split("?")[1] + ")");
+    // 파일 이름은 서버(Supabase)가 download= 값을 읽어 Content-Disposition 으로 실어 준다. 여기서는 그 값이
+    // 한 번만 부호화됐는지(두 번 부호화되면 «%25EB…» 로 깨진 이름이 내려온다)를 확인한다.
+    const dlName = decodeURIComponent(new URL(dl.url()).searchParams.get("download") || "");
+    c.ok(dlName === "2026년 연구계획(안).pdf", "한글 파일 이름이 한 번만 부호화되어 실린다 (" + dlName + ")");
+    c.ok(page.url() === urlBefore, "페이지는 그대로 — Supabase 주소로 이동하지 않는다");
+    c.ok(alerts.length === 0, "오류 알림 없이 받는다" + (alerts.length ? " — " + alerts[0].slice(0, 60) : ""));
+    await page.close();
+  }
+
+  // L. 운영 안내문은 공개 파일(index.html)에 없다 — 로그인한 뒤 DB에서 받아 채운다.
+  //    이 파일은 누구나(검색 크롤러 포함) 그대로 내려받으므로, 파일 안에 있으면 검색·AI 요약에 실린다.
+  {
+    const src = require("fs").readFileSync(require("path").join(__dirname, "..", "index.html"), "utf8");
+    // (「개조식으로 간단히」만 찾으면 회의록 입력칸 라벨에 걸리므로 안내문 문장 그대로 찾는다)
+    const leaked = ["회의 전에 원고", "취합 버튼을 누르면", "개조식으로 간단히 적습니다", "회의 자료로 취합될 원고", "행정지원 주무관(최근 7일"]
+      .filter(k => src.includes(k));
+    c.ok(leaked.length === 0, "운영 안내문이 공개 파일에 남아 있지 않다" + (leaked.length ? " — 남음: " + leaked.join(" / ") : ""));
+
+    const page = await H.newPage(browser);
+    const { user, session } = H.mkSession("twopro@hanmail.net", "two");
+    await H.setupPage(page, { user, session, routes: p => H.defaultBriefingRoutes(p) });
+    const before = await page.evaluate(() => (document.getElementById("about-workinfo") || {}).textContent || "");
+    await H.login(page, port, "twopro@hanmail.net");
+    await page.click('nav button[data-panel="about"]'); await page.waitForTimeout(700);
+    const after = await page.evaluate(() => {
+      const w = document.getElementById("about-workinfo");
+      return { text: w.textContent.trim(), shown: !w.hidden, hl: !!w.querySelector(".hl"),
+               help: document.getElementById("directive-help").textContent.trim() };
+    });
+    c.ok(before.trim() === "", "로그인 전 화면에는 안내문이 비어 있다");
+    c.ok(after.shown && /회의 전에 원고/.test(after.text) && after.hl, "로그인하면 DB에서 받은 안내문이 띠에 채워진다(강조 서식 포함)");
+    c.ok(/개조식/.test(after.help), "지시사항 창 도움말도 DB에서 채워진다");
+    await page.click('nav button[data-panel="resources"]'); await page.waitForTimeout(600);
+    const note = await page.evaluate(() => (document.getElementById("packet-note-detail") || {}).textContent || "");
+    c.ok(/취합 버튼을 누르면/.test(note), "자료마당 취합 안내도 DB에서 채워진다");
+    await page.close();
+  }
+
   // K. 한글 이름의 파일도 첨부된다.
   //    저장소 주소에 한글이 섞이면 Supabase가 「Invalid key」로 거절한다 —
   //    그래서 주소는 영문으로만 만들고, 보이는 이름에는 한글 원래 이름을 그대로 남긴다.

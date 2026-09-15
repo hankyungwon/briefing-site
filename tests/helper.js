@@ -78,6 +78,12 @@ function defaultBriefingRoutes(p) {
     { key: "four", email: "fourpro@hanmail.net" }, { key: "five", email: "fivepro@hanmail.net" },
     { key: "song", email: "syho99@naver.com" }
   ];
+  // 운영 안내문 — 실제 사이트는 site_config(로그인 전용)에서 받는다. 공개 파일에는 이 글이 없어야 한다.
+  if (p === "/rest/v1/site_config") return { value: {
+    workinfo: '💡 회의 전에 원고(주간/수시)를 <span class="hl">간략하게</span> 작성합니다. 자료마당에서 담당자가 각 원고를 취합하면 회의 자료가 됩니다.',
+    packet_note: "취합 버튼을 누르면 각 단원의 최신 원고(주간/수시)가 초안으로 모이고, 다듬어 올리면 됩니다.",
+    directive_help: "단원들이 잘 기억하도록 개조식으로 간단히 적습니다.",
+    memo_new: "회의 자료로 취합될 원고를 새로 작성합니다.", memo_edit: "이 원고를 고쳐 다시 저장합니다." } };
   if (p === "/rest/v1/briefings") return [{ id: 4, issue_no: 4, published_date: "2026-07-21", edition: "daily" }];
   if (p === "/rest/v1/briefing_items") return [{ id: 40, briefing_id: 4, category: "gov", title: "AI", keyword: "AI", summary: "x", source_url: "https://a.b", source_name: "출처", position: 1 }];
   return undefined;
