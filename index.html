@@ -2508,7 +2508,10 @@
         h += '<a class="att-img" href="' + esc(a.url) + '" target="_blank" rel="noopener">'
           + '<img src="' + esc(a.url) + '" alt="' + esc(a.file_name) + '" loading="lazy"></a>';
       } else {
-        h += '<a class="att-doc" href="' + esc(a.url || "#") + '" target="_blank" rel="noopener">'
+        // 문서는 「이동」이 아니라 「내려받기」로 보낸다. 서명 주소를 새 탭으로 그냥 열면 태블릿·휴대폰
+        // 브라우저가 Supabase 주소로 이동해 버리고(주소창에 드러남), 서명이 1시간 지나면 오류 화면이 뜬다.
+        // 누를 때 새 서명을 받아 파일 이름을 붙여 내려받는다(아래 att-doc 클릭 처리). href는 우클릭 저장용 예비.
+        h += '<a class="att-doc" href="' + esc(withDownloadName(a.url, a.file_name)) + '" data-att-path="' + esc(a.path) + '" data-att-name="' + esc(a.file_name) + '">'
           + '<span class="att-badge">' + esc(ext.toUpperCase() || "FILE") + '</span>'
           + '<span class="att-name">' + esc(a.file_name) + '</span>'
           + '<span class="att-size">' + fmtSize(a.file_size) + '</span></a>';
@@ -2516,6 +2519,29 @@
     }
     return h + '</div>';
   }
+  // 서명 주소에 「내려받기 + 파일 이름」을 붙인다. Supabase가 Content-Disposition: attachment 로 응답해
+  // 브라우저가 페이지를 떠나지 않고 파일로 받는다. 한글 이름은 서버가 UTF-8 로 실어 주므로 한 번만 부호화한다.
+  function withDownloadName(url, name) {
+    if (!url) return "#";
+    return url + (url.includes("?") ? "&" : "?") + "download=" + encodeURIComponent(name || "file");
+  }
+  // 문서 첨부를 누르면: 새 서명(10분)을 받아 내려받기로 보낸다. 실패하면 이유를 알린다.
+  document.addEventListener("click", async e => {
+    const a = e.target.closest("a.att-doc[data-att-path]");
+    if (!a || e.ctrlKey || e.metaKey || e.button !== 0) return;
+    e.preventDefault();
+    if (a.dataset.busy) return;
+    a.dataset.busy = "1";
+    try {
+      const { data, error } = await sb.storage.from("attachments").createSignedUrl(a.dataset.attPath, 600);
+      if (error || !data || !data.signedUrl) throw new Error(error ? error.message : "signed url 없음");
+      const url = withDownloadName(data.signedUrl, a.dataset.attName);
+      a.href = url;
+      window.location.assign(url);   // attachment 응답이라 페이지는 그대로, 파일만 내려온다
+    } catch (err) {
+      alert("파일을 내려받지 못했습니다. 다시 로그인한 뒤 시도해 주세요.\n(" + (err.message || err) + ")");
+    } finally { delete a.dataset.busy; }
+  });
   async function deleteAttachmentsFor(parentType, parentId) {
     const { data } = await sb.from("attachments").select("id,path")
       .eq("parent_type", parentType).eq("parent_id", parentId);
