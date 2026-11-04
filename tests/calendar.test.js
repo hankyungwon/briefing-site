@@ -107,7 +107,7 @@ const H = require("./helper");
     "회의와 식사 색이 서로 다름 (회의 " + look.byType.meeting + " / 식사 " + look.byType.meal + ")");
   c.ok(look.byType.meal === "rgb(126, 87, 194)", "식사는 주황과 헷갈리지 않는 보라");
 
-  // 행정지원 주무관(송프로)은 남이 올린 일정도 수정·삭제할 수 있어야 한다(일정 관리가 본업).
+  // 행정지원 주무관(석프로)은 남이 올린 일정도 수정·삭제할 수 있어야 한다(일정 관리가 본업).
   // 일반 연구관은 남의 일정에 아무 버튼도 보이지 않는다. 화면 버튼과 DB(RLS) 기준이 같다.
   {
     const others = [{ id: 9, type: "meeting", title: "남이 올린 회의", start_date: T, end_date: null,
@@ -132,10 +132,10 @@ const H = require("./helper");
       await pg.close();
       return r;
     };
-    const song = await look("syho99@naver.com", "song-uid");
+    const song = await look("seokpro@hanmail.net", "song-uid");
     const lead = await look("hanpro@hanmail.net", "lead-uid");
     const other = await look("twopro@hanmail.net", "two-uid");
-    c.ok(song.edit === 1 && song.del === 1, "송프로는 남의 일정에도 수정·삭제 버튼 (수정 " + song.edit + " / 삭제 " + song.del + ")");
+    c.ok(song.edit === 1 && song.del === 1, "석프로는 남의 일정에도 수정·삭제 버튼 (수정 " + song.edit + " / 삭제 " + song.del + ")");
     c.ok(lead.edit === 1 && lead.del === 1, "단장도 남의 일정에 수정·삭제 버튼 (수정 " + lead.edit + " / 삭제 " + lead.del + ")");
     c.ok(other.edit === 0 && other.del === 0, "일반 연구관은 남의 일정에 버튼 없음 (수정 " + other.edit + " / 삭제 " + other.del + ")");
   }
