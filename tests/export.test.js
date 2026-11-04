@@ -45,15 +45,15 @@ const fs = require("fs");
     await page.close();
   }
 
-  // B. 취합본(송프로) 보기·저장
+  // B. 취합본(행정지원 주무관 석프로) 보기·저장 — 옛 취합본 머리글의 「송프로」는 문서에 적힌 글자라 그대로 남는다
   {
     const page = await H.newPage(browser);
     await page.addInitScript(() => { try { delete window.showSaveFilePicker; } catch (e) { window.showSaveFilePicker = undefined; } });
-    const { user, session } = H.mkSession("syho99@naver.com", "song");
+    const { user, session } = H.mkSession("seokpro@hanmail.net", "song");
     const packets = [{ id: 1, packet_date: "2026-07-21", title: "주간회의 자료 (7.21)", content: "<h3 style=\"text-align:center;\">관악구 AI혁신정책연구단 · 주간회의 자료</h3><p style=\"text-align:center;color:#667;font-size:12px;\">취합 7.21(화) 22:03 · 취합 송프로</p><hr><h4>[1] 이프로 · AI혁신 선임연구관 <span style=\"color:#889;font-size:11px;\">(7.20(월) 09:30 작성)</span></h4><p>지난주 <b>실적</b></p><table class=\"pk-table\"><tbody><tr><td>가</td><td>나</td></tr></tbody></table>", created_by: "syho99@naver.com" },
       { id: 2, packet_date: "2026-07-14", title: "주간회의 자료 (7.14)", content: "<h3 style=\"text-align:center;\">관악구 AI혁신정책연구단 주간회의 자료</h3><p style=\"text-align:center;color:#667;font-size:12px;\">7.14(화) 09:00 · by 송프로</p><hr><h4>[1] 이프로</h4><p>지난 기록</p>", created_by: "syho99@naver.com" }];
     await H.setupPage(page, { user, session, routes: p => p === "/rest/v1/meeting_packets" ? packets : H.defaultBriefingRoutes(p) });
-    await H.login(page, port, "syho99@naver.com");
+    await H.login(page, port, "seokpro@hanmail.net");
     await page.click('nav button[data-panel="resources"]'); await page.waitForTimeout(400);
     await page.click('.res-subnav [data-ressec="packets"]'); await page.waitForTimeout(400);
     // 안내문은 한 줄만 보이고, 「자세히」를 눌러야 긴 설명이 펼쳐진다
@@ -62,7 +62,7 @@ const fs = require("fs");
     const noteAfter = await page.evaluate(() => { const d = document.querySelector(".note-detail"); return d && getComputedStyle(d).display; });
     c.ok(noteBefore === "none" && noteAfter === "block", "회의 자료 안내문: 접힘(" + noteBefore + ") → 「자세히」로 펼침(" + noteAfter + ")");
     const who = await page.evaluate(() => { const e = document.getElementById("auth-email"), cs = getComputedStyle(e), dot = getComputedStyle(e, "::before"); return { t: e.textContent, fw: cs.fontWeight, color: cs.color, dot: dot.backgroundColor, dotW: dot.width, glow: /radial-gradient/.test(dot.backgroundImage), noSpread: !/[^t] [1-9]\d*px [1-9]/.test(dot.boxShadow.replace(/inset[^,]*/g, "")) && dot.animationName === "none" }; });
-    c.ok(who.t === "송프로", "메뉴줄 로그인 표시가 이메일 대신 호칭(송프로)");
+    c.ok(who.t === "석프로", "메뉴줄 로그인 표시가 이메일 대신 호칭(석프로) (" + who.t + ")");
     const calm = await page.evaluate(() => { const b = document.getElementById("auth-btn"), cs = getComputedStyle(b); return { t: b.textContent, bg: cs.backgroundColor, bc: cs.borderTopColor }; });
     c.ok(calm.t === "로그아웃" && /rgba\(0, 0, 0, 0\)|255, 255, 255/.test(calm.bg) && calm.bc !== "rgb(14, 95, 168)", "로그아웃은 「비밀번호 변경」과 같은 조용한 무게 (" + calm.bc + ")");
     c.ok(parseInt(who.fw) >= 700 && who.color === "rgb(11, 74, 134)" && who.dotW === "10px" && who.glow && who.noSpread, "로그인 표시는 청색 접속 표시등(빛 번짐·깜빡임 없음) + 진한 파랑 굵은 글자 — 본문과 구분 (" + who.color + ", 점 " + who.dot + ")");

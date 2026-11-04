@@ -202,11 +202,11 @@ const daysAgo = n => { const d = new Date(); d.setDate(d.getDate() - n); return 
     await page.close();
   }
 
-  // B. 송프로 취합 — 「취합」은 바로 저장이 아니라 편집기(초안)를 연다 → 다듬어 「올리기」 → 게시
-  //    게시본에 취합자(created_by)·연구관 서식이 남고, 목록에 '취합 송프로'·'최신'이 보인다.
+  // B. 석프로(행정지원 주무관) 취합 — 「취합」은 바로 저장이 아니라 편집기(초안)를 연다 → 다듬어 「올리기」 → 게시
+  //    게시본에 취합자(created_by)·연구관 서식이 남고, 목록에 'by 석프로'·'최신'이 보인다.
   {
     const page = await H.newPage(browser, { viewport: { width: 900, height: 1100 } });
-    const { user, session } = H.mkSession("syho99@naver.com", "song");
+    const { user, session } = H.mkSession("seokpro@hanmail.net", "song");
     const staff = [{ id: 1, member_email: "twopro@hanmail.net", kind: "주간",
       body: '<span style="font-size:26px;font-family:굴림;line-height:2.4;color:#C00;"><b>굵은 원고</b></span>', updated_at: "2026-07-20T00:00:00Z" }];
     let packets = [], nid = 1;
@@ -218,7 +218,7 @@ const daysAgo = n => { const d = new Date(); d.setDate(d.getDate() - n); return 
       }
       return H.defaultBriefingRoutes(p);
     }});
-    await H.login(page, port, "syho99@naver.com");
+    await H.login(page, port, "seokpro@hanmail.net");
     await page.click('nav button[data-panel="resources"]'); await page.waitForTimeout(400);
     await page.click('.res-subnav [data-ressec="packets"]'); await page.waitForTimeout(400);
 
@@ -228,7 +228,7 @@ const daysAgo = n => { const d = new Date(); d.setDate(d.getDate() - n); return 
     c.ok(editorOpen, "취합 시 편집기가 열리고 버튼이 「올리기」");
     const draftHasFmt = await page.evaluate(() => document.getElementById("packet-edit-body").innerHTML);
     c.ok(/굵은 원고|<b>/i.test(draftHasFmt), "초안에 단원 원고(서식)가 실려 있음");
-    c.ok(/ by 송프로/.test(draftHasFmt) && !/취합/.test(draftHasFmt) && !/·\s*by/.test(draftHasFmt),
+    c.ok(/ by 석프로/.test(draftHasFmt) && !/취합/.test(draftHasFmt) && !/·\s*by/.test(draftHasFmt),
       "머리글은 「날짜  by 취합자」 — '취합' 중복·by 앞 가운뎃점 없음");
     c.ok(/〈[^〉]*7\.20[^〉]*〉/.test(draftHasFmt) && !/작성[)〉]/.test(draftHasFmt),
       "단원 작성 시각은 〈…〉 표기 — 괄호 중복·'작성' 꼬리말 없음");
@@ -266,7 +266,7 @@ const daysAgo = n => { const d = new Date(); d.setDate(d.getDate() - n); return 
     await page.fill("#packet-edit-summary", "AI 교육 확대·공모사업 마감 대응");
     await page.click("#packet-save"); await page.waitForTimeout(500);
     c.ok(packets.length === 1, "「올리기」로 게시본 1건 생성");
-    c.ok(packets[0].created_by === "syho99@naver.com", "게시본에 취합자(created_by) 기록");
+    c.ok(packets[0].created_by === "seokpro@hanmail.net", "게시본에 취합자(created_by) 기록");
     c.ok(packets[0].kind === "주간", "주간 취합본에 kind=주간 저장");
     c.ok(packets[0].summary === "AI 교육 확대·공모사업 마감 대응", "한 줄 요약 저장");
     c.ok(/굵은 원고|<b>/i.test(packets[0].content), "게시본에 단원 원고 반영");
@@ -279,9 +279,9 @@ const daysAgo = n => { const d = new Date(); d.setDate(d.getDate() - n); return 
                del: !!r.querySelector("[data-pk-del]"), edit: !!r.querySelector("[data-pk-edit]") };
     });
     c.ok(/AI 교육 확대/.test(row.sum), "목록에 한 줄 요약 표시");
-    c.ok(/^by 송프로/.test(row.by.trim()), "목록에 'by 송프로' 표시 (" + row.by.trim() + ")");
+    c.ok(/^by 석프로/.test(row.by.trim()), "목록에 'by 석프로' 표시 (" + row.by.trim() + ")");
     c.ok(!row.kind && /^주간회의 자료/.test(row.title), "목록에 종류 배지 없음 — 제목이 종류를 말해줌 (" + row.title + ")");
-    c.ok(row.del, "송프로는 이번 주(오늘) 자료 삭제 버튼 보임");
+    c.ok(row.del, "석프로는 이번 주(오늘) 자료 삭제 버튼 보임");
     c.ok(!row.edit, "게시본에 「수정」 버튼 없음(수정 불가)");
     await page.close();
   }
@@ -318,7 +318,7 @@ const daysAgo = n => { const d = new Date(); d.setDate(d.getDate() - n); return 
   // C2. 수시회의 자료 — 「수시」 버튼은 빈 양식으로 열리고, kind=수시로 게시되어 목록에 수시 배지.
   {
     const page = await H.newPage(browser, { viewport: { width: 900, height: 1100 } });
-    const { user, session } = H.mkSession("syho99@naver.com", "song");
+    const { user, session } = H.mkSession("seokpro@hanmail.net", "song");
     let packets = [], nid = 1;
     await H.setupPage(page, { user, session, routes: (p, m, req) => {
       if (p === "/rest/v1/staff_notes") return [{ id: 1, member_email: "twopro@hanmail.net", kind: "수시", body: "<b>수시원고</b>", updated_at: "2026-08-30T00:00:00Z" }];
@@ -328,7 +328,7 @@ const daysAgo = n => { const d = new Date(); d.setDate(d.getDate() - n); return 
       }
       return H.defaultBriefingRoutes(p);
     }});
-    await H.login(page, port, "syho99@naver.com");
+    await H.login(page, port, "seokpro@hanmail.net");
     await page.click('nav button[data-panel="resources"]'); await page.waitForTimeout(400);
     await page.click('.res-subnav [data-ressec="packets"]'); await page.waitForTimeout(400);
     await page.click('[data-pkkind="수시"]'); await page.waitForTimeout(500);
@@ -340,10 +340,10 @@ const daysAgo = n => { const d = new Date(); d.setDate(d.getDate() - n); return 
     await page.close();
   }
 
-  // D. 송프로 삭제 권한 — 이번 주(최근 7일) 자료만. 지난주 이전 확정본은 삭제 버튼이 없다.
+  // D. 행정지원 주무관(석프로) 삭제 권한 — 이번 주(최근 7일) 자료만. 지난주 이전 확정본은 삭제 버튼이 없다.
   {
     const page = await H.newPage(browser, { viewport: { width: 900, height: 1100 } });
-    const { user, session } = H.mkSession("syho99@naver.com", "song");
+    const { user, session } = H.mkSession("seokpro@hanmail.net", "song");
     const packets = [
       { id: 20, packet_date: today(), title: "이번 주", content: "<p>x</p>", created_by: "syho99@naver.com" },
       { id: 10, packet_date: daysAgo(10), title: "지난주 이전", content: "<p>y</p>", created_by: "syho99@naver.com" }
@@ -352,14 +352,14 @@ const daysAgo = n => { const d = new Date(); d.setDate(d.getDate() - n); return 
       if (p === "/rest/v1/meeting_packets") return packets;
       return H.defaultBriefingRoutes(p);
     }});
-    await H.login(page, port, "syho99@naver.com");
+    await H.login(page, port, "seokpro@hanmail.net");
     await page.click('nav button[data-panel="resources"]'); await page.waitForTimeout(400);
     await page.click('.res-subnav [data-ressec="packets"]'); await page.waitForTimeout(400);
     const del = await page.evaluate(() => [...document.querySelectorAll(".pk-row")].map(r => ({
       title: (r.querySelector(".pk-title") || {}).textContent || "", del: !!r.querySelector("[data-pk-del]") })));
     const recent = del.find(x => /이번 주/.test(x.title)), old = del.find(x => /지난주/.test(x.title));
-    c.ok(recent && recent.del, "송프로: 이번 주 자료는 삭제 버튼 보임");
-    c.ok(old && !old.del, "송프로: 지난주 이전 자료는 삭제 버튼 없음");
+    c.ok(recent && recent.del, "석프로: 이번 주 자료는 삭제 버튼 보임");
+    c.ok(old && !old.del, "석프로: 지난주 이전 자료는 삭제 버튼 없음");
     await page.close();
   }
 
@@ -509,10 +509,10 @@ const daysAgo = n => { const d = new Date(); d.setDate(d.getDate() - n); return 
     await page.close();
   }
 
-  // H. 회의록 삭제 권한 — 송프로는 이번 주(7일)만, 관리자는 오래된 것도.
+  // H. 회의록 삭제 권한 — 행정지원 주무관(석프로)은 이번 주(7일)만, 관리자는 오래된 것도.
   {
     const page = await H.newPage(browser, { viewport: { width: 900, height: 1100 } });
-    const { user, session } = H.mkSession("syho99@naver.com", "song");
+    const { user, session } = H.mkSession("seokpro@hanmail.net", "song");
     const notes = [
       { id: 2, meeting_date: today(), kind: "주간", result: "이번 주", author_email: "syho99@naver.com" },
       { id: 1, meeting_date: daysAgo(10), kind: "주간", result: "지난주 이전", author_email: "syho99@naver.com" }
@@ -521,15 +521,15 @@ const daysAgo = n => { const d = new Date(); d.setDate(d.getDate() - n); return 
       if (p === "/rest/v1/meeting_notes") return notes;
       return H.defaultBriefingRoutes(p);
     }});
-    await H.login(page, port, "syho99@naver.com");
+    await H.login(page, port, "seokpro@hanmail.net");
     await page.click('nav button[data-panel="about"]'); await page.waitForTimeout(500);
     // 최신(오늘)은 본문 클램프 영역, 지난 회의록은 details 안 — 둘 다 삭제 버튼 유무만 본다
     await page.evaluate(() => { const d = document.querySelector("#mboard details"); if (d) d.open = true; });
     const del = await page.evaluate(() => [...document.querySelectorAll("#mboard .board-note")].map(n => ({
       txt: (n.querySelector(".board-body") || {}).textContent || "", del: !!n.querySelector("[data-meeting-del]") })));
     const recent = del.find(x => /이번 주/.test(x.txt)), old = del.find(x => /지난주/.test(x.txt));
-    c.ok(recent && recent.del, "송프로: 이번 주 회의록 삭제 버튼 보임");
-    c.ok(old && !old.del, "송프로: 지난주 이전 회의록 삭제 버튼 없음");
+    c.ok(recent && recent.del, "석프로: 이번 주 회의록 삭제 버튼 보임");
+    c.ok(old && !old.del, "석프로: 지난주 이전 회의록 삭제 버튼 없음");
     await page.close();
   }
 
@@ -570,7 +570,7 @@ const daysAgo = n => { const d = new Date(); d.setDate(d.getDate() - n); return 
     });
     c.ok(JSON.stringify(r.authors) === JSON.stringify(["오프로", "단장", "한뱀", "randomguy"]),
       "게시판 작성자: 필명·이메일→호칭(오프로·단장), 한뱀/미상은 원본 (" + r.authors.join(",") + ")");
-    c.ok(r.commentAuthor === "송프로", "댓글 작성자도 호칭(송프로)으로 표시 (" + r.commentAuthor + ")");
+    c.ok(r.commentAuthor === "송프로", "전임자(송프로)가 남긴 댓글은 명단에서 빠진 뒤에도 「송프로」로 표시 (" + r.commentAuthor + ")");
     c.ok(r.postCol === "rgb(11, 74, 134)" && r.postSize === 15, "글쓴이는 진한 파랑·15px로 강조 (" + r.postCol + ", " + r.postSize + "px)");
     c.ok(r.cmtCol === "rgb(85, 106, 141)" && r.cmtSize < r.postSize, "댓글쓴이는 회색·더 작게 물러남 (" + r.cmtCol + ", " + r.cmtSize + "px)");
     // 게시 번호(No.N)는 중간 글을 지우면 건너뛰어 보이므로 없앴다 — 글은 제목부터 시작한다
