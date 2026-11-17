@@ -1054,6 +1054,11 @@
     .cal-spacer{flex:0 0 100%;height:0;}   /* 제목 뒤에서 줄을 바꿔 둘째 줄에 보기 전환·등록을 모은다 */
     .cal-views{margin-left:auto;}
   }
+  /* 공통 안전망 알림 — 화면 아래 가운데, 9초 뒤 사라진다 */
+  #app-toast{position:fixed;left:50%;bottom:24px;transform:translateX(-50%) translateY(20px);max-width:min(560px,calc(100vw - 32px));
+    background:#A33;color:#fff;padding:12px 16px;border-radius:10px;font-size:14px;line-height:1.5;box-shadow:0 6px 24px rgba(0,0,0,.25);
+    opacity:0;pointer-events:none;transition:opacity .25s,transform .25s;z-index:2147483000;}
+  #app-toast.show{opacity:1;transform:translateX(-50%) translateY(0);pointer-events:auto;}
 </style>
 </head>
 <body>
@@ -1656,13 +1661,32 @@
   <div class="sp-grip" id="sp-grip" title="끌어서 크기 바꾸기"></div>
 </div>
 
-<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.119.0"></script>
 <script>
   // ── Supabase 연결 정보 ─────────────────────────────
   // publishable 키는 '공개용'으로 설계된 키라서 웹페이지에 넣어도 안전합니다.
   // (데이터베이스 비밀번호와는 다른 것입니다. 비밀번호는 절대 코드에 넣지 않습니다.)
   const SUPABASE_URL = "https://bpkliumilseyuloutsqt.supabase.co";
   const SUPABASE_KEY = "sb_publishable_BlgBVtoK45odAbJf8BSM0g_CoX3FZqE";
+
+  // ── 공통 안전망 ─────────────────────────────
+  // 처리 도중 예외가 나면 화면이 조용히 굳는 대신, 알림을 띄우고 「…중…」으로 멈춘 단추를 풀어 준다.
+  function appToast(msg) {
+    let t = document.getElementById("app-toast");
+    if (!t) { t = document.createElement("div"); t.id = "app-toast"; t.setAttribute("role", "alert"); document.body.appendChild(t); }
+    t.textContent = msg; t.classList.add("show");
+    clearTimeout(appToast._t); appToast._t = setTimeout(() => t.classList.remove("show"), 9000);
+  }
+  function appFail(err) {
+    const msg = (err && (err.message || err.error_description)) || (typeof err === "string" ? err : "");
+    if (/^\[quiet\]/.test(msg)) return;   // 이미 따로 안내한 오류
+    document.querySelectorAll("button[disabled]").forEach(b => {
+      if (/중…$/.test((b.textContent || "").trim())) { b.disabled = false; b.textContent = "다시 시도"; }
+    });
+    appToast("처리 중 문제가 생겼습니다. 다시 시도하고, 계속되면 새로고침해 주세요." + (msg ? " (" + msg.slice(0, 120) + ")" : ""));
+  }
+  window.addEventListener("error", e => appFail(e.error || e.message));
+  window.addEventListener("unhandledrejection", e => appFail(e.reason));
 
   const CATS = [
     { key: "ahead", label: "이번 주 전망" },   // 월요 특별판·연휴 종합판에만 항목이 있음 (없으면 섹션 숨김)
@@ -2181,6 +2205,11 @@
   const authHashType = _hp.get("type");                                   // invite | recovery | signup | ...
   const authHashError = _hp.get("error_description") || _hp.get("error_code") || _hp.get("error");
 
+  if (!window.supabase) {
+    // CDN(cdn.jsdelivr.net)이 막힌 망이거나 인터넷이 끊긴 경우 — 아무 말 없이 멈추지 않고 이유를 알린다
+    appToast("연결 도구(supabase-js)를 불러오지 못해 내용을 표시할 수 없습니다. 인터넷 연결 또는 사내망 차단(cdn.jsdelivr.net)을 확인하고 새로고침해 주세요.");
+    throw new Error("[quiet] supabase-js를 불러오지 못했습니다");
+  }
   const sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
   let currentUser = null;
   // 운영 안내문(회의 전 원고 작성·취합 절차·지시사항/원고 창 도움말)은 공개 파일에 두지 않는다.
@@ -2415,8 +2444,18 @@
   // 본문 텍스트 속 URL(유튜브 링크 등)을 눌러서 열 수 있는 링크로 바꿔 준다
   function linkify(text) {
     return esc(text).replace(/(https?:\/\/[^\s<]+|www\.[^\s<]+)/g, m => {
-      const href = /^https?:/i.test(m) ? m : "https://" + m;
-      return '<a class="src" href="' + href + '" target="_blank" rel="noopener">' + m + '</a>';
+      // 주소 끝에 붙은 마침표·쉼표·따옴표·닫는 괄호는 문장부호로 보고 링크에서 뗀다
+      // (단, 여는 괄호가 더 많으면 「…(안)」처럼 주소의 일부이므로 남긴다)
+      let url = m, tail = "";
+      for (;;) {
+        const e = url.match(/(&(?:quot|#39|gt);|[.,;:!?'"\]})])$/);
+        if (!e) break;
+        if (e[1] === ")" && (url.split("(").length - 1) >= (url.split(")").length - 1)) break;
+        url = url.slice(0, -e[1].length); tail = e[1] + tail;
+      }
+      if (!url) return m;
+      const href = /^https?:/i.test(url) ? url : "https://" + url;
+      return '<a class="src" href="' + href + '" target="_blank" rel="noopener">' + url + '</a>' + tail;
     });
   }
 
@@ -2545,14 +2584,26 @@
       alert("파일을 내려받지 못했습니다. 다시 로그인한 뒤 시도해 주세요.\n(" + (err.message || err) + ")");
     } finally { delete a.dataset.busy; }
   });
+  // 글에 딸린 첨부를 모두 지운다. 목록(DB) → 파일(저장소) 순서: 목록을 못 지우면 멈추고 알리고,
+  // 파일만 못 지우면 글에서는 사라지되 저장소에 남는 쪽을 택한다(눌러도 없는 첨부보다 낫다). 실패하면 throw.
   async function deleteAttachmentsFor(parentType, parentId) {
-    const { data } = await sb.from("attachments").select("id,path")
+    const { data, error } = await sb.from("attachments").select("id,path")
       .eq("parent_type", parentType).eq("parent_id", parentId);
+    if (error) throw error;
     const rows = data || [];
-    if (rows.length) {
-      await sb.storage.from("attachments").remove(rows.map(r => r.path));
-      await sb.from("attachments").delete().eq("parent_type", parentType).eq("parent_id", parentId);
-    }
+    if (!rows.length) return;
+    const { error: delErr } = await sb.from("attachments").delete().eq("parent_type", parentType).eq("parent_id", parentId);
+    if (delErr) throw delErr;
+    await sb.storage.from("attachments").remove(rows.map(r => r.path));
+  }
+  // 글을 올리다 첨부에서 실패했을 때, 방금 만든 글을 거둬들인다 — 사용자가 다시 누르면 같은 글이 두 번 올라가지 않도록.
+  // 거두는 데 성공하면 true(폼 내용은 그대로 두고 다시 시도하게 함), 실패하면 false(글은 올라간 상태).
+  async function undoNewPost(table, parentType, id) {
+    try {
+      await deleteAttachmentsFor(parentType, id);
+      const { error } = await sb.from(table).delete().eq("id", id);
+      return !error;
+    } catch (e) { return false; }
   }
 
   function renderResources() {
@@ -2783,13 +2834,20 @@
       comment: document.getElementById("post-comment").value.trim() || null
     }).select().single();
     let failMsg = ins.error ? ins.error.message : null;
+    let keptWithoutFiles = false;   // 글은 올라갔는데 첨부만 실패했고, 글을 거두지도 못한 경우
     if (!failMsg && files.length) {
       try { await uploadAttachments("resource", ins.data.id, files); }
-      catch (up) { failMsg = "파일 업로드 실패: " + (up.message || up); }
+      catch (up) {
+        failMsg = "파일 업로드 실패: " + (up.message || up);
+        keptWithoutFiles = !(await undoNewPost("posts", "resource", ins.data.id));
+      }
     }
     submitBtn.disabled = false;
     submitBtn.textContent = "등록하기";
-    if (failMsg) {
+    if (failMsg && keptWithoutFiles) {
+      // 글 자체는 등록된 상태 — 다시 「등록」을 누르면 같은 글이 또 생기므로, 폼을 닫고 첨부만 다시 붙이게 안내한다
+      alert("글은 등록되었지만 첨부파일은 올리지 못했습니다. 글의 「수정」에서 파일을 다시 붙여 주세요. (" + failMsg + ")");
+    } else if (failMsg) {
       errEl.textContent = "저장하지 못했습니다. 입력하신 내용은 그대로 남아 있으니 다시 시도해 주세요. (" + failMsg + ")";
       errEl.classList.add("show");
       return;
@@ -2814,7 +2872,8 @@
 
   async function deletePost(id) {
     if (!confirm("이 글을 삭제할까요?")) return;
-    await deleteAttachmentsFor("resource", id);
+    try { await deleteAttachmentsFor("resource", id); }
+    catch (e) { alert("첨부파일을 지우지 못해 삭제를 멈췄습니다. 잠시 후 다시 시도해 주세요. (" + (e.message || e) + ")"); return; }
     const { error } = await sb.from("posts").delete().eq("id", id);
     if (error) {
       alert("삭제하지 못했습니다. 잠시 후 다시 시도해 주세요.");
@@ -2850,8 +2909,9 @@
 
   async function removeOneAttachment(attId, path, btnEl) {
     if (!confirm("이 첨부파일을 삭제할까요?")) return;
+    const { error } = await sb.from("attachments").delete().eq("id", attId);
+    if (error) { alert("첨부파일을 삭제하지 못했습니다. (" + error.message + ")"); return; }
     await sb.storage.from("attachments").remove([path]);
-    await sb.from("attachments").delete().eq("id", attId);
     const row = btnEl.closest(".edit-att");
     if (row) row.remove();
   }
@@ -3333,16 +3393,40 @@
     return h;
   }
   // 저장·표시 전 안전 처리: 스크립트·이벤트 핸들러·위험 URL 제거 (내부 문서지만 방어)
+  // 본문 HTML 정화 — 「허용 목록」 방식. 글(서식·표·그림)에 필요한 태그·속성·스타일만 남기고 나머지는 걷어낸다.
+  // 모르는 태그는 내용(글자)은 살리고 껍데기만 벗긴다. 스크립트·프레임·폼처럼 코드를 실을 수 있는 것은 통째로 지운다.
+  const SAFE_TAGS = new Set(("a abbr b big blockquote br caption center cite code col colgroup dd del dfn div dl dt em figcaption figure font "
+    + "h1 h2 h3 h4 h5 h6 hr i img ins kbd li mark ol p pre q s samp section small span strike strong sub sup table tbody td tfoot th thead tr tt u ul var wbr").split(" "));
+  const DROP_TAGS = "script,style,iframe,frame,frameset,object,embed,applet,link,meta,base,form,input,button,select,textarea,template,svg,math,noscript,video,audio,source,track,canvas,dialog,slot";
+  const SAFE_ATTRS = new Set(["style", "class", "href", "target", "rel", "src", "alt", "title", "colspan", "rowspan", "color", "face", "size",
+    "data-sb", "start", "type", "dir", "width", "height", "align", "valign", "border", "cellpadding", "cellspacing", "bgcolor"]);
+  const SAFE_CLASSES = new Set(["hl", "kbul", "kout", "pk-stamp", "pk-table"]);   // 이 파일의 CSS가 아는 본문용 클래스만
+  const CSS_BAD = /url\s*\(|expression\s*\(|javascript:|@import|behavior\s*:|-moz-binding/i;
+  function safeStyle(st) {
+    return st.split(";").map(x => x.trim()).filter(Boolean).filter(rule => {
+      const prop = rule.split(":")[0].trim().toLowerCase();
+      return prop && !/^(position|behavior|content|filter|pointer-events)$/.test(prop) && !CSS_BAD.test(rule);
+    }).join("; ");
+  }
   function sanitizePacketHtml(html) {
     const doc = new DOMParser().parseFromString("<div>" + (html || "") + "</div>", "text/html");
-    doc.querySelectorAll("script,style,iframe,object,embed,link,meta").forEach(n => n.remove());
-    doc.querySelectorAll("*").forEach(el => {
+    doc.querySelectorAll(DROP_TAGS).forEach(n => n.remove());
+    [...doc.body.querySelectorAll("*")].forEach(el => {
+      if (el === doc.body.firstChild) return;
+      const tag = el.tagName.toLowerCase();
+      if (!SAFE_TAGS.has(tag)) { el.replaceWith(...el.childNodes); return; }   // 모르는 태그는 글자만 남긴다
       [...el.attributes].forEach(a => {
         const name = a.name.toLowerCase(), val = (a.value || "").trim();
-        if (name.startsWith("on")) el.removeAttribute(a.name);
-        else if ((name === "href" || name === "src") && /^\s*javascript:/i.test(val)) el.removeAttribute(a.name);
-        else if (name === "src" && el.tagName === "IMG" && !/^data:image\//i.test(val) && !/^https:\/\//i.test(val)) el.removeAttribute(a.name);
+        if (!SAFE_ATTRS.has(name)) { el.removeAttribute(a.name); return; }
+        const bare = val.replace(/[\u0000-\u0020]/g, "");   // 「java\tscript:」처럼 제어문자를 끼워 넣는 속임수 대비
+        if (name === "href" && !/^(https?:|mailto:|tel:|#|\/(?!\/))/i.test(bare)) el.removeAttribute(a.name);
+        else if (name === "src" && (tag !== "img" || (!/^data:image\//i.test(bare) && !/^https:\/\//i.test(bare)))) el.removeAttribute(a.name);
+        else if (name === "style") { const ok = safeStyle(val); if (ok) el.setAttribute("style", ok); else el.removeAttribute("style"); }
+        else if (name === "class") { const ok = val.split(/\s+/).filter(c => SAFE_CLASSES.has(c)); if (ok.length) el.setAttribute("class", ok.join(" ")); else el.removeAttribute("class"); }
+        else if (name === "target" && val !== "_blank") el.removeAttribute("target");
+        else if (name === "type" && tag !== "ol" && tag !== "ul") el.removeAttribute("type");
       });
+      if (tag === "a" && el.getAttribute("target") === "_blank") el.setAttribute("rel", "noopener");
     });
     doc.querySelectorAll("img[data-sb]").forEach(i => i.removeAttribute("src"));   // 보관함 그림은 주소만 저장(서명 주소는 1시간짜리)
     return doc.body.firstChild ? doc.body.firstChild.innerHTML : "";
@@ -3677,7 +3761,7 @@
       const { error } = await sb.storage.from("attachments").upload(path, blob, { contentType: "image/jpeg" });
       if (error) { alert("그림을 올리지 못했습니다. (" + error.message + ")"); return; }
       ed.focus();
-      document.execCommand("insertHTML", false, '<img data-sb="' + esc(path) + '" src="' + url + '" style="max-width:100%;"><p><br></p>');
+      document.execCommand("insertHTML", false, '<img data-sb="' + esc(path) + '" src="' + url + '" alt="삽입한 그림" style="max-width:100%;"><p><br></p>');
       ed.dispatchEvent(new Event("input"));
     });
   }
@@ -4366,13 +4450,17 @@
       title, body: document.getElementById("fp-body").value.trim() || null,
       pinned: document.getElementById("fp-pin").checked
     }).select().single();
-    let failMsg = ins.error ? ins.error.message : null;
+    let failMsg = ins.error ? ins.error.message : null, keptWithoutFiles = false;
     if (!failMsg && files.length) {
       try { await uploadAttachments("free", ins.data.id, files); }
-      catch (up) { failMsg = "파일 업로드 실패: " + (up.message || up); }
+      catch (up) {
+        failMsg = "파일 업로드 실패: " + (up.message || up);
+        keptWithoutFiles = !(await undoNewPost("free_posts", "free", ins.data.id));   // 다시 눌러도 같은 글이 두 번 올라가지 않게 거둔다
+      }
     }
     btn.disabled = false;
-    if (failMsg) { err.textContent = "글을 올리지 못했습니다. 입력하신 내용은 그대로 남아 있으니 다시 시도해 주세요. (" + failMsg + ")"; err.classList.add("show"); return; }
+    if (failMsg && keptWithoutFiles) alert("글은 등록되었지만 첨부파일은 올리지 못했습니다. 글의 「수정」에서 파일을 다시 붙여 주세요. (" + failMsg + ")");
+    else if (failMsg) { err.textContent = "글을 올리지 못했습니다. 입력하신 내용은 그대로 남아 있으니 다시 시도해 주세요. (" + failMsg + ")"; err.classList.add("show"); return; }
     document.getElementById("fp-form").reset();
     document.getElementById("fp-file-chosen").innerHTML = "";
     draftClear("board");
@@ -4413,7 +4501,8 @@
 
   async function deleteFreePost(id) {
     if (!confirm("이 글을 삭제할까요? 댓글과 첨부파일도 함께 삭제됩니다.")) return;
-    await deleteAttachmentsFor("free", id);
+    try { await deleteAttachmentsFor("free", id); }
+    catch (e) { alert("첨부파일을 지우지 못해 삭제를 멈췄습니다. 잠시 후 다시 시도해 주세요. (" + (e.message || e) + ")"); return; }
     const { error } = await sb.from("free_posts").delete().eq("id", id);
     if (error) { alert("삭제하지 못했습니다."); return; }
     loadFreePosts();

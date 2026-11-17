@@ -1065,6 +1065,139 @@ const daysAgo = n => { const d = new Date(); d.setDate(d.getDate() - n); return 
     await page.close();
   }
 
+  // N. 글은 저장됐는데 첨부만 실패하면 — 방금 만든 글을 거두고 「다시 시도」를 안내한다.
+  //    (거두지 않으면 사용자가 다시 눌러 같은 글이 두 번 올라간다.) 입력 내용은 그대로 남아야 한다.
+  {
+    const page = await H.newPage(browser);
+    const { user, session } = H.mkSession("twopro@hanmail.net", "two");
+    let posts = [], pid = 1, uploads = 0, deletes = [];
+    await H.setupPage(page, { user, session, routes: (p, m, req, url) => {
+      if (p === "/rest/v1/free_posts") {
+        if (m === "POST") { const r = JSON.parse(req.postData()); r.id = pid++; r.created_at = new Date().toISOString(); posts.unshift(r); return r; }
+        if (m === "DELETE") { const id = Number((url.searchParams.get("id") || "").replace("eq.", "")); deletes.push(id); posts = posts.filter(x => x.id !== id); return []; }
+        return posts;
+      }
+      if (p === "/rest/v1/free_comments") return [];
+      if (p === "/rest/v1/attachments") return m === "POST" ? [JSON.parse(req.postData())] : [];
+      if (p.startsWith("/storage/v1/object/attachments/")) {
+        uploads++;
+        if (uploads === 1) return { __status: 500, error: "StorageError", message: "upload failed" };   // 첫 시도는 실패
+        return { Id: "1", Key: "attachments/x" };
+      }
+      if (p === "/storage/v1/object/sign/attachments") return [];
+      return H.defaultBriefingRoutes(p);
+    }});
+    await H.login(page, port, "twopro@hanmail.net");
+    await page.click('nav button[data-panel="board"]'); await page.waitForTimeout(600);
+    await page.click("#fp-write-toggle"); await page.waitForTimeout(300);
+    await page.fill("#fp-title", "첨부 실패 시험");
+    await page.fill("#fp-body", "본문은 남아 있어야 한다");
+    await page.setInputFiles("#fp-file", { name: "a.pdf", mimeType: "application/pdf", buffer: Buffer.from("%PDF-1.4 a") });
+    await page.click("#fp-submit"); await page.waitForTimeout(900);
+    const st1 = await page.evaluate(() => ({
+      err: document.getElementById("fp-error").classList.contains("show") ? document.getElementById("fp-error").textContent : "",
+      title: document.getElementById("fp-title").value, body: document.getElementById("fp-body").value,
+      btn: document.getElementById("fp-submit").disabled
+    }));
+    c.ok(/다시 시도/.test(st1.err), "첨부 실패 시 「다시 시도」 안내가 뜬다 (" + st1.err.slice(0, 60) + ")");
+    c.ok(deletes.length === 1 && deletes[0] === 1 && posts.length === 0, "방금 만든 글을 거둔다 (삭제 호출 " + deletes.length + "건, 남은 글 " + posts.length + ")");
+    c.ok(st1.title === "첨부 실패 시험" && st1.body === "본문은 남아 있어야 한다", "입력한 제목·본문은 그대로 남는다");
+    c.ok(!st1.btn, "등록 단추가 다시 눌린다");
+    await page.click("#fp-submit"); await page.waitForTimeout(900);
+    c.ok(posts.length === 1 && posts[0].title === "첨부 실패 시험", "다시 시도하면 글이 한 번만 올라간다 (글 " + posts.length + "개)");
+    await page.close();
+  }
+
+  // O. 본문 정화기는 「허용 목록」 방식 — 서식·표·그림은 살리고, 코드를 실을 수 있는 것은 변칙 표기라도 걷어낸다.
+  {
+    const page = await H.newPage(browser);
+    const { user, session } = H.mkSession("twopro@hanmail.net", "two");
+    await H.setupPage(page, { user, session, routes: H.defaultBriefingRoutes });
+    await H.login(page, port, "twopro@hanmail.net");
+    const r = await page.evaluate(() => {
+      const S = sanitizePacketHtml;
+      return {
+        keep: S('<p style="text-align:center"><b>굵게</b> <span style="color:#c00;background-color:#ff0">색</span> <font color="#00f" size="3">폰트</font></p>'
+          + '<ul class="kbul"><li>목록</li></ul><table class="pk-table"><tbody><tr><td colspan="2">칸</td></tr></tbody></table>'
+          + '<blockquote>인용</blockquote><a href="https://example.com" target="_blank">링크</a><img data-sb="inline/a.png" alt="그림" src="https://x/y.png">'),
+        jsTab: S('<a href="java\tscript:alert(1)">x</a>'),
+        jsEnt: S('<a href="&#106;avascript:alert(1)">x</a>'),
+        dataHref: S('<a href="data:text/html,<script>alert(1)</script>">x</a>'),
+        srcdoc: S('<iframe srcdoc="<script>alert(1)</script>"></iframe>글'),
+        formaction: S('<button formaction="javascript:alert(1)">b</button><form action="x"><input onfocus="alert(1)" autofocus></form>'),
+        styleUrl: S('<div style="color:red;background:url(javascript:alert(1));position:fixed">글</div>'),
+        unknown: S('<custom-el foo="1">남는 글자</custom-el><o:p>워드</o:p><details open><summary>s</summary>d</details>'),
+        onattr: S('<img src="https://x/y.png" onerror="alert(1)" onload="x()">'),
+        svg: S('<svg onload="alert(1)"><script>1</script></svg>뒤'),
+        badClass: S('<span class="sp-acts kbul">c</span>'),
+        mathml: S('<math><mi>x</mi></math>')
+      };
+    });
+    c.ok(/<b>굵게<\/b>/.test(r.keep) && /color:\s*#c00/.test(r.keep) && /background-color/.test(r.keep) && /<font color="#00f" size="3">/.test(r.keep),
+      "굵게·글자색·형광펜·font 태그는 살린다");
+    c.ok(/class="kbul"/.test(r.keep) && /class="pk-table"/.test(r.keep) && /colspan="2"/.test(r.keep) && /<blockquote>/.test(r.keep) && /text-align:\s*center/.test(r.keep),
+      "목록·표·인용·정렬은 살린다");
+    c.ok(/<a href="https:\/\/example.com" target="_blank" rel="noopener">/.test(r.keep), "https 링크는 새 창 + noopener로 살린다");
+    c.ok(/<img data-sb="inline\/a.png" alt="그림">/.test(r.keep), "보관함 그림은 data-sb·alt만 남기고 주소는 뗀다");
+    c.ok(!/href/.test(r.jsTab) && !/href/.test(r.jsEnt) && !/href/.test(r.dataHref), "javascript:(탭·엔티티 변칙 포함)·data: 링크는 뗀다");
+    c.ok(!/iframe|srcdoc|script/.test(r.srcdoc) && /글/.test(r.srcdoc), "iframe srcdoc는 통째로 지우고 글자는 남긴다");
+    c.ok(!/formaction|<form|<input|<button/.test(r.formaction), "폼·단추·입력칸은 지운다");
+    c.ok(/color:\s*red/.test(r.styleUrl) && !/url\(/.test(r.styleUrl) && !/position/.test(r.styleUrl), "style은 안전한 선언만 남긴다(url·position 제거)");
+    c.ok(/남는 글자/.test(r.unknown) && !/custom-el|o:p/.test(r.unknown) && /워드/.test(r.unknown) && /sd/.test(r.unknown) && !/<details|<summary/.test(r.unknown),
+      "모르는 태그는 껍데기만 벗기고 글자는 남긴다");
+    c.ok(!/onerror|onload/.test(r.onattr) && /<img src="https:\/\/x\/y.png">/.test(r.onattr), "on* 속성은 지우고 그림은 남긴다");
+    c.ok(!/svg|script/.test(r.svg) && /뒤/.test(r.svg) && !/math/.test(r.mathml), "svg·math는 통째로 지운다");
+    c.ok(r.badClass === '<span class="kbul">c</span>', "화면용 클래스(sp-acts)는 떼고 본문용(kbul)만 남긴다 (" + r.badClass + ")");
+    await page.close();
+  }
+
+  // P. 자동 링크 — 문장 끝 마침표·괄호는 주소에 딸려 들어가지 않는다.
+  {
+    const page = await H.newPage(browser);
+    await H.setupPage(page, { user: null, session: null, routes: H.defaultBriefingRoutes });
+    await page.goto("http://127.0.0.1:" + port + "/index.html"); await page.waitForSelector(".brief-head");
+    const r = await page.evaluate(() => ({
+      dot: linkify("자세한 내용은 https://example.go.kr/notice). 참고"),
+      quote: linkify('"https://a.b/c" 와 www.naver.com, 끝.'),
+      paren: linkify("https://ko.wikipedia.org/wiki/서울(도시) 참고"),
+      plain: linkify("https://a.b/c?x=1&y=2 끝")
+    }));
+    c.ok(/href="https:\/\/example.go.kr\/notice"/.test(r.dot) && /<\/a>\)\. 참고/.test(r.dot), "마침표·닫는 괄호는 링크 밖으로 (" + r.dot.replace(/<[^>]+>/g, "") + ")");
+    c.ok(/href="https:\/\/a.b\/c"/.test(r.quote) && /href="https:\/\/www.naver.com"/.test(r.quote), "따옴표·쉼표도 링크 밖으로");
+    c.ok(/href="https:\/\/ko.wikipedia.org\/wiki\/서울\(도시\)"/.test(r.paren), "여는 괄호가 짝이 맞으면 닫는 괄호는 주소의 일부");
+    c.ok(/href="https:\/\/a.b\/c\?x=1&amp;y=2"/.test(r.plain), "물음표·& 가 든 보통 주소는 그대로");
+    await page.close();
+  }
+
+  // Q. 연결 도구(supabase-js)를 못 불러오면 — 조용히 멈추지 않고 이유를 알린다.
+  {
+    const page = await H.newPage(browser);
+    await page.route("https://cdn.jsdelivr.net/npm/@supabase/supabase-js@*", r => r.fulfill({ status: 500, body: "" }));
+    await page.route("https://fonts.googleapis.com/**", r => r.fulfill({ status: 200, contentType: "text/css", body: "" }));
+    await page.goto("http://127.0.0.1:" + port + "/index.html"); await page.waitForTimeout(800);
+    const t = await page.evaluate(() => { const el = document.getElementById("app-toast"); return el && el.classList.contains("show") ? el.textContent : ""; });
+    c.ok(/supabase-js/.test(t) && /새로고침/.test(t), "로드 실패 안내가 뜬다 (" + t.slice(0, 50) + "…)");
+    await page.close();
+  }
+
+  // R. 처리 중 예외가 나면 — 「…중…」으로 굳은 단추를 풀고 알림을 띄운다.
+  {
+    const page = await H.newPage(browser);
+    const { user, session } = H.mkSession("twopro@hanmail.net", "two");
+    await H.setupPage(page, { user, session, routes: H.defaultBriefingRoutes });
+    await H.login(page, port, "twopro@hanmail.net");
+    const r = await page.evaluate(async () => {
+      const b = document.createElement("button"); b.textContent = "등록 중…"; b.disabled = true; document.body.appendChild(b);
+      Promise.reject(new Error("시험용 예외"));
+      await new Promise(r => setTimeout(r, 300));
+      const t = document.getElementById("app-toast");
+      return { toast: t && t.classList.contains("show") ? t.textContent : "", btn: b.disabled, txt: b.textContent };
+    });
+    c.ok(/시험용 예외/.test(r.toast), "알림에 오류 내용이 실린다 (" + r.toast.slice(0, 40) + "…)");
+    c.ok(!r.btn && r.txt === "다시 시도", "굳은 단추가 「다시 시도」로 풀린다");
+    await page.close();
+  }
+
   server.close();
   await c.finish(browser);
 })().catch(e => { console.error("FAIL", e.message, e.stack); process.exit(1); });
