@@ -34,7 +34,7 @@ function startServer() {
 
 // 페이지에 목 라우팅 장착 — routes(pathname, method, request)가 undefined를 주면 []로 응답
 async function setupPage(page, { user, session, routes }) {
-  await page.route("https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2", r =>
+  await page.route("https://cdn.jsdelivr.net/npm/@supabase/supabase-js@*", r =>
     r.fulfill({ contentType: "application/javascript", body: fs.readFileSync(VENDOR_SUPABASE, "utf8") }));
   await page.route("https://fonts.googleapis.com/**", r => r.fulfill({ status: 200, contentType: "text/css", body: "" }));
   await page.route("https://fonts.gstatic.com/**", r => r.fulfill({ status: 200, body: "" }));
